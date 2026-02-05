@@ -1,0 +1,7 @@
+# Ignore backend - deployed separately on Railway
+backend/
+
+# Other files not needed for frontend build
+*.md
+.claude/
+.git/
