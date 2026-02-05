@@ -202,12 +202,13 @@ app.use((req, res) => {
 app.use(secureErrorHandler);
 
 // ====================================
-// SCHEDULED SYNC
+// SCHEDULED SYNC (disabled - Zoho pushes to Neon via separate webhook project)
 // ====================================
 
-const syncOrchestrator = new SyncOrchestrator();
-
+// Only instantiate sync if explicitly enabled
+let syncOrchestrator = null;
 if (process.env.ENABLE_SCHEDULED_SYNC === 'true') {
+  syncOrchestrator = new SyncOrchestrator();
   const syncInterval = process.env.SYNC_INTERVAL_MINUTES || 30;
 
   cron.schedule(`*/${syncInterval} * * * *`, async () => {
@@ -378,10 +379,12 @@ const server = app.listen(PORT, () => {
     logger.warn('[Security] ADMIN_API_KEY not configured - admin endpoints disabled');
   }
 
-  // Initial sync
-  syncOrchestrator.runFullSync()
-    .then(() => logger.info('[Startup] Initial sync completed'))
-    .catch(err => logger.error('[Startup] Initial sync failed:', err));
+  // Initial sync (disabled - Zoho pushes to Neon via separate webhook project)
+  if (process.env.ENABLE_STARTUP_SYNC === 'true' && syncOrchestrator) {
+    syncOrchestrator.runFullSync()
+      .then(() => logger.info('[Startup] Initial sync completed'))
+      .catch(err => logger.error('[Startup] Initial sync failed:', err));
+  }
 });
 
 export default app;
