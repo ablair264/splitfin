@@ -146,10 +146,10 @@ app.use('/api/sync', apiKeyAuth, syncRouter);
 
 // Protected tracking
 app.use('/api/tracking', apiKeyAuth, trackingRouter);
-// Protected AI proxy
-app.use('/api/ai', apiKeyAuth, aiRouter);
+// Protected AI proxy (JWT auth for logged-in users)
+app.use('/api/ai', jwtAuth, aiRouter);
 // Back-compat aliases for clients that call alternate paths
-app.use('/api/ai-web-search', apiKeyAuth, aiRouter);
+app.use('/api/ai-web-search', jwtAuth, aiRouter);
 
 // Smart Search alias for other clients
 app.get('/api/smart-search', apiKeyAuth, (req, res) => handleWebSearch(req, res));

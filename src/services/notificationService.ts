@@ -33,14 +33,14 @@ export const notificationService = {
    * List notifications with pagination
    */
   async list(filters: NotificationFilters = {}): Promise<NotificationsListResponse> {
-    return api.get<NotificationsListResponse>('/v1/notifications', filters as Record<string, string | number | boolean>);
+    return api.get<NotificationsListResponse>('/api/v1/notifications', filters as Record<string, string | number | boolean>);
   },
 
   /**
    * Get unread notification count
    */
   async getUnreadCount(): Promise<number> {
-    const result = await api.get<{ unread_count: number }>('/v1/notifications/unread-count');
+    const result = await api.get<{ unread_count: number }>('/api/v1/notifications/unread-count');
     return result.unread_count;
   },
 
@@ -48,13 +48,13 @@ export const notificationService = {
    * Mark a single notification as read
    */
   async markRead(id: number): Promise<void> {
-    await api.put(`/v1/notifications/${id}/read`);
+    await api.put(`/api/v1/notifications/${id}/read`);
   },
 
   /**
    * Mark all notifications as read
    */
   async markAllRead(): Promise<{ count: number }> {
-    return api.put<{ message: string; count: number }>('/v1/notifications/mark-all-read');
+    return api.put<{ message: string; count: number }>('/api/v1/notifications/mark-all-read');
   },
 };
