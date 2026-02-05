@@ -136,7 +136,7 @@ app.use((req, res, next) => {
 // ====================================
 
 // Public health (basic)
-app.get('/api/health', healthRouter);
+app.use('/api/health', healthRouter);
 
 // Protected health (detailed)
 app.use('/api/health/detailed', apiKeyAuth, healthRouter);
