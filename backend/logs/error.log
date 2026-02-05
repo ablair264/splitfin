@@ -1,0 +1,1426 @@
+2026-02-05 00:51:22 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 00:51:22 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 00:51:23 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 00:51:23 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 00:51:23 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 00:51:23 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 00:52:31 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 00:52:35 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 00:52:35 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 00:52:35 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 00:52:37 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 01:23:37 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 01:23:37 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 01:23:37 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 01:23:37 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:23:37 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:23:37 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:25:19 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 01:25:19 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 01:25:19 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 01:25:19 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:25:19 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:25:19 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:27:39 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 01:27:39 [31merror[39m: Error: read ETIMEDOUT
+    at AxiosError.from (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at eventHandlers.<computed> (/Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/follow-redirects/index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:575:5)
+    at TLSSocket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 01:27:39 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 01:27:39 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:27:39 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:27:39 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:28:19 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 01:28:19 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 01:28:19 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 01:28:19 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:28:20 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:28:20 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:41:28 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 01:41:28 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 01:41:29 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 01:41:29 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:41:29 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:41:29 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:48:13 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 01:48:13 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 01:48:13 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 01:48:13 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:48:13 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:48:13 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:48:26 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 01:48:26 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 01:48:26 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 01:48:26 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:48:26 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:48:26 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:50:06 [31merror[39m: TypeError: fetch failed
+    at node:internal/deps/undici/undici:16416:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/analytics.js:631:32
+2026-02-05 01:50:38 [31merror[39m: TypeError: fetch failed
+    at node:internal/deps/undici/undici:16416:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/analytics.js:631:32
+2026-02-05 01:52:50 [31merror[39m: Zoho API network error:
+2026-02-05 01:52:50 [31merror[39m: Error: read ETIMEDOUT
+    at AxiosError.from (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:638:25)
+    at RedirectableRequest.emit (node:events:520:35)
+    at eventHandlers.<computed> (/Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/follow-redirects/index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:575:5)
+    at TLSSocket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 01:52:50 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 01:52:50 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:52:50 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:52:50 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:54:12 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 01:54:12 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 01:54:12 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 01:54:12 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:54:12 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:54:12 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:54:27 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 01:54:27 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 01:54:27 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 01:54:27 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:54:27 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:54:27 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 01:54:46 [31merror[39m: TypeError: fetch failed
+    at node:internal/deps/undici/undici:16416:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/analytics.js:631:32
+2026-02-05 01:54:52 [31merror[39m: TypeError: fetch failed
+    at node:internal/deps/undici/undici:16416:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/analytics.js:631:32
+2026-02-05 01:59:34 [31merror[39m: TypeError: fetch failed
+    at node:internal/deps/undici/undici:16416:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/analytics.js:631:32
+2026-02-05 02:01:21 [31merror[39m: TypeError: fetch failed
+    at node:internal/deps/undici/undici:16416:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/analytics.js:631:32
+2026-02-05 02:01:50 [31merror[39m: TypeError: fetch failed
+    at node:internal/deps/undici/undici:16416:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/analytics.js:631:32
+2026-02-05 02:04:10 [31merror[39m: TypeError: fetch failed
+    at node:internal/deps/undici/undici:16416:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/analytics.js:631:32
+2026-02-05 02:05:20 [31merror[39m: TypeError: fetch failed
+    at node:internal/deps/undici/undici:16416:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/analytics.js:631:32
+2026-02-05 02:24:39 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 02:24:39 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 02:24:40 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 02:24:40 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 02:24:40 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 02:24:40 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 02:25:04 [31merror[39m: TypeError: fetch failed
+    at node:internal/deps/undici/undici:16416:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/analytics.js:631:32
+2026-02-05 02:50:57 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 02:50:57 [31merror[39m: Error: read ETIMEDOUT
+    at AxiosError.from (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at eventHandlers.<computed> (/Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/follow-redirects/index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:575:5)
+    at TLSSocket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 02:50:57 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 02:50:57 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 02:50:58 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 02:50:58 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 18:39:08 [31merror[39m: TypeError: fetch failed
+    at node:internal/deps/undici/undici:16416:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/analytics.js:631:32
+2026-02-05 18:50:39 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 18:50:39 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 18:50:39 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 18:50:39 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 18:50:40 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 18:50:40 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 18:51:01 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 18:51:01 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 18:51:01 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 18:51:01 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 18:51:01 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 18:51:01 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 18:55:03 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 18:55:03 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 18:55:03 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 18:55:03 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 18:55:03 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 18:55:03 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 18:55:14 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 18:55:14 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 18:55:14 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 18:55:14 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 18:55:14 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 18:55:14 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:09:49 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 19:09:49 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 19:09:49 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 19:09:49 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:09:49 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:09:49 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:10:46 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 19:10:46 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 19:10:47 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 19:10:47 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:10:47 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:10:47 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:10:58 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 19:10:58 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 19:10:58 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 19:10:58 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:10:58 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:10:58 [31merror[39m: AxiosError: Request failed with status code 400
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at IncomingMessage.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at IncomingMessage.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:29:06 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 19:29:07 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 19:29:08 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 19:41:51 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 19:41:51 [31merror[39m: Error: read ETIMEDOUT
+    at AxiosError.from (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at eventHandlers.<computed> (/Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/follow-redirects/index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:575:5)
+    at TLSSocket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 19:42:18 [31merror[39m: Failed to refresh Zoho access token:
+2026-02-05 19:42:18 [31merror[39m: Error: read ETIMEDOUT
+    at AxiosError.from (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at eventHandlers.<computed> (/Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/follow-redirects/index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:575:5)
+    at TLSSocket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:42:18 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:42:18 [31merror[39m: Error: read ETIMEDOUT
+    at AxiosError.from (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/AxiosError.js:96:14)
+    at RedirectableRequest.handleRequestError (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:638:25)
+    at RedirectableRequest.emit (node:events:508:28)
+    at eventHandlers.<computed> (/Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/follow-redirects/index.js:49:24)
+    at ClientRequest.emit (node:events:508:28)
+    at emitErrorEvent (node:_http_client:108:11)
+    at TLSSocket.socketErrorListener (node:_http_client:575:5)
+    at TLSSocket.emit (node:events:508:28)
+    at emitErrorNT (node:internal/streams/destroy:170:8)
+    at emitErrorCloseNT (node:internal/streams/destroy:129:3)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.getAccessToken (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:24:24)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:49:25)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:45:52 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 19:45:56 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 19:45:56 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 19:46:02 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 19:46:03 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 19:46:04 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 19:46:04 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 19:46:05 [31merror[39m: error: column "zoho_salesorder_id" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/orders.js:82:33
+2026-02-05 19:55:29 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 19:55:29 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 19:55:56 [31merror[39m: Zoho API network error:
+2026-02-05 19:55:56 [31merror[39m: AxiosError: timeout of 30000ms exceeded
+    at RedirectableRequest.handleRequestTimeout (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:675:16)
+    at RedirectableRequest.emit (node:events:508:28)
+    at Timeout.<anonymous> (/Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/follow-redirects/index.js:221:12)
+    at listOnTimeout (node:internal/timers:605:17)
+    at process.processTimers (node:internal/timers:541:7)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 19:55:57 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 19:55:57 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:55:57 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:55:57 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 19:57:13 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 19:57:14 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:19:58 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:19:59 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:24:40 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:36:19 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:36:19 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:45:31 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:45:31 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:45:36 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:45:37 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:52:35 [31merror[39m: error: value "310656000002341121" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:52:36 [31merror[39m: error: value "310656000002341121" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:59:28 [31merror[39m: error: value "310656000002341121" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:59:43 [31merror[39m: error: value "310656000002341121" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:59:44 [31merror[39m: error: value "310656000002341121" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:59:50 [31merror[39m: error: value "310656000002341121" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 20:59:54 [31merror[39m: error: value "310656000002341121" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 21:00:09 [31merror[39m: error: value "310656000002341121" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 21:00:26 [31merror[39m: error: value "310656000002341121" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 21:00:33 [31merror[39m: error: value "310656000002341121" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 21:00:52 [31merror[39m: error: value "310656000002341121" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 21:01:04 [31merror[39m: error: value "310656000002341121" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 21:01:05 [31merror[39m: error: value "310656000002341121" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 21:06:25 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 21:06:25 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 21:09:24 [31merror[39m: error: value "310656000084398358" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 21:09:25 [31merror[39m: error: value "310656000084398358" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 21:09:27 [31merror[39m: TypeError: fetch failed
+    at node:internal/deps/undici/undici:16416:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/analytics.js:631:32
+2026-02-05 21:26:49 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 21:26:50 [31merror[39m: error: value "310656000083954373" is out of range for type integer
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async getById (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:57:20)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/customers.js:70:22
+2026-02-05 21:51:21 [31merror[39m: TypeError: fetch failed
+    at node:internal/deps/undici/undici:16416:13
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/routes/v1/analytics.js:631:32
+2026-02-05 22:26:14 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 22:26:14 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async SyncOrchestrator.getOrderRelatedIds (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:112:24)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:42:40)
+2026-02-05 22:26:14 [31merror[39m: Zoho API error - Status: 401, URL: https://www.zohoapis.eu/inventory/v1/salesorders
+2026-02-05 22:26:14 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 22:26:14 [31merror[39m: error: relation "sync_logs" does not exist
+    at /Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async query (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:40:18)
+    at async insert (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/database.js:73:20)
+    at async OrderSyncService.saveSyncLog (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:36:7)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:192:7)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)
+2026-02-05 22:26:14 [31merror[39m: AxiosError: Request failed with status code 401
+    at settle (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/settle.js:19:12)
+    at Unzip.handleStreamEnd (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/adapters/http.js:617:11)
+    at Unzip.emit (node:events:520:35)
+    at endReadableNT (node:internal/streams/readable:1701:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:89:21)
+    at Axios.request (file:///Users/blair/Desktop/Development/Splitfin-New/backend/node_modules/axios/lib/core/Axios.js:45:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async ZohoAuth.makeRequest (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/config/zoho.js:52:24)
+    at async OrderSyncService.fetchZohoData (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/orderSync.js:24:26)
+    at async OrderSyncService.sync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/sync/baseSyncService.js:157:27)
+    at async SyncOrchestrator.runFullSync (file:///Users/blair/Desktop/Development/Splitfin-New/backend/src/services/syncOrchestrator.js:68:27)

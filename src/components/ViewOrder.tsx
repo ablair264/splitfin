@@ -1,0 +1,1501 @@
+import React, { useEffect, useState, useCallback } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { orderService } from '../services/orderService';
+import { customerService } from '../services/customerService';
+import { invoiceService } from '../services/invoiceService';
+import { productService } from '../services/productService';
+import { shippingService } from '../services/shippingService';
+import { useLoader } from '../contexts/LoaderContext';
+import type { Order, OrderLineItem, Customer, Invoice } from '../types/domain';
+import {
+  FileText,
+  File,
+  Settings,
+  User,
+  Mail,
+  ShoppingCart,
+  CheckCircle,
+  Package,
+  Warehouse,
+  ClipboardList,
+  Calendar,
+  Home,
+  Clock,
+  HelpCircle,
+  ArrowLeft,
+  MapPin,
+  Truck,
+  Route,
+  Eye,
+  Send,
+  X,
+  Save,
+  AlertTriangle,
+  Plus,
+  Minus,
+  Search,
+  Copy,
+  Phone,
+  CreditCard,
+  ExternalLink,
+  Hash,
+  UserCheck,
+  CalendarCheck
+} from 'lucide-react';
+
+declare global {
+  interface Window {
+    google: any;
+  }
+}
+
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyCtvRdpXyzAg2YTTf398JHSxGA1dmD4Doc';
+
+type TabFilter = 'all' | 'shipped' | 'partial' | 'awaiting';
+
+const orderStatusSteps = [
+  { key: 'confirmed', label: 'Order Confirmed', icon: ClipboardList },
+  { key: 'processing', label: 'Sent to Warehouse', icon: Warehouse },
+  { key: 'packed', label: 'Packed', icon: Package },
+  { key: 'shipped', label: 'Shipped', icon: Truck },
+  { key: 'delivered', label: 'Delivered', icon: CheckCircle }
+];
+
+interface DisplayLineItem extends OrderLineItem {
+  brand_name?: string;
+  quantity_shipped?: number;
+  quantity_packed?: number;
+  quantity_delivered?: number;
+  quantity_invoiced?: number;
+  quantity_cancelled?: number;
+  quantity_returned?: number;
+  zoho_item_id: string;
+}
+
+function ViewOrder() {
+  const { orderId } = useParams<{ orderId: string }>();
+  const navigate = useNavigate();
+  const { showLoader, hideLoader } = useLoader();
+
+  const [order, setOrder] = useState<Order | null>(null);
+  const [customer, setCustomer] = useState<Customer | null>(null);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabFilter>('all');
+  const [courierInfo, setCourierInfo] = useState<any>(null);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [sendingToZoho, setSendingToZoho] = useState(false);
+  const [zohoSendStatus, setZohoSendStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [zohoSendMessage, setZohoSendMessage] = useState('');
+
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editOrderData, setEditOrderData] = useState<any>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
+
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancellingOrder, setCancellingOrder] = useState(false);
+
+  const [availableItems, setAvailableItems] = useState<any[]>([]);
+  const [itemSearchTerm, setItemSearchTerm] = useState('');
+  const [showItemSearch, setShowItemSearch] = useState(false);
+
+  const [sendingToPacking, setSendingToPacking] = useState(false);
+  const [shippingStatus, setShippingStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [shippingMessage, setShippingMessage] = useState('');
+
+  const [activePackageTab, setActivePackageTab] = useState(0);
+
+  const fetchOrderDetails = useCallback(async () => {
+    if (!orderId) return;
+
+    setLoading(true);
+    showLoader('Loading Order...');
+    try {
+      const orderData = await orderService.getById(Number(orderId));
+      if (!orderData) throw new Error('Order not found');
+
+      setOrder(orderData);
+
+      if (orderData.zoho_customer_id) {
+        try {
+          const customerData = await customerService.getById(orderData.zoho_customer_id);
+          setCustomer(customerData);
+
+          if (customerData.latitude && customerData.longitude) {
+            setMapCenter({ lat: customerData.latitude, lng: customerData.longitude });
+          } else {
+            const postcode = customerData.shipping_address?.zip || customerData.billing_address?.zip;
+            if (postcode) {
+              geocodePostcode(postcode);
+            } else {
+              setMapCenter({ lat: 51.5074, lng: -0.1278 });
+            }
+          }
+        } catch {
+          setMapCenter({ lat: 51.5074, lng: -0.1278 });
+        }
+      } else {
+        setMapCenter({ lat: 51.5074, lng: -0.1278 });
+      }
+
+      try {
+        const invoiceResult = await invoiceService.list({ customer_id: orderData.zoho_customer_id } as any);
+        if (invoiceResult?.data) {
+          const orderInvoices = invoiceResult.data.filter(
+            (inv: Invoice) => inv.zoho_salesorder_id === orderData.zoho_salesorder_id
+          );
+          setInvoices(orderInvoices.length > 0 ? orderInvoices : []);
+        }
+      } catch {
+        // invoices fetch failed silently
+      }
+
+      if (orderData.packages_json && Array.isArray(orderData.packages_json) && orderData.packages_json.length > 0) {
+        const firstPackage = orderData.packages_json[0] as any;
+        if (firstPackage) {
+          setCourierInfo({
+            courier_name: firstPackage.delivery_method || firstPackage.carrier || null,
+            courier_logo_url: null
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching order details:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch order details');
+    } finally {
+      setLoading(false);
+      hideLoader();
+    }
+  }, [orderId]);
+
+  const geocodePostcode = async (postcode: string) => {
+    if (!postcode) return;
+    try {
+      const response = await fetch(
+        `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(postcode)},UK&key=${GOOGLE_MAPS_API_KEY}`
+      );
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      const data = await response.json();
+      if (data.status === 'OK' && data.results?.length > 0) {
+        const location = data.results[0].geometry.location;
+        setMapCenter({ lat: location.lat, lng: location.lng });
+      } else {
+        setMapCenter({ lat: 51.5074, lng: -0.1278 });
+      }
+    } catch {
+      setMapCenter({ lat: 51.5074, lng: -0.1278 });
+    }
+  };
+
+  const getCourierLogo = (carrier: string): string => {
+    const carrierLower = carrier?.toLowerCase() || '';
+    if (carrierLower.includes('ups')) return '/logos/ups.png';
+    if (carrierLower.includes('royal mail')) return '/logos/royalmail.png';
+    if (carrierLower.includes('dpd')) return '/logos/dpd.png';
+    if (carrierLower.includes('dhl')) return '/logos/dhl.png';
+    if (carrierLower.includes('fedex')) return '/logos/fedex.png';
+    if (carrierLower.includes('tnt')) return '/logos/tnt.png';
+    return '/logos/courier.png';
+  };
+
+  useEffect(() => {
+    fetchOrderDetails();
+  }, [fetchOrderDetails]);
+
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(amount);
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch {
+      return 'Invalid Date';
+    }
+  };
+
+  const formatDateTime = (dateString: string) => {
+    if (!dateString) return 'N/A';
+    try {
+      return new Date(dateString).toLocaleString('en-GB', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return 'Invalid Date';
+    }
+  };
+
+  const getStatusBadgeClass = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'pending':
+        return 'bg-amber-400/20 text-amber-400 border-amber-400/30';
+      case 'confirmed':
+      case 'delivered':
+        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+      case 'processing':
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'shipped':
+        return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+      case 'cancelled':
+        return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'paid':
+        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+      case 'overdue':
+        return 'bg-red-500/20 text-red-400 border-red-500/30';
+      case 'partially_paid':
+        return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+      default:
+        return 'bg-gray-400/20 text-gray-400 border-gray-400/30';
+    }
+  };
+
+  const getOrderProgress = () => {
+    const status = order?.status?.toLowerCase();
+    // Map order statuses to stepper steps
+    if (status === 'delivered') return 4;
+    if (status === 'shipped') return 3;
+    // Check packages for packed state
+    if (order?.packages_json && Array.isArray(order.packages_json) && order.packages_json.length > 0) {
+      if (status === 'processing' || status === 'confirmed') return 2;
+    }
+    if (status === 'processing') return 1;
+    if (status === 'confirmed' || status === 'pending' || status === 'open') return 0;
+    return 0;
+  };
+
+  const getFilteredLineItems = (): DisplayLineItem[] => {
+    if (!order?.line_items) return [];
+    const items = order.line_items as DisplayLineItem[];
+    switch (activeTab) {
+      case 'shipped':
+        return items.filter(item => (item.quantity_shipped || 0) >= item.quantity);
+      case 'partial':
+        return items.filter(item => {
+          const shipped = item.quantity_shipped || 0;
+          return shipped > 0 && shipped < item.quantity;
+        });
+      case 'awaiting':
+        return items.filter(item => (item.quantity_shipped || 0) === 0);
+      default:
+        return items;
+    }
+  };
+
+  const getTotalsByTab = () => {
+    if (!order?.line_items) return { all: 0, shipped: 0, partial: 0, awaiting: 0 };
+    const items = order.line_items as DisplayLineItem[];
+    return {
+      all: items.length,
+      shipped: items.filter(item => (item.quantity_shipped || 0) >= item.quantity).length,
+      partial: items.filter(item => {
+        const shipped = item.quantity_shipped || 0;
+        return shipped > 0 && shipped < item.quantity;
+      }).length,
+      awaiting: items.filter(item => (item.quantity_shipped || 0) === 0).length
+    };
+  };
+
+  const handlePrintOrder = () => { window.print(); };
+
+  const handleCreateInvoice = () => {
+    console.log('Create invoice for order:', orderId);
+  };
+
+  const handleEditOrder = () => {
+    if (order && customer) {
+      setEditOrderData({
+        notes: order.notes || '',
+        order_status: order.status,
+        order_date: order.date ? order.date.split('T')[0] : new Date().toISOString().split('T')[0],
+        shipping_status: order.shipment_status || 'pending',
+        billing_address: {
+          address_1: customer.billing_address?.address || '',
+          address_2: customer.billing_address?.street2 || '',
+          city_town: customer.billing_address?.city || '',
+          county: customer.billing_address?.state || '',
+          postcode: customer.billing_address?.zip || ''
+        },
+        shipping_address: {
+          address_1: customer.shipping_address?.address || customer.billing_address?.address || '',
+          address_2: customer.shipping_address?.street2 || customer.billing_address?.street2 || '',
+          city_town: customer.shipping_address?.city || customer.billing_address?.city || '',
+          county: customer.shipping_address?.state || customer.billing_address?.state || '',
+          postcode: customer.shipping_address?.zip || customer.billing_address?.zip || ''
+        },
+        make_default_addresses: false,
+        line_items: order.line_items?.map(item => ({
+          id: item.id,
+          item_id: item.zoho_item_id,
+          item_name: item.name,
+          quantity: item.quantity,
+          unit_price: item.rate,
+          total_price: item.amount
+        })) || [],
+        new_items: []
+      });
+      setShowEditModal(true);
+    }
+  };
+
+  const handleBackToOrders = () => { navigate('/orders'); };
+
+  const searchItems = async (searchTerm: string) => {
+    if (!searchTerm || searchTerm.length < 2) { setAvailableItems([]); return; }
+    try {
+      const result = await productService.list({ search: searchTerm, limit: 20 });
+      setAvailableItems(result.data || []);
+    } catch {
+      setAvailableItems([]);
+    }
+  };
+
+  const addItemToOrder = (item: any) => {
+    const newItem = {
+      id: `new-${Date.now()}`,
+      item_id: item.zoho_item_id || item.id,
+      item_name: item.name,
+      quantity: 1,
+      unit_price: parseFloat(item.rate || 0),
+      total_price: parseFloat(item.rate || 0),
+      is_new: true
+    };
+    setEditOrderData({ ...editOrderData, line_items: [...editOrderData.line_items, newItem] });
+    setItemSearchTerm('');
+    setAvailableItems([]);
+    setShowItemSearch(false);
+  };
+
+  const removeItemFromOrder = (itemIndex: number) => {
+    const newItems = editOrderData.line_items.filter((_: any, index: number) => index !== itemIndex);
+    setEditOrderData({ ...editOrderData, line_items: newItems });
+  };
+
+  const handleSaveOrderEdit = async () => {
+    if (!editOrderData || !order || !customer) return;
+    setSavingOrder(true);
+    try {
+      await orderService.update(order.id, {
+        notes: editOrderData.notes,
+        status: editOrderData.order_status,
+        date: editOrderData.order_date
+      });
+
+      if (editOrderData.make_default_addresses) {
+        await customerService.update(customer.id, {
+          billing_address: {
+            address: editOrderData.billing_address.address_1,
+            street2: editOrderData.billing_address.address_2,
+            city: editOrderData.billing_address.city_town,
+            state: editOrderData.billing_address.county,
+            zip: editOrderData.billing_address.postcode
+          },
+          shipping_address: {
+            address: editOrderData.shipping_address.address_1,
+            street2: editOrderData.shipping_address.address_2,
+            city: editOrderData.shipping_address.city_town,
+            state: editOrderData.shipping_address.county,
+            zip: editOrderData.shipping_address.postcode
+          }
+        });
+      }
+
+      await sendOrderUpdateToWebhook('update', {
+        ...editOrderData,
+        addresses_updated: editOrderData.make_default_addresses,
+        items_added: editOrderData.line_items.filter((item: any) => item.is_new).length,
+        items_removed: 0
+      });
+
+      await fetchOrderDetails();
+      setShowEditModal(false);
+      setZohoSendStatus('success');
+      setZohoSendMessage('Order updated successfully!');
+      setTimeout(() => { setZohoSendStatus('idle'); setZohoSendMessage(''); }, 5000);
+    } catch (error) {
+      console.error('Error updating order:', error);
+      setZohoSendStatus('error');
+      setZohoSendMessage(error instanceof Error ? error.message : 'Failed to update order');
+      setTimeout(() => { setZohoSendStatus('idle'); setZohoSendMessage(''); }, 5000);
+    } finally {
+      setSavingOrder(false);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!order) return;
+    setCancellingOrder(true);
+    try {
+      await orderService.update(order.id, {
+        status: 'cancelled',
+        notes: order.notes ? `${order.notes}\n\nCANCELLED: ${cancelReason}` : `CANCELLED: ${cancelReason}`
+      });
+      await sendOrderUpdateToWebhook('cancel', { reason: cancelReason, cancelled_at: new Date().toISOString() });
+      await fetchOrderDetails();
+      setShowCancelModal(false);
+      setCancelReason('');
+      setZohoSendStatus('success');
+      setZohoSendMessage('Order cancelled successfully!');
+      setTimeout(() => { setZohoSendStatus('idle'); setZohoSendMessage(''); }, 5000);
+    } catch (error) {
+      console.error('Error cancelling order:', error);
+      setZohoSendStatus('error');
+      setZohoSendMessage(error instanceof Error ? error.message : 'Failed to cancel order');
+      setTimeout(() => { setZohoSendStatus('idle'); setZohoSendMessage(''); }, 5000);
+    } finally {
+      setCancellingOrder(false);
+    }
+  };
+
+  const sendOrderUpdateToWebhook = async (updateType: 'update' | 'cancel', updateData: any) => {
+    try {
+      const webhookData = {
+        action: 'update_order',
+        update_type: updateType,
+        order_id: order?.id,
+        order_number: order?.salesorder_number || order?.id,
+        customer_data: customer,
+        order_data: order,
+        update_data: updateData,
+        timestamp: new Date().toISOString(),
+        source: 'view_order_page'
+      };
+
+      const webhookUrl = import.meta.env.VITE_ORDER_WEBHOOK_URL || 'https://hook.eu2.make.com/ussc9u8m3bamb3epfx4u0o0ef8hy8b4n';
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(webhookData),
+      });
+
+      if (!response.ok) throw new Error(`Webhook failed with status: ${response.status}`);
+
+      const contentType = response.headers.get('content-type');
+      if (contentType?.includes('application/json')) {
+        await response.json();
+      } else {
+        await response.text();
+      }
+    } catch (error) {
+      console.error('Error sending order update to webhook:', error);
+    }
+  };
+
+  const handleSendToZoho = async () => {
+    if (!order || !customer) {
+      setZohoSendMessage('Missing order or customer data');
+      setZohoSendStatus('error');
+      return;
+    }
+
+    setSendingToZoho(true);
+    setZohoSendStatus('sending');
+    setZohoSendMessage('Preparing order for Zoho...');
+
+    try {
+      const lineItemsForWebhook = (order.line_items || []).map((item) => ({
+        item_id: item.zoho_item_id,
+        sku: item.sku || 'N/A',
+        name: item.name,
+        quantity: item.quantity,
+        rate: item.rate,
+        amount: item.amount,
+        brand: 'Unknown'
+      }));
+
+      const webhookPayload = {
+        salesorder_number: order.salesorder_number || `SO-${order.id}`,
+        date: new Date(order.date || order.created_at).toISOString().split('T')[0],
+        customer: {
+          customer_id: customer.zoho_contact_id || customer.id,
+          name: customer.company_name,
+          email: customer.email,
+          company: customer.company_name
+        },
+        line_items: lineItemsForWebhook,
+        subtotal: order.sub_total || 0,
+        vat_amount: Math.max(0, (order.total || 0) - (order.sub_total || 0)),
+        total: order.total || 0,
+        notes: order.notes || 'Order resent to Zoho via web app',
+        created_by: 'Web Order - Resend',
+        created_at: new Date().toISOString(),
+        original_order_date: order.date || order.created_at
+      };
+
+      setZohoSendMessage('Sending to Zoho webhook...');
+      const webhookUrl = import.meta.env.VITE_ORDER_WEBHOOK_URL || 'https://hook.eu2.make.com/ussc9u8m3bamb3epfx4u0o0ef8hy8b4n';
+      const response = await fetch(webhookUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(webhookPayload)
+      });
+
+      if (!response.ok) throw new Error(`Webhook failed with status: ${response.status}`);
+
+      setZohoSendStatus('success');
+      setZohoSendMessage('Order successfully sent to Zoho!');
+      setTimeout(() => { setZohoSendStatus('idle'); setZohoSendMessage(''); }, 5000);
+    } catch (error) {
+      console.error('Error sending to Zoho:', error);
+      setZohoSendStatus('error');
+      setZohoSendMessage(error instanceof Error ? error.message : 'Failed to send to Zoho');
+      setTimeout(() => { setZohoSendStatus('idle'); setZohoSendMessage(''); }, 5000);
+    } finally {
+      setSendingToZoho(false);
+    }
+  };
+
+  const handleSendToPacking = async () => {
+    if (!order) return;
+    setSendingToPacking(true);
+    setShippingStatus('sending');
+    setShippingMessage('Sending order to packing...');
+
+    try {
+      const result = await shippingService.sendOrderToPacking(String(order.id));
+      if (result.success) {
+        setShippingStatus('success');
+        setShippingMessage(result.message);
+        await fetchOrderDetails();
+        setTimeout(() => { setShippingStatus('idle'); setShippingMessage(''); }, 5000);
+      } else {
+        throw new Error(result.message);
+      }
+    } catch (error) {
+      console.error('Error sending order to packing:', error);
+      setShippingStatus('error');
+      setShippingMessage(error instanceof Error ? error.message : 'Failed to send order to packing');
+      setTimeout(() => { setShippingStatus('idle'); setShippingMessage(''); }, 5000);
+    } finally {
+      setSendingToPacking(false);
+    }
+  };
+
+  // Loading is handled by ProgressLoader via useLoader
+  if (loading) {
+    return null;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0f1419] via-[#1a1f2a] to-[#2c3e50] text-white flex justify-center items-center p-8">
+        <div className="text-center max-w-md">
+          <HelpCircle size={48} className="text-red-500 mx-auto" />
+          <h2 className="mt-4 mb-2 text-xl font-bold">Error Loading Order</h2>
+          <p className="text-white/70 mb-8">{error}</p>
+          <div className="flex gap-4 justify-center">
+            <button onClick={fetchOrderDetails} className="px-6 py-3 bg-gradient-to-r from-brand-300 to-[#4daeac] text-[#0f1419] rounded-lg font-semibold hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-300/30 transition-all">
+              Retry
+            </button>
+            <button onClick={handleBackToOrders} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/20 rounded-lg hover:bg-white/10 transition-all text-sm backdrop-blur-sm">
+              Back to Orders
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!order) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-[#0f1419] via-[#1a1f2a] to-[#2c3e50] text-white flex justify-center items-center p-8">
+        <div className="text-center max-w-md">
+          <Package size={48} className="text-gray-400 mx-auto" />
+          <h2 className="mt-4 mb-2 text-xl font-bold">Order Not Found</h2>
+          <p className="text-white/70 mb-8">The requested order could not be found.</p>
+          <button onClick={handleBackToOrders} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/20 rounded-lg hover:bg-white/10 transition-all text-sm backdrop-blur-sm mx-auto">
+            Back to Orders
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const progress = getOrderProgress();
+  const tabTotals = getTotalsByTab();
+  const filteredItems = getFilteredLineItems();
+  const packages = (order.packages_json || []) as any[];
+  const hasPackages = packages.length > 0;
+  const activePackage = hasPackages ? packages[activePackageTab] || packages[0] : null;
+
+  const notificationClass = (status: string) => {
+    switch (status) {
+      case 'sending': return 'bg-blue-500/10 border-blue-500/30 text-blue-400';
+      case 'success': return 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
+      case 'error': return 'bg-red-500/10 border-red-500/30 text-red-400';
+      default: return 'bg-gray-500/10 border-gray-500/30 text-gray-400';
+    }
+  };
+
+  const getCustomerInitial = () => {
+    const name = customer?.company_name || order.customer_name || '';
+    return name.charAt(0).toUpperCase() || '?';
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#0f1419] via-[#1a1f2a] to-[#2c3e50] text-white p-6 relative overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle, #79d5e9 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
+      <div className="absolute inset-0 bg-gradient-to-br from-brand-300/[0.02] via-transparent to-purple-500/[0.02] animate-pulse" style={{ animationDuration: '8s' }} />
+
+      <div className="relative">
+        {/* Header */}
+        <div className="flex justify-between items-start mb-6 pb-5 border-b border-white/10 flex-wrap gap-4">
+          <div className="flex flex-col gap-3">
+            <button onClick={handleBackToOrders} className="flex items-center gap-2 px-4 py-2.5 bg-white/5 border border-white/20 rounded-lg hover:bg-white/10 hover:-translate-x-0.5 transition-all text-sm backdrop-blur-sm w-fit">
+              <ArrowLeft size={16} /> Back to Orders
+            </button>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold">Order {order.salesorder_number || 'N/A'}</h1>
+              <span className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wide border ${getStatusBadgeClass(order.status)}`}>
+                {order.status}
+              </span>
+            </div>
+          </div>
+          <div className="flex gap-3 flex-wrap">
+            <button onClick={handlePrintOrder} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-brand-300/30 text-brand-300 rounded-lg hover:bg-brand-300/10 hover:border-brand-300 transition-all text-sm backdrop-blur-sm">
+              <File size={16} /> Print
+            </button>
+            <button onClick={handleCreateInvoice} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-brand-300/30 text-brand-300 rounded-lg hover:bg-brand-300/10 hover:border-brand-300 transition-all text-sm backdrop-blur-sm">
+              <FileText size={16} /> Invoice
+            </button>
+            <button onClick={handleSendToZoho} disabled={sendingToZoho} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-brand-300/30 text-brand-300 rounded-lg hover:bg-brand-300/10 hover:border-brand-300 transition-all text-sm backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed">
+              <Send size={16} /> {sendingToZoho ? 'Sending...' : 'Send to Zoho'}
+            </button>
+            <button onClick={handleSendToPacking} disabled={sendingToPacking} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-brand-300/30 text-brand-300 rounded-lg hover:bg-brand-300/10 hover:border-brand-300 transition-all text-sm backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed">
+              <Package size={16} /> {sendingToPacking ? 'Sending...' : 'Send to Packing'}
+            </button>
+            <button onClick={handleEditOrder} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-300 to-[#4daeac] text-[#0f1419] rounded-lg font-semibold hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-300/30 transition-all text-sm">
+              <Settings size={16} /> Edit Order
+            </button>
+          </div>
+        </div>
+
+        {/* Notifications */}
+        {zohoSendMessage && (
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border mb-4 ${notificationClass(zohoSendStatus)}`}>
+            {zohoSendStatus === 'sending' && <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
+            {zohoSendStatus === 'success' && <CheckCircle size={20} />}
+            {zohoSendStatus === 'error' && <HelpCircle size={20} />}
+            <span>{zohoSendMessage}</span>
+          </div>
+        )}
+        {shippingMessage && (
+          <div className={`flex items-center gap-3 px-4 py-3 rounded-lg border mb-4 ${notificationClass(shippingStatus)}`}>
+            {shippingStatus === 'sending' && <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
+            {shippingStatus === 'success' && <CheckCircle size={20} />}
+            {shippingStatus === 'error' && <HelpCircle size={20} />}
+            <span>{shippingMessage}</span>
+          </div>
+        )}
+
+        {/* Customer Details Card (full-width, above grid) */}
+        {customer && (
+          <div className="bg-[#1a1f2a] rounded-xl border border-white/10 p-4 mb-6 backdrop-blur-sm">
+            <div className="flex items-center gap-4 flex-wrap">
+              {/* Avatar */}
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand-300 to-[#4daeac] flex items-center justify-center text-white font-bold text-lg shrink-0">
+                {getCustomerInitial()}
+              </div>
+
+              {/* Name + Company */}
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-white truncate">{customer.company_name}</h3>
+                {customer.contact_name && (
+                  <p className="text-sm text-white/60 truncate">{customer.contact_name}</p>
+                )}
+              </div>
+
+              {/* Contact info inline */}
+              <div className="flex items-center gap-5 flex-wrap text-sm text-white/70">
+                {customer.phone && (
+                  <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 hover:text-brand-300 transition-colors">
+                    <Phone size={14} className="text-brand-300" />
+                    <span>{customer.phone}</span>
+                  </a>
+                )}
+                {customer.email && (
+                  <a href={`mailto:${customer.email}`} className="flex items-center gap-1.5 hover:text-brand-300 transition-colors">
+                    <Mail size={14} className="text-brand-300" />
+                    <span>{customer.email}</span>
+                  </a>
+                )}
+              </div>
+
+              {/* Financial summary */}
+              <div className="flex items-center gap-4 text-sm">
+                <div className="flex flex-col items-center px-3 py-1 bg-white/5 rounded-lg border border-white/10">
+                  <span className="text-[10px] text-white/50 uppercase tracking-wider">Receivable</span>
+                  <span className="font-semibold text-amber-400">{formatCurrency(customer.outstanding_receivable || 0)}</span>
+                </div>
+                <div className="flex flex-col items-center px-3 py-1 bg-white/5 rounded-lg border border-white/10">
+                  <span className="text-[10px] text-white/50 uppercase tracking-wider">Credits</span>
+                  <span className="font-semibold text-emerald-400">{formatCurrency(customer.unused_credits || 0)}</span>
+                </div>
+              </div>
+
+              {/* View Customer button */}
+              <button
+                onClick={() => navigate(`/customer/${customer.zoho_contact_id}`)}
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-brand-300/80 border border-brand-300/25 bg-brand-300/5 rounded-md hover:text-brand-300 hover:border-brand-300/40 hover:bg-brand-300/10 transition-all shrink-0"
+              >
+                <ExternalLink size={12} />
+                View Customer
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 mb-6">
+          {/* Left Column */}
+          <div className="flex flex-col gap-5">
+            {/* Order Information */}
+            <div className="bg-[#1a1f2a] rounded-xl border border-white/10 p-5 backdrop-blur-sm">
+              <h3 className="text-sm font-semibold text-white mb-3">Order Information</h3>
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-3">
+                  <FileText className="text-brand-300 w-5 shrink-0" size={20} />
+                  <div className="flex-1">
+                    <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Order Number</label>
+                    <span className="text-white font-semibold font-mono">{order.salesorder_number || 'N/A'}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Calendar className="text-brand-300 w-5 shrink-0" size={20} />
+                  <div className="flex-1">
+                    <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Order Date</label>
+                    <span className="text-white font-medium">{formatDate(order.date || order.created_at)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <User className="text-brand-300 w-5 shrink-0" size={20} />
+                  <div className="flex-1">
+                    <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Customer</label>
+                    <span className="text-white font-medium">{order.customer_name || 'Unknown Customer'}</span>
+                  </div>
+                </div>
+                {order.reference_number && (
+                  <div className="flex items-center gap-3">
+                    <Hash className="text-brand-300 w-5 shrink-0" size={20} />
+                    <div className="flex-1">
+                      <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Reference</label>
+                      <span className="text-white font-medium">{order.reference_number}</span>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-3">
+                  <ShoppingCart className="text-brand-300 w-5 shrink-0" size={20} />
+                  <div className="flex-1">
+                    <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Shipping Status</label>
+                    <span className="text-white font-medium">{order.shipment_status || order.status || 'Pending'}</span>
+                  </div>
+                </div>
+                {order.salesperson_name && (
+                  <div className="flex items-center gap-3">
+                    <UserCheck className="text-brand-300 w-5 shrink-0" size={20} />
+                    <div className="flex-1">
+                      <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Salesperson</label>
+                      <span className="text-white font-medium">{order.salesperson_name}</span>
+                    </div>
+                  </div>
+                )}
+                {order.delivery_date && (
+                  <div className="flex items-center gap-3">
+                    <CalendarCheck className="text-brand-300 w-5 shrink-0" size={20} />
+                    <div className="flex-1">
+                      <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Delivery Date</label>
+                      <span className="text-white font-medium">{formatDate(order.delivery_date)}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Status Stepper Card */}
+            <div className="bg-[#1a1f2a] rounded-xl border border-white/10 p-5 backdrop-blur-sm">
+              <h3 className="text-sm font-semibold text-white mb-4">Order Progress</h3>
+              <div className="flex flex-col gap-0">
+                {orderStatusSteps.map((step, index) => {
+                  const isCompleted = index < progress;
+                  const isCurrent = index === progress;
+                  const isFuture = index > progress;
+                  const StepIcon = step.icon;
+
+                  return (
+                    <div key={step.key} className="flex items-start gap-3 relative">
+                      {/* Vertical line */}
+                      {index < orderStatusSteps.length - 1 && (
+                        <div className={`absolute left-[15px] top-[32px] w-0.5 h-[calc(100%-8px)] ${
+                          isCompleted ? 'bg-brand-300' : 'bg-white/10'
+                        }`} />
+                      )}
+
+                      {/* Icon circle */}
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 transition-all ${
+                        isCompleted ? 'bg-brand-300 text-[#0f1419]' :
+                        isCurrent ? 'bg-emerald-500 text-white shadow-[0_0_12px_rgba(34,197,94,0.5)]' :
+                        'bg-white/10 text-white/40'
+                      }`}>
+                        <StepIcon size={14} />
+                      </div>
+
+                      {/* Label */}
+                      <div className={`pb-5 pt-1 ${isFuture ? 'opacity-40' : ''}`}>
+                        <span className={`text-sm font-medium ${
+                          isCurrent ? 'text-emerald-400' : isCompleted ? 'text-white' : 'text-white/50'
+                        }`}>
+                          {step.label}
+                        </span>
+                        {isCurrent && (
+                          <span className="block text-[10px] text-emerald-400/70 uppercase tracking-wider mt-0.5">Current</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Customer Details (map + addresses) */}
+            {customer && (
+              <div className="bg-[#1a1f2a] rounded-xl border border-white/10 p-5 backdrop-blur-sm">
+                <h3 className="text-sm font-semibold text-white mb-3">Location</h3>
+
+                {mapCenter && (
+                  <div className="w-full h-[200px] rounded-lg overflow-hidden border border-white/10 mb-4">
+                    <iframe
+                      title="Customer Location Map"
+                      width="100%"
+                      height="300"
+                      frameBorder="0"
+                      style={{ border: 0, borderRadius: '8px' }}
+                      src={`https://www.google.com/maps/embed/v1/place?key=${GOOGLE_MAPS_API_KEY}&q=${mapCenter.lat},${mapCenter.lng}&zoom=15`}
+                      allowFullScreen
+                    />
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-2">
+                    {customer.email && (
+                      <a href={`mailto:${customer.email}`} className="flex items-center gap-3 text-sm text-white/80 hover:text-brand-300 transition-colors">
+                        <Mail size={16} className="text-brand-300" />
+                        <span>{customer.email}</span>
+                      </a>
+                    )}
+                    {customer.phone && (
+                      <a href={`tel:${customer.phone}`} className="flex items-center gap-3 text-sm text-white/80 hover:text-brand-300 transition-colors">
+                        <Phone size={16} className="text-brand-300" />
+                        <span>{customer.phone}</span>
+                      </a>
+                    )}
+                  </div>
+
+                  <div className="mt-2">
+                    <h5 className="text-sm font-semibold text-brand-300 uppercase tracking-wide mb-2">Billing Address</h5>
+                    <div className="flex items-start gap-3 text-sm text-white/80 leading-relaxed">
+                      <Home size={16} className="text-brand-300 mt-0.5 shrink-0" />
+                      <div>
+                        {customer.billing_address?.address}<br />
+                        {customer.billing_address?.street2 && <>{customer.billing_address.street2}<br /></>}
+                        {customer.billing_address?.city} {customer.billing_address?.zip}<br />
+                        {customer.billing_address?.state}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-2">
+                    <h5 className="text-sm font-semibold text-brand-300 uppercase tracking-wide mb-2">Shipping Address</h5>
+                    <div className="flex items-start gap-3 text-sm text-white/80 leading-relaxed">
+                      <MapPin size={16} className="text-brand-300 mt-0.5 shrink-0" />
+                      <div>
+                        {customer.shipping_address?.address ? (
+                          <>
+                            {customer.shipping_address.address}<br />
+                            {customer.shipping_address.street2 && <>{customer.shipping_address.street2}<br /></>}
+                            {customer.shipping_address.city} {customer.shipping_address.zip}<br />
+                            {customer.shipping_address.state}
+                          </>
+                        ) : (
+                          <>
+                            <em>Same as billing address:</em><br />
+                            {customer.billing_address?.address}<br />
+                            {customer.billing_address?.street2 && <>{customer.billing_address.street2}<br /></>}
+                            {customer.billing_address?.city} {customer.billing_address?.zip}<br />
+                            {customer.billing_address?.state}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Package Information with Tabs */}
+            {customer && (
+              <div className="bg-[#1a1f2a] rounded-xl border border-white/10 p-5 backdrop-blur-sm">
+                <h3 className="text-sm font-semibold text-white mb-3">Package Information</h3>
+                {!hasPackages ? (
+                  <p className="text-white/70 italic text-sm">No shipment data available for this order.</p>
+                ) : (
+                  <div className="mt-2">
+                    {/* Package tabs (if multiple) */}
+                    {packages.length > 1 && (
+                      <div className="flex gap-1 mb-4 border-b border-white/10 pb-3">
+                        {packages.map((_: any, idx: number) => (
+                          <button
+                            key={idx}
+                            onClick={() => setActivePackageTab(idx)}
+                            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
+                              activePackageTab === idx
+                                ? 'bg-brand-300/20 text-brand-300 border border-brand-300/30'
+                                : 'text-white/60 border border-white/10 hover:bg-white/5 hover:text-white'
+                            }`}
+                          >
+                            Package {idx + 1}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {activePackage && (
+                      <div className="flex flex-col gap-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex flex-col gap-3 text-sm text-white/70">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs text-white/60 uppercase tracking-wide font-medium">Package</span>
+                              <span className="text-white font-medium">#{activePackageTab + 1} of {packages.length}</span>
+                            </div>
+                            {activePackage.quantity !== undefined && (
+                              <div className="flex flex-col gap-1">
+                                <span className="text-xs text-white/60 uppercase tracking-wide font-medium">Quantity</span>
+                                <span className="text-white font-medium">{activePackage.quantity}</span>
+                              </div>
+                            )}
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs text-white/60 uppercase tracking-wide font-medium">Courier</span>
+                              <span className="text-white font-medium">{activePackage.delivery_method || activePackage.carrier || 'Unknown'}</span>
+                            </div>
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs text-white/60 uppercase tracking-wide font-medium">Tracking</span>
+                              <span className="text-white font-medium">{activePackage.tracking_number || 'N/A'}</span>
+                            </div>
+                            {activePackage.shipment_date && (
+                              <div className="flex flex-col gap-1">
+                                <span className="text-xs text-white/60 uppercase tracking-wide font-medium">Shipment Date</span>
+                                <span className="text-white font-medium">{formatDateTime(activePackage.shipment_date)}</span>
+                              </div>
+                            )}
+                          </div>
+                          {(activePackage.delivery_method || activePackage.carrier) && (
+                            <div className="h-10">
+                              <img
+                                src={getCourierLogo(activePackage.delivery_method || activePackage.carrier)}
+                                alt={activePackage.delivery_method || activePackage.carrier}
+                                className="h-10 w-auto object-contain"
+                                onError={(e) => { (e.target as HTMLImageElement).src = getCourierLogo('default'); }}
+                              />
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="mt-2">
+                          <h4 className="text-sm font-semibold text-brand-300 mb-2">Ship To</h4>
+                          {(order.shipping_address_json?.address || customer.shipping_address?.address) ? (
+                            <div className="flex items-start gap-3 text-sm text-white/80 leading-relaxed">
+                              <MapPin size={16} className="text-brand-300 mt-0.5 shrink-0" />
+                              <div>
+                                <strong>{customer.company_name}</strong><br />
+                                {order.shipping_address_json?.address || customer.shipping_address?.address}<br />
+                                {(order.shipping_address_json?.street2 || customer.shipping_address?.street2) && <>{order.shipping_address_json?.street2 || customer.shipping_address?.street2}<br /></>}
+                                {order.shipping_address_json?.city || customer.shipping_address?.city} {order.shipping_address_json?.zip || customer.shipping_address?.zip}<br />
+                                {order.shipping_address_json?.state || customer.shipping_address?.state}
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-white/70 italic text-sm">No shipping address available.</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Order Notes (in left column) */}
+            {order.notes && (
+              <div className="bg-[#1a1f2a] rounded-xl border border-white/10 p-5 backdrop-blur-sm">
+                <h3 className="text-sm font-semibold text-white mb-3">Order Notes</h3>
+                <div className="bg-white/5 p-4 rounded-lg border-l-4 border-brand-300">
+                  <p className="text-white/90 leading-relaxed m-0 text-sm">{order.notes}</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Right Column */}
+          <div className="flex flex-col">
+            {/* Order Items Card */}
+            <div className="bg-[#1a1f2a] rounded-xl border border-white/10 p-5 backdrop-blur-sm">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-sm font-semibold text-white">Order Items</h3>
+                <span className="text-lg font-semibold text-brand-300">Total: {formatCurrency(order.total || 0)}</span>
+              </div>
+
+              {/* Tab Filters */}
+              <div className="flex gap-2 mb-6 border-b border-white/10 pb-4 flex-wrap">
+                {(['all', 'shipped', 'partial', 'awaiting'] as TabFilter[]).map(tab => (
+                  <button
+                    key={tab}
+                    className={`px-4 py-2 border rounded-md text-sm font-medium transition-all ${
+                      activeTab === tab
+                        ? 'bg-brand-300/20 border-brand-300 text-brand-300'
+                        : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10 hover:text-white'
+                    }`}
+                    onClick={() => setActiveTab(tab)}
+                  >
+                    {tab === 'all' ? `All Items (${tabTotals.all})` :
+                     tab === 'shipped' ? `Shipped (${tabTotals.shipped})` :
+                     tab === 'partial' ? `Partial (${tabTotals.partial})` :
+                     `Awaiting (${tabTotals.awaiting})`}
+                  </button>
+                ))}
+              </div>
+
+              {/* Line Items Table */}
+              <div className="mb-6">
+                <div className="hidden lg:grid grid-cols-[2fr_1fr_0.5fr_1fr_1fr_1fr_1fr] gap-4 py-3 border-b-2 border-white/10 text-xs font-semibold uppercase tracking-wide text-white/70">
+                  <div>Item</div>
+                  <div>SKU</div>
+                  <div>Qty</div>
+                  <div>Unit Price</div>
+                  <div>Total</div>
+                  <div>Shipped</div>
+                  <div>Status</div>
+                </div>
+
+                <div className="flex flex-col">
+                  {filteredItems.map((item) => {
+                    const shipped = item.quantity_shipped || 0;
+                    const isFullyShipped = shipped >= item.quantity;
+                    const isPartiallyShipped = shipped > 0 && shipped < item.quantity;
+
+                    return (
+                      <div key={item.id} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_0.5fr_1fr_1fr_1fr_1fr] gap-4 py-4 border-b border-white/5 items-center hover:bg-white/[0.03] transition-colors">
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm font-medium text-white">{item.name}</span>
+                          {item.brand_name && <span className="text-xs text-white/60">{item.brand_name}</span>}
+                        </div>
+                        <div>
+                          <code className="bg-white/10 px-2 py-1 rounded text-xs text-brand-300 border border-brand-300/20">
+                            {item.sku || item.zoho_item_id?.substr(0, 8) || 'N/A'}
+                          </code>
+                        </div>
+                        <div className="text-sm font-medium text-white">{item.quantity}</div>
+                        <div className="text-sm font-medium text-white">{formatCurrency(item.rate || 0)}</div>
+                        <div className="text-sm font-medium text-white">{formatCurrency(item.amount || 0)}</div>
+                        <div className="text-sm font-medium text-white">{shipped} / {item.quantity}</div>
+                        <div className="text-xs">
+                          {isFullyShipped ? (
+                            <span className="flex items-center gap-1.5 text-emerald-400 font-medium"><CheckCircle size={16} /> Shipped</span>
+                          ) : isPartiallyShipped ? (
+                            <span className="flex items-center gap-1.5 text-amber-400 font-medium"><Clock size={16} /> Partial</span>
+                          ) : (
+                            <span className="flex items-center gap-1.5 text-gray-400 font-medium"><Package size={16} /> Pending</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {filteredItems.length === 0 && (
+                  <div className="flex flex-col items-center gap-4 py-12 text-white/50 text-center">
+                    <Package size={48} className="text-white/30" />
+                    <p>No items match the current filter</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Order Summary */}
+              <div className="bg-white/5 p-6 rounded-lg border-t border-white/10">
+                <div className="flex justify-between items-center py-2 text-sm text-white/80">
+                  <span>Subtotal:</span>
+                  <span>{formatCurrency(order.sub_total || 0)}</span>
+                </div>
+                {(order.discount_total || 0) > 0 && (
+                  <div className="flex justify-between items-center py-2 text-sm text-white/80">
+                    <span>Discount:</span>
+                    <span className="text-emerald-400">-{formatCurrency(order.discount_total || 0)}</span>
+                  </div>
+                )}
+                {(order.shipping_charge || 0) > 0 && (
+                  <div className="flex justify-between items-center py-2 text-sm text-white/80">
+                    <span>Shipping:</span>
+                    <span>{formatCurrency(order.shipping_charge || 0)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center py-2 text-sm text-white/80">
+                  <span>Tax:</span>
+                  <span>{formatCurrency(order.tax_total || Math.max(0, (order.total || 0) - (order.sub_total || 0)))}</span>
+                </div>
+                {(order.adjustment || 0) !== 0 && (
+                  <div className="flex justify-between items-center py-2 text-sm text-white/80">
+                    <span>Adjustment:</span>
+                    <span>{formatCurrency(order.adjustment || 0)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center py-3 border-t border-white/10 mt-2 text-lg font-semibold text-brand-300">
+                  <span>Total:</span>
+                  <span>{formatCurrency(order.total || 0)}</span>
+                </div>
+              </div>
+
+              {/* Invoice Section (below summary) */}
+              <div className="mt-6 pt-6 border-t border-white/10">
+                <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+                  <CreditCard size={16} className="text-brand-300" />
+                  Invoices {invoices.length > 0 && <span className="text-xs text-white/50">({invoices.length})</span>}
+                </h3>
+                {invoices.length === 0 ? (
+                  <div className="flex items-center gap-3 px-4 py-4 bg-white/[0.02] rounded-lg border border-white/5 text-white/50 text-sm">
+                    <FileText size={18} className="text-white/30" />
+                    <span>No invoice generated yet</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {invoices.map((invoice) => (
+                      <div key={invoice.id} className="flex items-center justify-between gap-4 px-4 py-3 bg-white/[0.03] rounded-lg border border-white/10 hover:bg-white/[0.06] transition-colors">
+                        <div className="flex items-center gap-4 flex-1 min-w-0">
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-medium text-white truncate">{invoice.invoice_number || 'Invoice'}</span>
+                            <span className="text-xs text-white/50">{formatDate(invoice.invoice_date)}</span>
+                          </div>
+                          {invoice.due_date && (
+                            <div className="flex flex-col text-xs text-white/50 hidden sm:flex">
+                              <span>Due</span>
+                              <span className="text-white/70">{formatDate(invoice.due_date)}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <div className="flex flex-col items-end text-sm">
+                            <span className="font-medium text-white">{formatCurrency(invoice.total)}</span>
+                            {invoice.balance > 0 && (
+                              <span className="text-xs text-amber-400">Bal: {formatCurrency(invoice.balance)}</span>
+                            )}
+                          </div>
+                          <span className={`px-2.5 py-1 rounded text-[10px] font-semibold uppercase tracking-wide border ${getStatusBadgeClass(invoice.status)}`}>
+                            {invoice.status}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Edit Order Modal */}
+        {showEditModal && editOrderData && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-4">
+            <div className="bg-[#1a1a1a] rounded-xl border border-white/10 max-w-[800px] w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+              <div className="flex justify-between items-center p-6 border-b border-white/10">
+                <h2 className="text-2xl font-bold text-white">Edit Order</h2>
+                <button onClick={() => setShowEditModal(false)} className="p-2 rounded-md text-white/60 hover:bg-white/10 hover:text-white transition-all">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-6">
+                {/* Order Status and Date */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <div>
+                    <label htmlFor="orderStatus" className="block mb-2 font-semibold text-white/90">Order Status</label>
+                    <select
+                      id="orderStatus"
+                      value={editOrderData.order_status}
+                      onChange={(e) => setEditOrderData({ ...editOrderData, order_status: e.target.value })}
+                      className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="confirmed">Confirmed</option>
+                      <option value="processing">Processing</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="cancelled">Cancelled</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="shippingStatus" className="block mb-2 font-semibold text-white/90">Shipping Status</label>
+                    <select
+                      id="shippingStatus"
+                      value={editOrderData.shipping_status}
+                      onChange={(e) => setEditOrderData({ ...editOrderData, shipping_status: e.target.value })}
+                      className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all"
+                    >
+                      <option value="pending">Pending</option>
+                      <option value="processing">Processing</option>
+                      <option value="shipped">Shipped</option>
+                      <option value="delivered">Delivered</option>
+                      <option value="returned">Returned</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="orderDate" className="block mb-2 font-semibold text-white/90">Order Date</label>
+                    <input
+                      type="date"
+                      id="orderDate"
+                      value={editOrderData.order_date}
+                      onChange={(e) => setEditOrderData({ ...editOrderData, order_date: e.target.value })}
+                      className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all"
+                    />
+                  </div>
+                </div>
+
+                {/* Addresses Section */}
+                <div className="my-8 p-6 bg-white/[0.02] border border-white/10 rounded-xl">
+                  <h3 className="text-xl font-semibold text-white mb-6">Addresses</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Billing Address */}
+                    <div>
+                      <h4 className="text-base font-semibold text-white/90 mb-4">Billing Address</h4>
+                      <div className="flex flex-col gap-3">
+                        <input type="text" placeholder="Address Line 1" value={editOrderData.billing_address.address_1}
+                          onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, address_1: e.target.value } })}
+                          className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all" />
+                        <input type="text" placeholder="Address Line 2 (optional)" value={editOrderData.billing_address.address_2}
+                          onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, address_2: e.target.value } })}
+                          className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all" />
+                        <div className="grid grid-cols-3 gap-3">
+                          <input type="text" placeholder="City/Town" value={editOrderData.billing_address.city_town}
+                            onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, city_town: e.target.value } })}
+                            className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all" />
+                          <input type="text" placeholder="County" value={editOrderData.billing_address.county}
+                            onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, county: e.target.value } })}
+                            className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all" />
+                          <input type="text" placeholder="Postcode" value={editOrderData.billing_address.postcode}
+                            onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, postcode: e.target.value } })}
+                            className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Shipping Address */}
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="text-base font-semibold text-white/90">Shipping Address</h4>
+                        <button type="button" onClick={() => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.billing_address } })}
+                          className="flex items-center gap-1 px-3 py-2 bg-blue-500/10 border border-blue-500/30 rounded-md text-blue-400 text-xs hover:bg-blue-500/20 hover:border-blue-500/50 transition-all">
+                          <Copy size={14} /> Copy Billing
+                        </button>
+                      </div>
+                      <div className="flex flex-col gap-3">
+                        <input type="text" placeholder="Address Line 1" value={editOrderData.shipping_address.address_1}
+                          onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, address_1: e.target.value } })}
+                          className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all" />
+                        <input type="text" placeholder="Address Line 2 (optional)" value={editOrderData.shipping_address.address_2}
+                          onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, address_2: e.target.value } })}
+                          className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all" />
+                        <div className="grid grid-cols-3 gap-3">
+                          <input type="text" placeholder="City/Town" value={editOrderData.shipping_address.city_town}
+                            onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, city_town: e.target.value } })}
+                            className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all" />
+                          <input type="text" placeholder="County" value={editOrderData.shipping_address.county}
+                            onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, county: e.target.value } })}
+                            className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all" />
+                          <input type="text" placeholder="Postcode" value={editOrderData.shipping_address.postcode}
+                            onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, postcode: e.target.value } })}
+                            className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all" />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <label className="flex items-center cursor-pointer text-white/90 mt-6 gap-2">
+                    <input type="checkbox" checked={editOrderData.make_default_addresses}
+                      onChange={(e) => setEditOrderData({ ...editOrderData, make_default_addresses: e.target.checked })}
+                      className="w-auto" />
+                    <span className="text-sm">Update customer's default addresses with these changes</span>
+                  </label>
+                </div>
+
+                {/* Line Items Section */}
+                <div className="my-8 p-6 bg-white/[0.02] border border-white/10 rounded-xl">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-semibold text-white">Line Items</h3>
+                    <button type="button" onClick={() => setShowItemSearch(true)}
+                      className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white rounded-md font-semibold hover:bg-emerald-600 hover:-translate-y-0.5 transition-all text-sm">
+                      <Plus size={16} /> Add Item
+                    </button>
+                  </div>
+
+                  {showItemSearch && (
+                    <div className="mb-6 p-4 bg-white/5 rounded-lg border border-white/10">
+                      <div className="relative flex items-center gap-2">
+                        <Search size={16} className="absolute left-3 text-white/50 pointer-events-none" />
+                        <input type="text" placeholder="Search items by name, SKU, or description..."
+                          value={itemSearchTerm}
+                          onChange={(e) => { setItemSearchTerm(e.target.value); searchItems(e.target.value); }}
+                          className="w-full pl-10 pr-10 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all"
+                          autoFocus />
+                        <button onClick={() => { setShowItemSearch(false); setItemSearchTerm(''); setAvailableItems([]); }}
+                          className="absolute right-2 p-1 rounded text-white/50 hover:bg-white/10 hover:text-white transition-all">
+                          <X size={16} />
+                        </button>
+                      </div>
+
+                      {availableItems.length > 0 && (
+                        <div className="mt-2 max-h-[200px] overflow-y-auto border border-white/10 rounded-md bg-white/[0.02]">
+                          {availableItems.map((item) => (
+                            <div key={item.id} className="p-3 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-all last:border-b-0"
+                              onClick={() => addItemToOrder(item)}>
+                              <div className="font-semibold text-white text-sm mb-1">{item.name}</div>
+                              <div className="flex gap-4 text-xs text-white/70">
+                                <span className="font-mono bg-white/10 px-1.5 py-0.5 rounded">{item.sku}</span>
+                                <span className="text-emerald-400">{item.brand}</span>
+                                <span className="text-blue-400 font-semibold">{formatCurrency(item.rate || 0)}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="border border-white/10 rounded-lg p-4 bg-white/[0.02]">
+                    {editOrderData.line_items.map((item: any, index: number) => (
+                      <div key={item.id} className="grid grid-cols-1 md:grid-cols-[2fr_100px_120px_150px_40px] gap-4 items-center p-3 border-b border-white/10 last:border-b-0">
+                        <div className="flex flex-col gap-1">
+                          <span className="font-semibold text-white text-sm">
+                            {item.item_name}
+                            {item.is_new && <span className="inline-block bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded ml-2">NEW</span>}
+                          </span>
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-xs text-white/70">Qty:</label>
+                          <input type="number" min="0" value={item.quantity}
+                            onChange={(e) => {
+                              const newItems = [...editOrderData.line_items];
+                              const qty = parseInt(e.target.value) || 0;
+                              newItems[index].quantity = qty;
+                              newItems[index].total_price = qty * newItems[index].unit_price;
+                              setEditOrderData({ ...editOrderData, line_items: newItems });
+                            }}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 transition-all" />
+                        </div>
+                        <div className="flex flex-col gap-1">
+                          <label className="text-xs text-white/70">Unit Price:</label>
+                          <input type="number" min="0" step="0.01" value={item.unit_price}
+                            onChange={(e) => {
+                              const newItems = [...editOrderData.line_items];
+                              const price = parseFloat(e.target.value) || 0;
+                              newItems[index].unit_price = price;
+                              newItems[index].total_price = newItems[index].quantity * price;
+                              setEditOrderData({ ...editOrderData, line_items: newItems });
+                            }}
+                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 transition-all" />
+                        </div>
+                        <div className="text-right font-semibold text-emerald-400 text-sm">
+                          Total: {formatCurrency(item.total_price)}
+                        </div>
+                        <div className="flex justify-center">
+                          <button type="button" onClick={() => removeItemFromOrder(index)}
+                            className="bg-red-600 text-white rounded p-1.5 hover:bg-red-700 hover:scale-110 transition-all" title="Remove item">
+                            <Minus size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {editOrderData.line_items.length === 0 && (
+                      <div className="text-center py-8 text-white/60 text-sm">
+                        <p>No items in this order. Add items using the button above.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-right p-4 border-t-2 border-white/20 mt-4 text-white text-lg">
+                    <strong>Order Total: {formatCurrency(editOrderData.line_items.reduce((sum: number, item: any) => sum + item.total_price, 0))}</strong>
+                  </div>
+                </div>
+
+                {/* Order Notes */}
+                <div className="mb-6">
+                  <label htmlFor="orderNotes" className="block mb-2 font-semibold text-white/90">Order Notes</label>
+                  <textarea id="orderNotes" value={editOrderData.notes}
+                    onChange={(e) => setEditOrderData({ ...editOrderData, notes: e.target.value })}
+                    className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all resize-y min-h-[80px]"
+                    rows={4} placeholder="Add any notes about this order..." />
+                </div>
+              </div>
+
+              <div className="flex justify-between items-center p-6 border-t border-white/10 gap-4 flex-wrap">
+                <button onClick={() => setShowCancelModal(true)}
+                  className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 hover:-translate-y-0.5 transition-all text-sm">
+                  <AlertTriangle size={16} /> Cancel Order
+                </button>
+                <div className="flex gap-3">
+                  <button onClick={() => setShowEditModal(false)} disabled={savingOrder}
+                    className="flex items-center gap-2 px-6 py-3 bg-white/10 text-white border border-white/20 rounded-lg font-semibold hover:bg-white/15 hover:border-white/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all text-sm">
+                    Close
+                  </button>
+                  <button onClick={handleSaveOrderEdit} disabled={savingOrder}
+                    className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed transition-all text-sm">
+                    <Save size={16} /> {savingOrder ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cancel Order Modal */}
+        {showCancelModal && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-4">
+            <div className="bg-[#1a1a1a] rounded-xl border border-white/10 max-w-[800px] w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+              <div className="flex justify-between items-center p-6 border-b border-white/10">
+                <h2 className="text-2xl font-bold text-white">Cancel Order</h2>
+                <button onClick={() => setShowCancelModal(false)} className="p-2 rounded-md text-white/60 hover:bg-white/10 hover:text-white transition-all">
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="p-6">
+                <div className="flex items-center gap-3 p-4 bg-amber-400/10 border border-amber-400/30 rounded-lg mb-6 text-amber-400">
+                  <AlertTriangle size={20} />
+                  <p className="font-semibold m-0">Are you sure you want to cancel this order? This action cannot be undone.</p>
+                </div>
+
+                <div className="mb-6">
+                  <label htmlFor="cancelReason" className="block mb-2 font-semibold text-white/90">Reason for cancellation (optional)</label>
+                  <textarea id="cancelReason" value={cancelReason}
+                    onChange={(e) => setCancelReason(e.target.value)}
+                    className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500 focus:bg-white/[0.08] focus:ring-2 focus:ring-blue-500/10 transition-all resize-y min-h-[80px]"
+                    rows={3} placeholder="Please provide a reason for cancelling this order..." />
+                </div>
+              </div>
+
+              <div className="flex justify-end items-center p-6 border-t border-white/10 gap-3">
+                <button onClick={() => setShowCancelModal(false)} disabled={cancellingOrder}
+                  className="flex items-center gap-2 px-6 py-3 bg-white/10 text-white border border-white/20 rounded-lg font-semibold hover:bg-white/15 hover:border-white/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all text-sm">
+                  Keep Order
+                </button>
+                <button onClick={handleCancelOrder} disabled={cancellingOrder}
+                  className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed transition-all text-sm">
+                  <AlertTriangle size={16} /> {cancellingOrder ? 'Cancelling...' : 'Cancel Order'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default ViewOrder;
