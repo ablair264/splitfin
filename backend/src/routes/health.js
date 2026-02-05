@@ -15,15 +15,21 @@ healthRouter.get('/', async (req, res) => {
   try {
     await healthCheck();
     health.database = 'ok';
+  } catch (error) {
+    health.database = 'error';
+    health.database_error = error.message;
+  }
 
+  try {
     const zohoToken = await zohoAuth.getAccessToken();
     health.zoho = zohoToken ? 'ok' : 'error';
   } catch (error) {
-    health.status = 'degraded';
-    health.error = error.message;
+    health.zoho = 'error';
   }
 
-  res.status(health.status === 'ok' ? 200 : 503).json(health);
+  // Always return 200 for Railway health checks - server is running
+  // Check database/zoho fields for actual service health
+  res.status(200).json(health);
 });
 
 healthRouter.get('/detailed', async (req, res) => {
