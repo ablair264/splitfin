@@ -62,14 +62,6 @@ coverage/
 *.so
 *.dylib
 
-# Media (uncomment if not needed in repo)
-# *.mp4
-# *.mov
-# *.avi
-# *.mkv
-# *.mp3
-# *.wav
-
 # Database files
 *.sqlite
 *.sqlite3
