@@ -16,7 +16,7 @@ const SEARCH_DEBOUNCE_MS = 500;
 
 function SkeletonRow() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[120px_1fr_100px_130px_90px] gap-2 px-4 py-3 border-b border-border/40 items-center animate-pulse">
+    <div className="grid grid-cols-1 lg:grid-cols-[100px_minmax(120px,280px)_90px_120px_90px] gap-2 px-4 py-3 border-b border-border/40 items-center animate-pulse">
       <div className="h-4 w-20 bg-muted rounded" />
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-full bg-muted" />
@@ -330,7 +330,7 @@ function ViewOrders() {
         </div>
 
         {/* Table Header */}
-        <div className="hidden lg:grid grid-cols-[120px_1fr_100px_130px_90px] gap-2 px-4 py-3 bg-gradient-to-r from-muted to-card border-b border-border text-[11px] font-semibold text-muted-foreground uppercase tracking-wider items-center">
+        <div className="hidden lg:grid grid-cols-[100px_minmax(120px,280px)_90px_120px_90px] gap-2 px-4 py-3 bg-gradient-to-r from-muted to-card border-b border-border text-[11px] font-semibold text-muted-foreground uppercase tracking-wider items-center">
           <div>Order #</div>
           <div>Customer</div>
           <div>Date</div>
@@ -358,7 +358,7 @@ function ViewOrders() {
               return (
                 <div
                   key={order.id}
-                  className="grid grid-cols-1 lg:grid-cols-[120px_1fr_100px_130px_90px] gap-2 px-4 py-3 border-b border-border/40 hover:bg-white/[0.04] transition-colors items-center cursor-pointer"
+                  className="grid grid-cols-1 lg:grid-cols-[100px_minmax(120px,280px)_90px_120px_90px] gap-2 px-4 py-3 border-b border-border/40 hover:bg-white/[0.04] transition-colors items-center cursor-pointer"
                   onClick={() => handleViewOrder(order)}
                 >
                   {/* Order # */}

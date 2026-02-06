@@ -9,8 +9,6 @@ import {
   Trash2,
   Pencil,
   X,
-  ChevronDown,
-  ChevronUp,
   AlertTriangle,
   ImagePlus,
   TrendingUp,
@@ -155,7 +153,6 @@ export function ProductDetailSheet({
   const [copiedSku, setCopiedSku] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [detailsExpanded, setDetailsExpanded] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -246,7 +243,6 @@ export function ProductDetailSheet({
     setSaveError(null);
     setIsEditing(false);
     setShowDeleteConfirm(false);
-    setDetailsExpanded(false);
     setImageError(null);
     setCurrentImageUrl(product?.image_url || null);
   }, [product?.id]);
@@ -471,11 +467,141 @@ export function ProductDetailSheet({
             </SheetHeader>
 
             <SheetBody className="px-5 py-4 space-y-4 overflow-y-auto">
-              {/* Pricing — flat rows */}
+              {/* Product Details — always visible */}
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 }}
+                className="rounded-xl border border-border/40 divide-y divide-border/30"
+              >
+                <DetailRow label="SKU" editing={isEditing}>
+                  {isEditing ? (
+                    <Editable
+                      key={`sku-${pk}`}
+                      defaultValue={p.sku}
+                      onSubmit={(val) => handleFieldSubmit('sku', val)}
+                    >
+                      <EditableArea>
+                        <EditablePreview className="text-sm text-foreground py-0 font-mono" />
+                        <EditableInput className="text-sm font-mono px-1" />
+                      </EditableArea>
+                    </Editable>
+                  ) : (
+                    <span className="text-sm text-foreground font-mono">{p.sku}</span>
+                  )}
+                </DetailRow>
+
+                {p.ean && (
+                  <DetailRow label="EAN" editing={isEditing}>
+                    {isEditing ? (
+                      <Editable
+                        key={`ean-${pk}`}
+                        defaultValue={p.ean || ''}
+                        placeholder="—"
+                        onSubmit={(val) => handleFieldSubmit('ean', val)}
+                      >
+                        <EditableArea>
+                          <EditablePreview className="text-sm text-foreground py-0 font-mono" />
+                          <EditableInput className="text-sm font-mono px-1" />
+                        </EditableArea>
+                      </Editable>
+                    ) : (
+                      <span className="text-sm text-foreground font-mono">{p.ean}</span>
+                    )}
+                  </DetailRow>
+                )}
+
+                <DetailRow label="Brand" editing={isEditing}>
+                  {isEditing ? (
+                    <Editable
+                      key={`brand-${pk}`}
+                      defaultValue={p.brand}
+                      onSubmit={(val) => handleFieldSubmit('brand', val)}
+                    >
+                      <EditableArea>
+                        <EditablePreview className="text-sm text-foreground py-0" />
+                        <EditableInput className="text-sm px-1" />
+                      </EditableArea>
+                    </Editable>
+                  ) : (
+                    <span className="text-sm text-foreground">{p.brand}</span>
+                  )}
+                </DetailRow>
+
+                <DetailRow label="Category" editing={false}>
+                  <span className="text-sm text-foreground">{p.category_name || '—'}</span>
+                </DetailRow>
+
+                <DetailRow label="Pack Qty" editing={isEditing}>
+                  {isEditing ? (
+                    <Editable
+                      key={`pack_qty-${pk}`}
+                      defaultValue={String(p.pack_qty ?? '')}
+                      placeholder="—"
+                      onSubmit={(val) => handleNumericFieldSubmit('pack_qty', val)}
+                    >
+                      <EditableArea>
+                        <EditablePreview className="text-sm text-foreground py-0" />
+                        <EditableInput className="text-sm px-1" type="number" />
+                      </EditableArea>
+                    </Editable>
+                  ) : (
+                    <span className="text-sm text-foreground">{p.pack_qty ?? '—'}</span>
+                  )}
+                </DetailRow>
+
+                {p.dimensions_formatted && (
+                  <DetailRow label="Dimensions" editing={false}>
+                    <span className="text-sm text-foreground">{p.dimensions_formatted}</span>
+                  </DetailRow>
+                )}
+
+                {(p.materials || isEditing) && (
+                  <DetailRow label="Materials" editing={isEditing}>
+                    {isEditing ? (
+                      <Editable
+                        key={`materials-${pk}`}
+                        defaultValue={p.materials || ''}
+                        placeholder="—"
+                        onSubmit={(val) => handleFieldSubmit('materials', val)}
+                      >
+                        <EditableArea>
+                          <EditablePreview className="text-sm text-foreground py-0" />
+                          <EditableInput className="text-sm px-1" />
+                        </EditableArea>
+                      </Editable>
+                    ) : (
+                      <span className="text-sm text-foreground">{p.materials}</span>
+                    )}
+                  </DetailRow>
+                )}
+
+                {(p.color_family || isEditing) && (
+                  <DetailRow label="Color" editing={isEditing}>
+                    {isEditing ? (
+                      <Editable
+                        key={`color-${pk}`}
+                        defaultValue={p.color_family || ''}
+                        placeholder="—"
+                        onSubmit={(val) => handleFieldSubmit('color_family', val)}
+                      >
+                        <EditableArea>
+                          <EditablePreview className="text-sm text-foreground py-0" />
+                          <EditableInput className="text-sm px-1" />
+                        </EditableArea>
+                      </Editable>
+                    ) : (
+                      <span className="text-sm text-foreground">{p.color_family}</span>
+                    )}
+                  </DetailRow>
+                )}
+              </motion.div>
+
+              {/* Pricing + Stock */}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
                 className="rounded-xl border border-border/40 divide-y divide-border/30"
               >
                 <DetailRow label="Cost" editing={isEditing}>
@@ -547,80 +673,75 @@ export function ProductDetailSheet({
                     </div>
                   </div>
                 </DetailRow>
-              </motion.div>
 
-              {/* Stock Status */}
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-                className={cn(
-                  'flex items-center justify-between px-4 py-3 rounded-xl border',
-                  stockBg
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    'w-2 h-2 rounded-full',
-                    p.stock_on_hand === 0 ? 'bg-red-400' : p.stock_on_hand <= 10 ? 'bg-amber-400' : 'bg-emerald-400'
-                  )} />
-                  <div>
-                    <span className={cn('text-sm font-semibold tabular-nums', stockColor)}>
-                      {p.stock_on_hand.toLocaleString()}
+                <div className={cn(
+                  'flex items-center justify-between px-3 py-2.5',
+                  stockBg.replace('rounded-xl border', '')
+                )}>
+                  <span className="text-xs text-muted-foreground/60 w-24 shrink-0">Stock</span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
+                      <div className={cn(
+                        'w-1.5 h-1.5 rounded-full',
+                        p.stock_on_hand === 0 ? 'bg-red-400' : p.stock_on_hand <= 10 ? 'bg-amber-400' : 'bg-emerald-400'
+                      )} />
+                      <span className={cn('text-sm font-semibold tabular-nums', stockColor)}>
+                        {p.stock_on_hand.toLocaleString()}
+                      </span>
+                      {p.unit && <span className="text-xs text-muted-foreground">{p.unit}</span>}
+                    </div>
+                    <span className={cn('text-[11px] font-medium', stockColor)}>
+                      {stockLabel}
                     </span>
-                    {p.unit && <span className="text-xs text-muted-foreground ml-1">{p.unit}</span>}
                   </div>
                 </div>
-                <span className={cn('text-xs font-medium', stockColor)}>
-                  {stockLabel}
-                </span>
               </motion.div>
 
               {/* Description */}
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.15 }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
-                    Description
-                  </h3>
-                  {isAiDescription && (
-                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-primary/10 text-primary border border-primary/15">
-                      <Sparkles size={9} />
-                      AI Generated
-                    </span>
-                  )}
-                </div>
-                {isEditing ? (
-                  <Editable
-                    key={`desc-${pk}`}
-                    defaultValue={displayDescription || ''}
-                    placeholder="No description. Click to add..."
-                    onSubmit={(val) => {
-                      const field = isAiDescription ? 'ai_description' : 'description';
-                      handleFieldSubmit(field, val);
-                    }}
-                  >
-                    <EditableArea>
-                      <EditablePreview className="text-sm text-foreground/70 leading-relaxed py-0.5" />
-                      <EditableInput
-                        asChild
-                        className="text-sm leading-relaxed min-h-[80px] px-3 py-2 rounded-lg"
-                      >
-                        <textarea rows={4} />
-                      </EditableInput>
-                    </EditableArea>
-                  </Editable>
-                ) : (
-                  <p className="text-sm text-foreground/70 leading-relaxed">
-                    {displayDescription || (
-                      <span className="text-muted-foreground/40 italic">No description</span>
+              {(displayDescription || isEditing) && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
+                      Description
+                    </h3>
+                    {isAiDescription && (
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-primary/10 text-primary border border-primary/15">
+                        <Sparkles size={9} />
+                        AI Generated
+                      </span>
                     )}
-                  </p>
-                )}
-              </motion.div>
+                  </div>
+                  {isEditing ? (
+                    <Editable
+                      key={`desc-${pk}`}
+                      defaultValue={displayDescription || ''}
+                      placeholder="No description. Click to add..."
+                      onSubmit={(val) => {
+                        const field = isAiDescription ? 'ai_description' : 'description';
+                        handleFieldSubmit(field, val);
+                      }}
+                    >
+                      <EditableArea>
+                        <EditablePreview className="text-sm text-foreground/70 leading-relaxed py-0.5" />
+                        <EditableInput
+                          asChild
+                          className="text-sm leading-relaxed min-h-[80px] px-3 py-2 rounded-lg"
+                        >
+                          <textarea rows={4} />
+                        </EditableInput>
+                      </EditableArea>
+                    </Editable>
+                  ) : (
+                    <p className="text-sm text-foreground/70 leading-relaxed">
+                      {displayDescription}
+                    </p>
+                  )}
+                </motion.div>
+              )}
 
               {/* AI Features */}
               {p.ai_features && p.ai_features.length > 0 && (
@@ -649,191 +770,12 @@ export function ProductDetailSheet({
                 </motion.div>
               )}
 
-              {/* Product Details — Collapsible */}
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-              >
-                <button
-                  onClick={() => setDetailsExpanded(!detailsExpanded)}
-                  className="flex items-center justify-between w-full py-2 group"
-                >
-                  <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
-                    Product Details
-                  </h3>
-                  <motion.div
-                    animate={{ rotate: detailsExpanded ? 180 : 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <ChevronDown size={14} className="text-muted-foreground/40 group-hover:text-muted-foreground" />
-                  </motion.div>
-                </button>
-
-                <AnimatePresence>
-                  {detailsExpanded && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: 'auto', opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.25, ease: 'easeInOut' }}
-                      className="overflow-hidden"
-                    >
-                      <div className="rounded-xl border border-border/40 divide-y divide-border/30">
-                        <DetailRow label="SKU" editing={isEditing}>
-                          {isEditing ? (
-                            <Editable
-                              key={`sku-${pk}`}
-                              defaultValue={p.sku}
-                              onSubmit={(val) => handleFieldSubmit('sku', val)}
-                            >
-                              <EditableArea>
-                                <EditablePreview className="text-sm text-foreground py-0 font-mono" />
-                                <EditableInput className="text-sm font-mono px-1" />
-                              </EditableArea>
-                            </Editable>
-                          ) : (
-                            <span className="text-sm text-foreground font-mono">{p.sku}</span>
-                          )}
-                        </DetailRow>
-
-                        <DetailRow label="EAN" editing={isEditing}>
-                          {isEditing ? (
-                            <Editable
-                              key={`ean-${pk}`}
-                              defaultValue={p.ean || ''}
-                              placeholder="—"
-                              onSubmit={(val) => handleFieldSubmit('ean', val)}
-                            >
-                              <EditableArea>
-                                <EditablePreview className="text-sm text-foreground py-0 font-mono" />
-                                <EditableInput className="text-sm font-mono px-1" />
-                              </EditableArea>
-                            </Editable>
-                          ) : (
-                            <span className="text-sm text-foreground font-mono">{p.ean || '—'}</span>
-                          )}
-                        </DetailRow>
-
-                        <DetailRow label="Brand" editing={isEditing}>
-                          {isEditing ? (
-                            <Editable
-                              key={`brand-${pk}`}
-                              defaultValue={p.brand}
-                              onSubmit={(val) => handleFieldSubmit('brand', val)}
-                            >
-                              <EditableArea>
-                                <EditablePreview className="text-sm text-foreground py-0" />
-                                <EditableInput className="text-sm px-1" />
-                              </EditableArea>
-                            </Editable>
-                          ) : (
-                            <span className="text-sm text-foreground">{p.brand}</span>
-                          )}
-                        </DetailRow>
-
-                        <DetailRow label="Category" editing={false}>
-                          <span className="text-sm text-foreground">{p.category_name || '—'}</span>
-                        </DetailRow>
-
-                        <DetailRow label="Pack Qty" editing={isEditing}>
-                          {isEditing ? (
-                            <Editable
-                              key={`pack_qty-${pk}`}
-                              defaultValue={String(p.pack_qty ?? '')}
-                              placeholder="—"
-                              onSubmit={(val) => handleNumericFieldSubmit('pack_qty', val)}
-                            >
-                              <EditableArea>
-                                <EditablePreview className="text-sm text-foreground py-0" />
-                                <EditableInput className="text-sm px-1" type="number" />
-                              </EditableArea>
-                            </Editable>
-                          ) : (
-                            <span className="text-sm text-foreground">{p.pack_qty ?? '—'}</span>
-                          )}
-                        </DetailRow>
-
-                        {p.dimensions_formatted && (
-                          <DetailRow label="Dimensions" editing={false}>
-                            <span className="text-sm text-foreground">{p.dimensions_formatted}</span>
-                          </DetailRow>
-                        )}
-
-                        <DetailRow label="Materials" editing={isEditing}>
-                          {isEditing ? (
-                            <Editable
-                              key={`materials-${pk}`}
-                              defaultValue={p.materials || ''}
-                              placeholder="—"
-                              onSubmit={(val) => handleFieldSubmit('materials', val)}
-                            >
-                              <EditableArea>
-                                <EditablePreview className="text-sm text-foreground py-0" />
-                                <EditableInput className="text-sm px-1" />
-                              </EditableArea>
-                            </Editable>
-                          ) : (
-                            <span className="text-sm text-foreground">{p.materials || '—'}</span>
-                          )}
-                        </DetailRow>
-
-                        <DetailRow label="Color" editing={isEditing}>
-                          {isEditing ? (
-                            <Editable
-                              key={`color-${pk}`}
-                              defaultValue={p.color_family || ''}
-                              placeholder="—"
-                              onSubmit={(val) => handleFieldSubmit('color_family', val)}
-                            >
-                              <EditableArea>
-                                <EditablePreview className="text-sm text-foreground py-0" />
-                                <EditableInput className="text-sm px-1" />
-                              </EditableArea>
-                            </Editable>
-                          ) : (
-                            <span className="text-sm text-foreground">{p.color_family || '—'}</span>
-                          )}
-                        </DetailRow>
-
-                        {currentImageUrl && (
-                          <DetailRow label="Image URL" editing={isEditing}>
-                            {isEditing ? (
-                              <Editable
-                                key={`image_url-${pk}`}
-                                defaultValue={currentImageUrl || ''}
-                                placeholder="—"
-                                onSubmit={(val) => handleFieldSubmit('image_url', val)}
-                              >
-                                <EditableArea>
-                                  <EditablePreview className="text-sm text-foreground py-0 truncate max-w-[300px]" />
-                                  <EditableInput className="text-sm px-1" />
-                                </EditableArea>
-                              </Editable>
-                            ) : (
-                              <a
-                                href={currentImageUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-primary hover:underline truncate max-w-[300px] block"
-                              >
-                                {currentImageUrl}
-                              </a>
-                            )}
-                          </DetailRow>
-                        )}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-
               {/* Category Path */}
               {(p.category_l1 || p.category_l2 || p.category_l3) && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
+                  transition={{ delay: 0.25 }}
                 >
                   <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-2">
                     Category Path
@@ -856,12 +798,36 @@ export function ProductDetailSheet({
                 </motion.div>
               )}
 
+              {/* Image URL (editing only) */}
+              {currentImageUrl && isEditing && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.28 }}
+                  className="rounded-xl border border-border/40 divide-y divide-border/30"
+                >
+                  <DetailRow label="Image URL" editing={isEditing}>
+                    <Editable
+                      key={`image_url-${pk}`}
+                      defaultValue={currentImageUrl || ''}
+                      placeholder="—"
+                      onSubmit={(val) => handleFieldSubmit('image_url', val)}
+                    >
+                      <EditableArea>
+                        <EditablePreview className="text-sm text-foreground py-0 truncate max-w-[300px]" />
+                        <EditableInput className="text-sm px-1" />
+                      </EditableArea>
+                    </Editable>
+                  </DetailRow>
+                </motion.div>
+              )}
+
               {/* Integration */}
               {p.zoho_item_id && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35 }}
+                  transition={{ delay: 0.3 }}
                   className="border-t border-border/40 pt-4"
                 >
                   <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-2">

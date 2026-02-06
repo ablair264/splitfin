@@ -196,13 +196,12 @@ const DashboardContent: React.FC = () => {
   ], []);
 
   const customerColumns = useMemo<ColumnDef<RecentCustomer>[]>(() => [
-    { accessorKey: 'companyName', header: 'Company', size: 170 },
-    { accessorKey: 'contactName', header: 'Contact', size: 130 },
-    { accessorKey: 'email', header: 'Email', size: 150 },
+    { accessorKey: 'companyName', header: 'Customer', size: 200 },
+    { accessorKey: 'email', header: 'Email', size: 200 },
     {
       accessorKey: 'orderCount',
       header: 'Orders',
-      size: 65,
+      size: 70,
       cell: ({ row }) => (
         <span className="tabular-nums text-muted-foreground">{row.original.orderCount}</span>
       ),
@@ -210,7 +209,7 @@ const DashboardContent: React.FC = () => {
     {
       accessorKey: 'totalSpent',
       header: 'Spent',
-      size: 80,
+      size: 90,
       cell: ({ row }) => (
         <span className="font-medium tabular-nums">{formatCurrency(row.original.totalSpent)}</span>
       ),

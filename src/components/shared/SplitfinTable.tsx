@@ -77,7 +77,7 @@ function SplitfinTable<TData>({
       )}
 
       {/* Table */}
-      <Table>
+      <Table className="table-fixed">
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow
@@ -88,7 +88,7 @@ function SplitfinTable<TData>({
                 <TableHead
                   key={header.id}
                   colSpan={header.colSpan}
-                  style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
+                  style={{ width: `${header.getSize()}px` }}
                 >
                   {header.isPlaceholder
                     ? null
@@ -106,9 +106,9 @@ function SplitfinTable<TData>({
           {loading ? (
             Array.from({ length: skeletonRows }).map((_, i) => (
               <TableRow key={`skeleton-${i}`} className="hover:bg-transparent">
-                {columns.map((_, j) => (
-                  <TableCell key={j}>
-                    <Skeleton className="h-4 w-full" />
+                {table.getAllColumns().map((col) => (
+                  <TableCell key={col.id} style={{ width: `${col.getSize()}px` }}>
+                    <Skeleton className="h-4 w-3/4" />
                   </TableCell>
                 ))}
               </TableRow>
@@ -124,7 +124,10 @@ function SplitfinTable<TData>({
                 onClick={() => onRowClick?.(row.original)}
               >
                 {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
+                  <TableCell
+                    key={cell.id}
+                    style={{ width: `${cell.column.getSize()}px` }}
+                  >
                     {flexRender(
                       cell.column.columnDef.cell,
                       cell.getContext(),
