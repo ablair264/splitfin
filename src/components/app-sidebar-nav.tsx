@@ -109,32 +109,29 @@ export default function AppSidebarNav({
 
   return (
     <SidebarNav>
-      <span className="flex items-center gap-x-4">
-        <SidebarTrigger className="-ml-2.5 lg:ml-0" />
-        <Breadcrumbs className="hidden md:flex">
-          {breadcrumbs.map((crumb) => (
-            <BreadcrumbsItem
-              key={crumb.to}
-              href={crumb.isLast ? undefined : crumb.to}
-            >
-              {crumb.name}
-            </BreadcrumbsItem>
-          ))}
-        </Breadcrumbs>
-      </span>
+      {/* Left: Page title / breadcrumbs */}
+      <Breadcrumbs className="hidden md:flex">
+        {breadcrumbs.map((crumb) => (
+          <BreadcrumbsItem
+            key={crumb.to}
+            href={crumb.isLast ? undefined : crumb.to}
+          >
+            {crumb.name}
+          </BreadcrumbsItem>
+        ))}
+      </Breadcrumbs>
 
-      {/* Right side actions */}
-      <div className="flex items-center gap-3">
-        {/* Theme Toggle */}
-        <div className="flex items-center gap-2">
-          <Switch
-            checked={isDark}
-            onCheckedChange={handleThemeToggle}
-            startIcon={<Sun />}
-            endIcon={<Moon />}
-            aria-label="Toggle theme"
-          />
-        </div>
+      {/* Right: sidebar toggle + actions */}
+      <div className="ml-auto flex items-center gap-3">
+        <SidebarTrigger className="-mr-1" />
+
+        <Switch
+          checked={isDark}
+          onCheckedChange={handleThemeToggle}
+          startIcon={<Sun />}
+          endIcon={<Moon />}
+          aria-label="Toggle theme"
+        />
 
         <Button
           intent="plain"
