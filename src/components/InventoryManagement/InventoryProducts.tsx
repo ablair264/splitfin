@@ -1,5 +1,16 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import {
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  type ColumnDef,
+  type SortingState,
+  type ColumnFiltersState,
+  type PaginationState,
+} from '@tanstack/react-table';
 import {
   Package2,
   Search,
@@ -7,12 +18,9 @@ import {
   Eye,
   Edit2,
   Trash2,
-  XCircle,
-  ChevronLeft,
-  ChevronRight,
   Image,
   Sparkles,
-  Upload
+  Upload,
 } from 'lucide-react';
 import { productService } from '../../services/productService';
 import { useLoader } from '../../contexts/LoaderContext';
@@ -24,10 +32,22 @@ import PricelistUpload from './PricelistUpload';
 import type { Product } from '../../types/domain';
 import { cn } from '@/lib/utils';
 
+import { DataTable } from '@/components/data-table/data-table';
+import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header';
+import { DataTableSkeleton } from '@/components/data-table/data-table-skeleton';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
 const ITEMS_PER_PAGE = 25;
 
 // Internal inventory item interface for UI display
-// Maps from backend Product type
 interface InventoryItem {
   id: string;
   name: string;
@@ -36,10 +56,10 @@ interface InventoryItem {
   description?: string;
   category?: string;
   brand: string;
-  gross_stock_level: number; // mapped from stock_on_hand
+  gross_stock_level: number;
   reorder_level: number;
-  cost_price?: number; // what we pay suppliers
-  rate?: number; // selling price
+  cost_price?: number;
+  rate?: number;
   status: string;
   image_url?: string;
   created_date: string;
@@ -56,12 +76,32 @@ const mapProductToInventoryItem = (product: Product): InventoryItem => ({
   brand: product.brand,
   gross_stock_level: product.stock_on_hand,
   reorder_level: 0,
-  cost_price: product.cost_price,
-  rate: product.rate,
+  cost_price: product.cost_price ?? undefined,
+  rate: product.rate ?? undefined,
   status: product.status,
   image_url: product.image_url || undefined,
-  created_date: product.created_at
+  created_date: product.created_at,
 });
+
+const formatCurrency = (value?: number) => {
+  if (value === undefined || value === null) return '---';
+  return new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+  }).format(value);
+};
+
+const stockColor = (level: number) => {
+  if (level === 0) return 'text-red-400';
+  if (level <= 5) return 'text-amber-400';
+  return 'text-emerald-400';
+};
+
+const stockBadge = (level: number) => {
+  if (level === 0) return { label: 'Out', cls: 'bg-red-400/10 text-red-400 border-red-400/20' };
+  if (level <= 5) return { label: 'Low', cls: 'bg-amber-400/10 text-amber-400 border-amber-400/20' };
+  return { label: 'In Stock', cls: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20' };
+};
 
 const InventoryProducts: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -71,15 +111,23 @@ const InventoryProducts: React.FC = () => {
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [rawProducts, setRawProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<{ brand: string; count: number }[]>([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [totalItems, setTotalItems] = useState(0);
 
+  // Table state
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: 'gross_stock_level', desc: true },
+  ]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: ITEMS_PER_PAGE,
+  });
+
+  // Filters synced with URL
   const [filters, setFilters] = useState({
     search: searchParams.get('search') || '',
     brand: searchParams.get('brand') || '',
     stockFilter: searchParams.get('filter') || '',
-    sort: searchParams.get('sort') || 'stock_desc'
   });
 
   // Modal states
@@ -89,6 +137,162 @@ const InventoryProducts: React.FC = () => {
   const [showAIEnrichModal, setShowAIEnrichModal] = useState(false);
   const [showPricelistUpload, setShowPricelistUpload] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
+
+  // Column definitions
+  const columns = useMemo<ColumnDef<InventoryItem>[]>(
+    () => [
+      {
+        id: 'product',
+        accessorFn: (row) => row.name,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} label="Product" />
+        ),
+        cell: ({ row }) => {
+          const item = row.original;
+          return (
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-9 h-9 rounded-lg bg-[#0f1419] border border-gray-700/60 flex items-center justify-center overflow-hidden shrink-0">
+                {item.image_url ? (
+                  <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
+                ) : (
+                  <Image size={14} className="text-gray-600" />
+                )}
+              </div>
+              <div className="min-w-0">
+                <div className="text-sm font-medium text-white truncate max-w-[200px]">
+                  {item.name}
+                </div>
+                <div className="text-[11px] text-gray-500 truncate">{item.sku}</div>
+              </div>
+            </div>
+          );
+        },
+        enableSorting: true,
+        size: 280,
+      },
+      {
+        accessorKey: 'brand',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} label="Brand" />
+        ),
+        cell: ({ row }) => (
+          <span className="text-[13px] text-gray-300 truncate block max-w-[100px]">
+            {row.original.brand}
+          </span>
+        ),
+        enableSorting: true,
+        size: 120,
+      },
+      {
+        accessorKey: 'category',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} label="Category" />
+        ),
+        cell: ({ row }) => (
+          <span className="text-[12px] text-gray-500 truncate block max-w-[120px]">
+            {row.original.category || '-'}
+          </span>
+        ),
+        enableSorting: true,
+        size: 130,
+      },
+      {
+        accessorKey: 'gross_stock_level',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} label="Stock" className="justify-end" />
+        ),
+        cell: ({ row }) => {
+          const level = row.original.gross_stock_level;
+          const badge = stockBadge(level);
+          return (
+            <div className="flex items-center justify-end gap-2">
+              <span className={cn('text-[13px] font-medium tabular-nums', stockColor(level))}>
+                {level}
+              </span>
+              <span className={cn('text-[10px] px-1.5 py-0.5 rounded border font-medium', badge.cls)}>
+                {badge.label}
+              </span>
+            </div>
+          );
+        },
+        enableSorting: true,
+        size: 100,
+      },
+      {
+        accessorKey: 'cost_price',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} label="Cost" className="justify-end" />
+        ),
+        cell: ({ row }) => (
+          <span className="text-[13px] text-gray-400 tabular-nums text-right block">
+            {formatCurrency(row.original.cost_price)}
+          </span>
+        ),
+        enableSorting: true,
+        size: 90,
+      },
+      {
+        accessorKey: 'rate',
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} label="Rate" className="justify-end" />
+        ),
+        cell: ({ row }) => (
+          <span className="text-[13px] font-medium text-white tabular-nums text-right block">
+            {formatCurrency(row.original.rate)}
+          </span>
+        ),
+        enableSorting: true,
+        size: 90,
+      },
+      {
+        id: 'actions',
+        header: () => <span className="text-[11px] font-semibold text-gray-400 uppercase">Actions</span>,
+        cell: ({ row }) => {
+          const item = row.original;
+          return (
+            <div className="flex gap-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedProduct(item);
+                  setShowDetailsModal(true);
+                }}
+                className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-brand-300/80 border border-brand-300/25 bg-brand-300/5 rounded-md hover:text-brand-300 hover:border-brand-300/40 hover:bg-brand-300/10 transition-all"
+                title="View Details"
+              >
+                <Eye size={11} /> View
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedProduct(item);
+                  setShowEditModal(true);
+                }}
+                className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-amber-400/80 border border-amber-400/25 bg-amber-400/5 rounded-md hover:text-amber-400 hover:border-amber-400/40 hover:bg-amber-400/10 transition-all"
+                title="Edit"
+              >
+                <Edit2 size={11} /> Edit
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteProduct(item.id);
+                }}
+                className="inline-flex items-center p-1.5 text-[11px] text-red-400/60 border border-red-400/15 bg-red-400/5 rounded-md hover:text-red-400 hover:border-red-400/30 hover:bg-red-400/10 transition-all"
+                title="Delete"
+              >
+                <Trash2 size={11} />
+              </button>
+            </div>
+          );
+        },
+        size: 150,
+        enableSorting: false,
+        enableHiding: false,
+      },
+    ],
+    []
+  );
 
   const fetchBrands = useCallback(async () => {
     try {
@@ -111,15 +315,14 @@ const InventoryProducts: React.FC = () => {
       if (filters.brand) countFilters.brand = filters.brand;
 
       const apiFilters: Record<string, string | number> = {
-        limit: ITEMS_PER_PAGE,
-        offset: (page - 1) * ITEMS_PER_PAGE
+        limit: pagination.pageSize,
+        offset: (page - 1) * pagination.pageSize,
       };
 
       if (filters.brand) apiFilters.brand = filters.brand;
       if (filters.search) apiFilters.search = filters.search;
       apiFilters.status = 'active';
 
-      // Fetch items and total count in parallel
       const [response, totalCount] = await Promise.all([
         productService.list(apiFilters),
         productService.count(countFilters),
@@ -129,43 +332,20 @@ const InventoryProducts: React.FC = () => {
         setRawProducts(response.data);
         let mappedItems = response.data.map(mapProductToInventoryItem);
 
-        // Client-side stock filtering (until backend supports it)
+        // Client-side stock filtering
         if (filters.stockFilter === 'out-of-stock') {
-          mappedItems = mappedItems.filter(item => item.gross_stock_level === 0);
+          mappedItems = mappedItems.filter((item) => item.gross_stock_level === 0);
         } else if (filters.stockFilter === 'low-stock') {
-          mappedItems = mappedItems.filter(item =>
-            item.reorder_level > 0 && item.gross_stock_level <= item.reorder_level
+          mappedItems = mappedItems.filter(
+            (item) => item.reorder_level > 0 && item.gross_stock_level <= item.reorder_level
           );
         } else if (filters.stockFilter === 'in-stock') {
-          mappedItems = mappedItems.filter(item => item.gross_stock_level > 0);
-        }
-
-        // Client-side sorting (until backend supports it)
-        switch (filters.sort) {
-          case 'created_newest':
-            mappedItems.sort((a, b) => new Date(b.created_date).getTime() - new Date(a.created_date).getTime());
-            break;
-          case 'created_oldest':
-            mappedItems.sort((a, b) => new Date(a.created_date).getTime() - new Date(b.created_date).getTime());
-            break;
-          case 'name_asc':
-            mappedItems.sort((a, b) => a.name.localeCompare(b.name));
-            break;
-          case 'name_desc':
-            mappedItems.sort((a, b) => b.name.localeCompare(a.name));
-            break;
-          case 'stock_asc':
-            mappedItems.sort((a, b) => a.gross_stock_level - b.gross_stock_level);
-            break;
-          case 'stock_desc':
-            mappedItems.sort((a, b) => b.gross_stock_level - a.gross_stock_level);
-            break;
+          mappedItems = mappedItems.filter((item) => item.gross_stock_level > 0);
         }
 
         setItems(mappedItems);
         setTotalItems(totalCount);
-        setTotalPages(Math.ceil(totalCount / ITEMS_PER_PAGE));
-        setCurrentPage(page);
+        setPagination((prev) => ({ ...prev, pageIndex: page - 1 }));
       }
     } catch (err) {
       console.error('Error loading items:', err);
@@ -174,9 +354,30 @@ const InventoryProducts: React.FC = () => {
       setLoading(false);
       if (isInitialLoad) hideLoader();
     }
-  }, [filters, showLoader, hideLoader]);
+  }, [filters, pagination.pageSize, showLoader, hideLoader]);
 
-  // Load brands and items on mount
+  // Table instance
+  const table = useReactTable({
+    data: items,
+    columns,
+    state: {
+      sorting,
+      columnFilters,
+      pagination,
+    },
+    pageCount: Math.ceil(totalItems / pagination.pageSize),
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onPaginationChange: setPagination,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true,
+    enableRowSelection: false,
+  });
+
+  // Load brands on mount
   useEffect(() => {
     const init = async () => {
       showLoader('Loading Inventory...');
@@ -185,14 +386,15 @@ const InventoryProducts: React.FC = () => {
     init();
   }, [fetchBrands, showLoader]);
 
-  // Load items when filters change
+  // Load items when filters or page changes
   useEffect(() => {
-    loadItems(1, items.length === 0);
-  }, [filters, loadItems]);
+    loadItems(pagination.pageIndex + 1, items.length === 0);
+  }, [filters, pagination.pageIndex, pagination.pageSize]);
 
   const handleFilterChange = (key: string, value: string) => {
     const newFilters = { ...filters, [key]: value };
     setFilters(newFilters);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
 
     const params = new URLSearchParams();
     Object.entries(newFilters).forEach(([k, v]) => {
@@ -201,15 +403,15 @@ const InventoryProducts: React.FC = () => {
     setSearchParams(params);
   };
 
-  const handlePageChange = (page: number) => {
-    loadItems(page, false);
+  const handlePageChange = (newPage: number) => {
+    loadItems(newPage, false);
   };
 
   const handleDeleteProduct = async (id: string) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
       try {
         await productService.update(parseInt(id), { status: 'inactive' });
-        loadItems(currentPage, false);
+        loadItems(pagination.pageIndex + 1, false);
       } catch (err) {
         console.error('Error deleting product:', err);
         setError('Failed to delete product');
@@ -217,29 +419,26 @@ const InventoryProducts: React.FC = () => {
     }
   };
 
-  const formatCurrency = (value?: number) => {
-    if (value === undefined || value === null) return '---';
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP'
-    }).format(value);
+  // Handle row click
+  const handleRowClick = (item: InventoryItem) => {
+    setSelectedProduct(item);
+    setShowDetailsModal(true);
   };
 
-  const stockColor = (level: number) => {
-    if (level === 0) return 'text-red-400';
-    if (level <= 5) return 'text-amber-400';
-    return 'text-emerald-400';
-  };
-
-  const stockBadge = (level: number) => {
-    if (level === 0) return { label: 'Out', cls: 'bg-red-400/10 text-red-400 border-red-400/20' };
-    if (level <= 5) return { label: 'Low', cls: 'bg-amber-400/10 text-amber-400 border-amber-400/20' };
-    return { label: 'In Stock', cls: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20' };
-  };
-
-  // ProgressLoader handles initial load
+  // Loading skeleton
   if (loading && items.length === 0 && !error) {
-    return null;
+    return (
+      <div className="min-h-screen text-white p-4">
+        <div className="bg-[#1a1f2a] rounded-xl border border-gray-700 overflow-hidden p-4">
+          <DataTableSkeleton
+            columnCount={7}
+            rowCount={10}
+            withViewOptions={false}
+            withPagination
+          />
+        </div>
+      </div>
+    );
   }
 
   // Empty state
@@ -250,30 +449,35 @@ const InventoryProducts: React.FC = () => {
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
             <span className="text-sm text-gray-400">0 products</span>
             <div className="flex items-center gap-2">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => setShowAIEnrichModal(true)}
-                className="flex items-center gap-2 px-3 py-2 bg-brand-300/10 text-brand-300 border border-brand-300/20 rounded-lg text-sm font-medium hover:bg-brand-300/20 transition-colors"
+                className="border-brand-300/25 text-brand-300 hover:bg-brand-300/10"
               >
-                <Sparkles size={14} /> AI Enhance
-              </button>
-              <button
+                <Sparkles size={14} className="mr-1.5" /> AI Enhance
+              </Button>
+              <Button
+                size="sm"
                 onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-300 to-[#4daeac] text-white rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-brand-300/25 transition-all"
+                className="bg-gradient-to-r from-brand-300 to-[#4daeac] text-white"
               >
-                <Plus size={16} /> Add Product
-              </button>
+                <Plus size={16} className="mr-1.5" /> Add Product
+              </Button>
             </div>
           </div>
           <div className="flex flex-col items-center justify-center py-20 text-gray-500">
             <Package2 size={48} className="mb-4 opacity-40" />
             <h3 className="text-lg font-semibold text-gray-300 mb-1">No products found</h3>
-            <p className="text-sm text-gray-500 mb-4">Get started by adding your first product to the inventory</p>
-            <button
+            <p className="text-sm text-gray-500 mb-4">
+              Get started by adding your first product to the inventory
+            </p>
+            <Button
               onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-300 to-[#4daeac] text-white rounded-lg text-sm font-medium"
+              className="bg-gradient-to-r from-brand-300 to-[#4daeac] text-white"
             >
-              <Plus size={16} /> Add First Product
-            </button>
+              <Plus size={16} className="mr-1.5" /> Add First Product
+            </Button>
           </div>
         </div>
 
@@ -281,14 +485,20 @@ const InventoryProducts: React.FC = () => {
           <AddProductModal
             brands={brands}
             onClose={() => setShowAddModal(false)}
-            onAdd={() => { loadItems(1, false); setShowAddModal(false); }}
+            onAdd={() => {
+              loadItems(1, false);
+              setShowAddModal(false);
+            }}
           />
         )}
         {showAIEnrichModal && (
           <AIProductEnricher
             companyId="dm-brands"
             onClose={() => setShowAIEnrichModal(false)}
-            onComplete={() => { loadItems(currentPage, false); setShowAIEnrichModal(false); }}
+            onComplete={() => {
+              loadItems(pagination.pageIndex + 1, false);
+              setShowAIEnrichModal(false);
+            }}
           />
         )}
       </div>
@@ -297,83 +507,80 @@ const InventoryProducts: React.FC = () => {
 
   return (
     <div className="min-h-screen text-white p-4">
-      {/* Table Card */}
-      <div className="bg-[#1a1f2a] rounded-xl border border-gray-700 overflow-hidden">
-        {/* Toolbar */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-700 flex-wrap">
+      <DataTable table={table}>
+        {/* Custom Toolbar */}
+        <div className="flex items-center gap-3 flex-wrap mb-4">
           {/* Search */}
           <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-            <input
+            <Input
               type="text"
               placeholder="Search by name or SKU..."
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white text-sm placeholder-gray-500 transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30"
+              className="pl-9 bg-[#0f1419] border-gray-700 text-white placeholder-gray-500 focus:border-brand-300 focus:ring-brand-300/30"
             />
           </div>
 
           {/* Brand filter */}
-          <select
-            value={filters.brand}
-            onChange={(e) => handleFilterChange('brand', e.target.value)}
-            className="px-3 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white text-sm cursor-pointer transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30"
-          >
-            <option value="">All Brands</option>
-            {brands.map(b => (
-              <option key={b.brand} value={b.brand}>{b.brand} ({b.count})</option>
-            ))}
-          </select>
+          <Select value={filters.brand} onValueChange={(val) => handleFilterChange('brand', val)}>
+            <SelectTrigger className="w-[160px] bg-[#0f1419] border-gray-700 text-white">
+              <SelectValue placeholder="All Brands" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Brands</SelectItem>
+              {brands.map((b) => (
+                <SelectItem key={b.brand} value={b.brand}>
+                  {b.brand} ({b.count})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           {/* Stock filter */}
-          <select
+          <Select
             value={filters.stockFilter}
-            onChange={(e) => handleFilterChange('stockFilter', e.target.value)}
-            className="px-3 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white text-sm cursor-pointer transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30"
+            onValueChange={(val) => handleFilterChange('stockFilter', val)}
           >
-            <option value="">All Stock</option>
-            <option value="in-stock">In Stock</option>
-            <option value="low-stock">Low Stock</option>
-            <option value="out-of-stock">Out of Stock</option>
-          </select>
-
-          {/* Sort */}
-          <select
-            value={filters.sort}
-            onChange={(e) => handleFilterChange('sort', e.target.value)}
-            className="px-3 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white text-sm cursor-pointer transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30"
-          >
-            <option value="stock_desc">Stock: High to Low</option>
-            <option value="stock_asc">Stock: Low to High</option>
-            <option value="name_asc">Name: A-Z</option>
-            <option value="name_desc">Name: Z-A</option>
-            <option value="created_newest">Newest First</option>
-            <option value="created_oldest">Oldest First</option>
-          </select>
+            <SelectTrigger className="w-[140px] bg-[#0f1419] border-gray-700 text-white">
+              <SelectValue placeholder="All Stock" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="">All Stock</SelectItem>
+              <SelectItem value="in-stock">In Stock</SelectItem>
+              <SelectItem value="low-stock">Low Stock</SelectItem>
+              <SelectItem value="out-of-stock">Out of Stock</SelectItem>
+            </SelectContent>
+          </Select>
 
           {/* Actions */}
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setShowPricelistUpload(true)}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-amber-400/80 border border-amber-400/25 bg-amber-400/5 rounded-lg hover:text-amber-400 hover:border-amber-400/40 hover:bg-amber-400/10 transition-all shrink-0"
+            className="border-amber-400/25 text-amber-400/80 hover:text-amber-400 hover:bg-amber-400/10"
           >
-            <Upload size={14} /> Pricelists
-          </button>
-          <button
+            <Upload size={14} className="mr-1.5" /> Pricelists
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setShowAIEnrichModal(true)}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-brand-300/80 border border-brand-300/25 bg-brand-300/5 rounded-lg hover:text-brand-300 hover:border-brand-300/40 hover:bg-brand-300/10 transition-all shrink-0"
+            className="border-brand-300/25 text-brand-300/80 hover:text-brand-300 hover:bg-brand-300/10"
           >
-            <Sparkles size={14} /> AI Enhance
-          </button>
-          <button
+            <Sparkles size={14} className="mr-1.5" /> AI Enhance
+          </Button>
+          <Button
+            size="sm"
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-300 to-[#4daeac] text-white rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-brand-300/25 transition-all shrink-0"
+            className="bg-gradient-to-r from-brand-300 to-[#4daeac] text-white hover:shadow-lg hover:shadow-brand-300/25"
           >
-            <Plus size={16} /> Add Product
-          </button>
+            <Plus size={16} className="mr-1.5" /> Add Product
+          </Button>
         </div>
 
         {/* Results count */}
-        <div className="px-5 py-2 text-xs text-gray-500 border-b border-gray-700/40">
+        <div className="text-xs text-gray-500 mb-2">
           {totalItems} product{totalItems !== 1 ? 's' : ''}
           {filters.search && ` matching "${filters.search}"`}
           {filters.brand && ` in ${filters.brand}`}
@@ -381,154 +588,132 @@ const InventoryProducts: React.FC = () => {
 
         {/* Error */}
         {error && (
-          <div className="mx-4 my-3 flex items-center gap-2 px-4 py-2.5 rounded-md bg-red-400/10 border border-red-400/20 text-[13px] text-red-400">
-            <XCircle size={14} /> {error}
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-md bg-red-400/10 border border-red-400/20 text-[13px] text-red-400 mb-4">
+            {error}
           </div>
         )}
+      </DataTable>
 
-        {/* Table Header */}
-        <div className="hidden lg:grid grid-cols-[minmax(200px,2fr)_minmax(80px,1fr)_minmax(100px,1fr)_70px_80px_80px_140px] gap-3 px-4 py-3 bg-gradient-to-r from-[#2a3441] to-[#1e2532] border-b border-gray-700 text-[11px] font-semibold text-gray-400 uppercase tracking-wider items-center">
-          <div>Product</div>
-          <div>Brand</div>
-          <div>Category</div>
-          <div className="text-right">Stock</div>
-          <div className="text-right">Cost</div>
-          <div className="text-right">Rate</div>
-          <div>Actions</div>
-        </div>
+      {/* Custom pagination with page numbers */}
+      {Math.ceil(totalItems / pagination.pageSize) > 1 && (
+        <div className="flex items-center justify-between px-1 py-3 mt-2">
+          <span className="text-sm text-gray-500">
+            {pagination.pageIndex * pagination.pageSize + 1}–
+            {Math.min((pagination.pageIndex + 1) * pagination.pageSize, totalItems)} of {totalItems}
+          </span>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => handlePageChange(1)}
+              disabled={pagination.pageIndex === 0}
+            >
+              «
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => handlePageChange(pagination.pageIndex)}
+              disabled={pagination.pageIndex === 0}
+            >
+              ‹
+            </Button>
+            {/* Page numbers */}
+            {(() => {
+              const totalPages = Math.ceil(totalItems / pagination.pageSize);
+              const currentPage = pagination.pageIndex + 1;
+              const pages: (number | string)[] = [];
 
-        {/* Table Body */}
-        <div>
-          {items.map(item => {
-            const badge = stockBadge(item.gross_stock_level);
-            return (
-              <div
-                key={item.id}
-                className="grid grid-cols-1 lg:grid-cols-[minmax(200px,2fr)_minmax(80px,1fr)_minmax(100px,1fr)_70px_80px_80px_140px] gap-3 px-4 py-2.5 border-b border-gray-700/40 hover:bg-white/[0.02] transition-colors items-center group cursor-pointer"
-                onClick={() => {
-                  setSelectedProduct(item);
-                  setShowDetailsModal(true);
-                }}
-              >
-                {/* Product: image + name + SKU */}
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-9 h-9 rounded-lg bg-[#0f1419] border border-gray-700/60 flex items-center justify-center overflow-hidden shrink-0">
-                    {item.image_url ? (
-                      <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <Image size={14} className="text-gray-600" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-sm font-medium text-white truncate group-hover:text-brand-300 transition-colors">
-                      {item.name}
-                    </div>
-                    <div className="text-[11px] text-gray-500 truncate">{item.sku}</div>
-                  </div>
-                </div>
+              if (totalPages <= 7) {
+                for (let i = 1; i <= totalPages; i++) pages.push(i);
+              } else {
+                pages.push(1);
+                if (currentPage > 3) pages.push('...');
+                for (
+                  let i = Math.max(2, currentPage - 1);
+                  i <= Math.min(totalPages - 1, currentPage + 1);
+                  i++
+                ) {
+                  pages.push(i);
+                }
+                if (currentPage < totalPages - 2) pages.push('...');
+                pages.push(totalPages);
+              }
 
-                {/* Brand */}
-                <div className="hidden lg:block text-[13px] text-gray-300 truncate">
-                  {item.brand}
-                </div>
-
-                {/* Category */}
-                <div className="hidden lg:block text-[12px] text-gray-500 truncate">
-                  {item.category || '-'}
-                </div>
-
-                {/* Stock */}
-                <div className="hidden lg:flex items-center justify-end gap-1.5">
-                  <span className={cn('text-[13px] font-medium tabular-nums', stockColor(item.gross_stock_level))}>
-                    {item.gross_stock_level}
+              return pages.map((p, idx) =>
+                typeof p === 'string' ? (
+                  <span key={`ellipsis-${idx}`} className="px-2 text-gray-500">
+                    {p}
                   </span>
-                </div>
-
-                {/* Cost */}
-                <div className="hidden lg:block text-[13px] text-gray-400 text-right tabular-nums">
-                  {formatCurrency(item.cost_price)}
-                </div>
-
-                {/* Rate (selling price) */}
-                <div className="hidden lg:block text-[13px] font-medium text-white text-right tabular-nums">
-                  {formatCurrency(item.rate)}
-                </div>
-
-                {/* Actions */}
-                <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    onClick={() => { setSelectedProduct(item); setShowDetailsModal(true); }}
-                    className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-brand-300/80 border border-brand-300/25 bg-brand-300/5 rounded-md hover:text-brand-300 hover:border-brand-300/40 hover:bg-brand-300/10 transition-all"
-                    title="View Details"
+                ) : (
+                  <Button
+                    key={p}
+                    variant={p === currentPage ? 'default' : 'outline'}
+                    size="sm"
+                    className={cn(
+                      'h-8 w-8 p-0',
+                      p === currentPage && 'bg-brand-300 text-white hover:bg-brand-300/90'
+                    )}
+                    onClick={() => handlePageChange(p)}
                   >
-                    <Eye size={11} /> View
-                  </button>
-                  <button
-                    onClick={() => { setSelectedProduct(item); setShowEditModal(true); }}
-                    className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-amber-400/80 border border-amber-400/25 bg-amber-400/5 rounded-md hover:text-amber-400 hover:border-amber-400/40 hover:bg-amber-400/10 transition-all"
-                    title="Edit"
-                  >
-                    <Edit2 size={11} /> Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteProduct(item.id)}
-                    className="inline-flex items-center p-1.5 text-[11px] text-red-400/60 border border-red-400/15 bg-red-400/5 rounded-md hover:text-red-400 hover:border-red-400/30 hover:bg-red-400/10 transition-all"
-                    title="Delete"
-                  >
-                    <Trash2 size={11} />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-700">
-            <span className="text-sm text-gray-500">
-              {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, totalItems)} of {totalItems}
-            </span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
-                disabled={currentPage === 1}
-                className="p-2 text-gray-400 border border-gray-700 rounded-md hover:bg-gray-700/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <span className="text-sm text-gray-300 font-medium px-2">
-                {currentPage} / {totalPages}
-              </span>
-              <button
-                onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
-                disabled={currentPage === totalPages}
-                className="p-2 text-gray-400 border border-gray-700 rounded-md hover:bg-gray-700/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
+                    {p}
+                  </Button>
+                )
+              );
+            })()}
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => handlePageChange(pagination.pageIndex + 2)}
+              disabled={pagination.pageIndex >= Math.ceil(totalItems / pagination.pageSize) - 1}
+            >
+              ›
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => handlePageChange(Math.ceil(totalItems / pagination.pageSize))}
+              disabled={pagination.pageIndex >= Math.ceil(totalItems / pagination.pageSize) - 1}
+            >
+              »
+            </Button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Modals */}
-      {showDetailsModal && selectedProduct && (() => {
-        const originalProduct = rawProducts.find(p => String(p.id) === selectedProduct.id);
-        return originalProduct ? (
-          <ProductDetailsModal
-            product={originalProduct}
-            onClose={() => { setShowDetailsModal(false); setSelectedProduct(null); }}
-          />
-        ) : null;
-      })()}
+      {showDetailsModal &&
+        selectedProduct &&
+        (() => {
+          const originalProduct = rawProducts.find((p) => String(p.id) === selectedProduct.id);
+          return originalProduct ? (
+            <ProductDetailsModal
+              product={originalProduct}
+              onClose={() => {
+                setShowDetailsModal(false);
+                setSelectedProduct(null);
+              }}
+            />
+          ) : null;
+        })()}
 
       {showEditModal && selectedProduct && (
         <EditProductModal
           product={selectedProduct}
           brands={brands}
-          onClose={() => { setShowEditModal(false); setSelectedProduct(null); }}
-          onUpdate={() => { loadItems(currentPage, false); setShowEditModal(false); setSelectedProduct(null); }}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedProduct(null);
+          }}
+          onUpdate={() => {
+            loadItems(pagination.pageIndex + 1, false);
+            setShowEditModal(false);
+            setSelectedProduct(null);
+          }}
         />
       )}
 
@@ -536,7 +721,10 @@ const InventoryProducts: React.FC = () => {
         <AddProductModal
           brands={brands}
           onClose={() => setShowAddModal(false)}
-          onAdd={() => { loadItems(1, false); setShowAddModal(false); }}
+          onAdd={() => {
+            loadItems(1, false);
+            setShowAddModal(false);
+          }}
         />
       )}
 
@@ -544,13 +732,19 @@ const InventoryProducts: React.FC = () => {
         <AIProductEnricher
           companyId="dm-brands"
           onClose={() => setShowAIEnrichModal(false)}
-          onComplete={() => { loadItems(currentPage, false); setShowAIEnrichModal(false); }}
+          onComplete={() => {
+            loadItems(pagination.pageIndex + 1, false);
+            setShowAIEnrichModal(false);
+          }}
         />
       )}
 
       {showPricelistUpload && (
         <PricelistUpload
-          onClose={() => { setShowPricelistUpload(false); loadItems(currentPage, false); }}
+          onClose={() => {
+            setShowPricelistUpload(false);
+            loadItems(pagination.pageIndex + 1, false);
+          }}
         />
       )}
     </div>

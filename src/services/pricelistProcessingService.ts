@@ -265,9 +265,9 @@ class PricelistProcessingService {
         id: product.id,
         sku: product.sku,
         name: product.name,
-        purchase_price: product.rate,
-        cost_price: product.rate,
-        retail_price: product.rrp || product.rate,
+        purchase_price: product.cost_price,
+        cost_price: product.cost_price,
+        retail_price: null,
         brand_id: product.brand,
         status: product.status
       };
@@ -380,9 +380,9 @@ class PricelistProcessingService {
               id: product.id,
               sku: product.sku,
               name: product.name,
-              purchase_price: product.rate,
-              cost_price: product.rate,
-              retail_price: product.rrp || product.rate,
+              purchase_price: product.cost_price,
+              cost_price: product.cost_price,
+              retail_price: null,
               brand_id: product.brand,
               status: product.status
             };

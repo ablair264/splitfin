@@ -349,8 +349,8 @@ class AirtableService {
             category: item.category_name,
             brand_name: item.brand,
             gross_stock_level: item.stock_on_hand,
-            retail_price: item.rrp || item.rate,
-            cost_price: item.rate,
+            retail_price: null,
+            cost_price: item.cost_price,
             status: item.status,
             image_url: item.image_url || undefined,
             manufacturer: item.manufacturer
