@@ -167,6 +167,7 @@ router.get('/recent-orders', async (req, res) => {
       SELECT
         id,
         salesorder_number,
+        reference_number,
         customer_name,
         date,
         status,
@@ -179,6 +180,7 @@ router.get('/recent-orders', async (req, res) => {
     res.json(rows.map(row => ({
       id: row.id,
       orderNumber: row.salesorder_number,
+      referenceNumber: row.reference_number || null,
       customer: row.customer_name,
       date: row.date,
       status: row.status,
@@ -202,6 +204,7 @@ router.get('/recent-products', async (req, res) => {
         brand,
         rate,
         stock_on_hand,
+        image_url,
         created_at
       FROM products
       WHERE status = 'active'
@@ -216,6 +219,7 @@ router.get('/recent-products', async (req, res) => {
       brand: row.brand || 'N/A',
       price: parseFloat(row.rate) || 0,
       stock: row.stock_on_hand || 0,
+      imageUrl: row.image_url || null,
       addedAt: row.created_at
     })));
   } catch (error) {
@@ -230,15 +234,21 @@ router.get('/recent-customers', async (req, res) => {
     const { limit = 5 } = req.query;
     const { rows } = await query(`
       SELECT
-        id,
-        company_name,
-        contact_name,
-        email,
-        status,
-        total_spent,
-        created_at
-      FROM customers
-      ORDER BY created_at DESC
+        c.id,
+        c.company_name,
+        c.contact_name,
+        c.email,
+        c.status,
+        c.total_spent,
+        c.created_at,
+        COALESCE(oc.order_count, 0) as order_count
+      FROM customers c
+      LEFT JOIN (
+        SELECT zoho_customer_id, COUNT(*) as order_count
+        FROM orders
+        GROUP BY zoho_customer_id
+      ) oc ON oc.zoho_customer_id = c.zoho_contact_id
+      ORDER BY c.created_at DESC
       LIMIT $1
     `, [parseInt(limit)]);
 
@@ -249,6 +259,7 @@ router.get('/recent-customers', async (req, res) => {
       email: row.email || 'N/A',
       status: row.status,
       totalSpent: parseFloat(row.total_spent) || 0,
+      orderCount: parseInt(row.order_count) || 0,
       addedAt: row.created_at
     })));
   } catch (error) {

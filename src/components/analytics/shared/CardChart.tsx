@@ -1,6 +1,5 @@
 import React from 'react';
 import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
-import styles from './CardChart.module.css';
 
 interface CardChartProps {
   id: string;
@@ -163,16 +162,22 @@ const CardChart: React.FC<CardChartProps> = ({
   };
 
   return (
-    <div className={styles.cardChart} onClick={onClick}>
+    <div
+      className="bg-card rounded-xl p-4 border border-border/60 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md [&_canvas]:max-w-full [&_canvas]:max-h-full"
+      onClick={onClick}
+    >
       {(title || subtitle) && (
-        <div className={styles.cardHeader}>
-          <div className={styles.cardHeaderLeft}>
-            {title && <h3 className={styles.cardTitle}>{title}</h3>}
-            {subtitle && <p className={styles.cardSubtitle}>{subtitle}</p>}
+        <div className="flex justify-between items-start mb-4">
+          <div className="flex-1">
+            {title && <h3 className="text-base font-semibold text-foreground m-0 mb-1">{title}</h3>}
+            {subtitle && <p className="text-sm text-muted-foreground m-0">{subtitle}</p>}
           </div>
           {onOptionsClick && (
-            <div className={styles.cardHeaderRight}>
-              <button className={styles.optionsButton} onClick={onOptionsClick}>
+            <div className="flex items-center gap-2">
+              <button
+                className="bg-transparent border-none text-muted-foreground cursor-pointer p-1 rounded opacity-60 transition-all duration-200 hover:bg-muted hover:text-foreground hover:opacity-100"
+                onClick={onOptionsClick}
+              >
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
                   <circle cx="10" cy="4" r="1.5" />
                   <circle cx="10" cy="10" r="1.5" />
@@ -183,7 +188,7 @@ const CardChart: React.FC<CardChartProps> = ({
           )}
         </div>
       )}
-      <div className={styles.chartContainer}>
+      <div className="relative w-full h-full flex items-center justify-center min-h-0">
         {renderChart()}
       </div>
     </div>

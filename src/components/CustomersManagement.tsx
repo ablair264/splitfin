@@ -328,7 +328,7 @@ function CustomersManagement() {
   );
 
   return (
-    <div className="min-h-screen text-foreground bg-background p-4 relative overflow-hidden">
+    <div className="min-h-screen text-foreground bg-background p-6 relative overflow-hidden">
       {/* Table Card */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         {/* Integrated Toolbar */}

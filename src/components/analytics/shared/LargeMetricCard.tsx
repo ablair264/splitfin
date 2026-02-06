@@ -4,7 +4,6 @@ import {
   ResponsiveContainer, XAxis, YAxis, Tooltip
 } from 'recharts';
 import CountUp from 'react-countup';
-import styles from './LargeMetricCard.module.css';
 
 export interface LargeMetricCardProps {
   id: string;
@@ -45,7 +44,7 @@ const LargeMetricCard: React.FC<LargeMetricCardProps> = ({
 
   const formatValue = (val: number | string) => {
     if (typeof val === 'string') return val;
-    
+
     switch (format) {
       case 'currency':
         return new Intl.NumberFormat('en-GB', {
@@ -68,11 +67,11 @@ const LargeMetricCard: React.FC<LargeMetricCardProps> = ({
 
   const renderVariantSelector = () => {
     if (!onVariantChange || !isEditMode) return null;
-    
+
     return (
-      <div className={styles.variantSelector}>
+      <div className="flex items-center gap-1 p-0.5 bg-white/5 rounded-md border border-white/10">
         <button
-          className={`${styles.variantButton} ${design === 'variant1' ? styles.active : ''}`}
+          className={`bg-transparent border-none py-1 px-2 rounded text-[10px] cursor-pointer transition-all duration-200 min-w-[24px] h-5 flex items-center justify-center ${design === 'variant1' ? 'bg-primary text-background font-medium' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
           onClick={(e) => {
             e.stopPropagation();
             onVariantChange('variant1');
@@ -82,7 +81,7 @@ const LargeMetricCard: React.FC<LargeMetricCardProps> = ({
           1
         </button>
         <button
-          className={`${styles.variantButton} ${design === 'variant2' ? styles.active : ''}`}
+          className={`bg-transparent border-none py-1 px-2 rounded text-[10px] cursor-pointer transition-all duration-200 min-w-[24px] h-5 flex items-center justify-center ${design === 'variant2' ? 'bg-primary text-background font-medium' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
           onClick={(e) => {
             e.stopPropagation();
             onVariantChange('variant2');
@@ -92,7 +91,7 @@ const LargeMetricCard: React.FC<LargeMetricCardProps> = ({
           2
         </button>
         <button
-          className={`${styles.variantButton} ${design === 'variant3' ? styles.active : ''}`}
+          className={`bg-transparent border-none py-1 px-2 rounded text-[10px] cursor-pointer transition-all duration-200 min-w-[24px] h-5 flex items-center justify-center ${design === 'variant3' ? 'bg-primary text-background font-medium' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
           onClick={(e) => {
             e.stopPropagation();
             onVariantChange('variant3');
@@ -162,10 +161,16 @@ const LargeMetricCard: React.FC<LargeMetricCardProps> = ({
     );
   };
 
+  const variantClasses = {
+    variant1: 'backdrop-blur-[10px]',
+    variant2: 'border-l-4 pl-5 bg-white/5 backdrop-blur-[10px] hover:opacity-95',
+    variant3: 'border-t-[3px] bg-white/5 backdrop-blur-[10px] shadow-[0_4px_20px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)]',
+  };
+
   return (
-    <div 
-      className={`${styles.largeMetricCard} ${styles[`metricCard${design.charAt(0).toUpperCase() + design.slice(1)}`]}`} 
-      onClick={onClick} 
+    <div
+      className={`bg-white/5 backdrop-blur-[10px] rounded-2xl p-5 relative transition-all duration-300 border-none h-[310px] flex flex-col cursor-pointer overflow-hidden min-w-[280px] box-border w-full hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)] ${variantClasses[design]}`}
+      onClick={onClick}
       style={{
         ...(design === 'variant1' && {
           borderTopColor: color,
@@ -182,20 +187,20 @@ const LargeMetricCard: React.FC<LargeMetricCardProps> = ({
         background: design === 'variant1' ? `linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, ${color}15 100%)` : undefined
       }}
     >
-      <div className={styles.cardHeader}>
-        <div className={styles.headerLeft}>
-          <h3 className={styles.cardTitle}>{title}</h3>
+      <div className="flex justify-between items-start mb-2">
+        <div className="flex items-center gap-3">
+          <h3 className="text-sm font-medium text-white/70 m-0 uppercase tracking-wide">{title}</h3>
         </div>
-        <div className={styles.headerRight}>
+        <div className="flex items-center gap-2">
           {trend && (
-            <div className={`${styles.trendIndicator} ${trend.isPositive ? styles.positive : styles.negative}`}>
-              <span className={styles.trendIcon}>{trend.isPositive ? '↑' : '↓'}</span>
-              <span className={styles.trendValue}>{Math.abs(trend.value).toFixed(0)}%</span>
+            <div className={`flex items-center gap-1 text-sm font-semibold ${trend.isPositive ? 'text-success' : 'text-destructive'}`}>
+              <span className="text-base">{trend.isPositive ? '↑' : '↓'}</span>
+              <span className="text-sm">{Math.abs(trend.value).toFixed(0)}%</span>
             </div>
           )}
           {renderVariantSelector()}
           {onOptionsClick && (
-            <button className={styles.optionsButton} onClick={(e) => {
+            <button className="bg-transparent border-none text-white/70 cursor-pointer p-1 rounded transition-all duration-200 opacity-50 hover:bg-white/5 hover:text-white group-hover:opacity-100" onClick={(e) => {
               e.stopPropagation();
               onOptionsClick();
             }}>
@@ -208,8 +213,8 @@ const LargeMetricCard: React.FC<LargeMetricCardProps> = ({
           )}
         </div>
       </div>
-      
-      <div className={styles.cardValue}>
+
+      <div className="text-4xl font-bold text-white mt-1 mb-0.5 -tracking-wide leading-none">
         {typeof value === 'number' ? (
           <CountUp
             end={value}
@@ -223,17 +228,17 @@ const LargeMetricCard: React.FC<LargeMetricCardProps> = ({
           value
         )}
       </div>
-      
-      {subtitle && <div className={styles.cardSubtitle}>{subtitle}</div>}
-      
+
+      {subtitle && <div className="text-[13px] text-white/70 mb-3">{subtitle}</div>}
+
       {chartData && chartData.length > 0 && (
-        <div className={styles.cardChart}>
+        <div className="flex-1 -mx-2 min-h-[80px] max-h-[100px] overflow-hidden relative">
           {renderChart()}
         </div>
       )}
-      
+
       {chartData && chartData.length > 0 && (
-        <div className={styles.cardDateRange}>
+        <div className="flex justify-between text-[11px] text-white/70 mt-1 px-2 opacity-70">
           <span>{chartData[0]?.name}</span>
           <span>{chartData[chartData.length - 1]?.name}</span>
         </div>

@@ -1,33 +1,53 @@
 import express from 'express';
-import multer from 'multer';
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { query, getById, insert, update } from '../../config/database.js';
 import { logger } from '../../utils/logger.js';
 
 const router = express.Router();
 
-// Multer: in-memory storage, 5MB limit, images only
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('Only image files are allowed'));
-  },
-});
+// Lazy-loaded R2 + multer (only initialised when image endpoints are hit)
+let _r2 = null;
+let _upload = null;
+let _s3Sdk = null;
 
-// R2 client (S3-compatible)
-const r2 = new S3Client({
-  region: 'auto',
-  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
-  credentials: {
-    accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
-  },
-});
+const R2_BUCKET = process.env.R2_BUCKET_NAME || process.env.R2_BUCKET || 'dmbrands-cdn';
+const R2_PUBLIC_URL = (process.env.R2_PUBLIC_URL || 'https://pub-b1c365d59f294b0fbc4c7362679bbaef.r2.dev').replace(/\/$/, '');
 
-const R2_BUCKET = process.env.R2_BUCKET_NAME || 'dmbrands-cdn';
-const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || 'https://pub-b1c365d59f294b0fbc4c7362679bbaef.r2.dev';
+async function getR2Client() {
+  if (!_r2) {
+    const endpoint = process.env.R2_ENDPOINT
+      || (process.env.CLOUDFLARE_ACCOUNT_ID && `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`);
+
+    if (!endpoint || !process.env.R2_ACCESS_KEY_ID || !process.env.R2_SECRET_ACCESS_KEY) {
+      throw new Error('R2 not configured — need R2_ENDPOINT (or CLOUDFLARE_ACCOUNT_ID), R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY');
+    }
+    if (!_s3Sdk) _s3Sdk = await import('@aws-sdk/client-s3');
+    _r2 = new _s3Sdk.S3Client({
+      region: 'auto',
+      endpoint: endpoint.replace(/\/$/, ''),
+      credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY,
+      },
+    });
+  }
+  return _r2;
+}
+
+async function getUploadMiddleware() {
+  if (!_upload) {
+    const multerMod = await import('multer');
+    const multer = multerMod.default;
+    _upload = multer({
+      storage: multer.memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+      fileFilter: (_req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) cb(null, true);
+        else cb(new Error('Only image files are allowed'));
+      },
+    });
+  }
+  return _upload;
+}
 
 // Helper: build common WHERE clause for product queries
 function buildProductWhere(filters) {
@@ -153,8 +173,17 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/v1/products/:id/image
-router.post('/:id/image', upload.single('image'), async (req, res) => {
+router.post('/:id/image', async (req, res) => {
   try {
+    // Lazy-load multer and run it as middleware
+    const uploadMiddleware = await getUploadMiddleware();
+    await new Promise((resolve, reject) => {
+      uploadMiddleware.single('image')(req, res, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+
     const product = await getById('products', req.params.id);
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
@@ -164,13 +193,15 @@ router.post('/:id/image', upload.single('image'), async (req, res) => {
       return res.status(400).json({ error: 'No image file provided' });
     }
 
-    // Build R2 key: products/{id}/{sanitised-filename}
+    const r2 = await getR2Client();
+    if (!_s3Sdk) _s3Sdk = await import('@aws-sdk/client-s3');
+
+    // Build R2 key: products/{id}/{sanitised-sku}.{ext}
     const ext = req.file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
     const safeName = product.sku.replace(/[^a-zA-Z0-9-_]/g, '_').toLowerCase();
     const key = `products/${product.id}/${safeName}.${ext}`;
 
-    // Upload to R2
-    await r2.send(new PutObjectCommand({
+    await r2.send(new _s3Sdk.PutObjectCommand({
       Bucket: R2_BUCKET,
       Key: key,
       Body: req.file.buffer,
@@ -178,8 +209,6 @@ router.post('/:id/image', upload.single('image'), async (req, res) => {
     }));
 
     const imageUrl = `${R2_PUBLIC_URL}/${key}`;
-
-    // Update DB
     await update('products', product.id, { image_url: imageUrl });
 
     logger.info(`[Products] Image uploaded for ${product.sku}: ${imageUrl}`);
@@ -205,7 +234,9 @@ router.delete('/:id/image', async (req, res) => {
     if (product.image_url && product.image_url.includes(R2_PUBLIC_URL)) {
       const key = product.image_url.replace(`${R2_PUBLIC_URL}/`, '');
       try {
-        await r2.send(new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: key }));
+        const r2 = await getR2Client();
+        if (!_s3Sdk) _s3Sdk = await import('@aws-sdk/client-s3');
+        await r2.send(new _s3Sdk.DeleteObjectCommand({ Bucket: R2_BUCKET, Key: key }));
       } catch (r2Err) {
         logger.warn('[Products] R2 delete failed (non-fatal):', r2Err.message);
       }

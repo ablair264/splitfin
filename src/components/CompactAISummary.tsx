@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '../api/client';
-import './CompactAISummary.css';
 
 interface CompactAISummaryProps {
   companyId: string;
@@ -89,22 +88,22 @@ const CompactAISummary: React.FC<CompactAISummaryProps> = ({ companyId }) => {
   }, []);
 
   return (
-    <div className="compact-ai-summary">
-      <div className="ai-content">
+    <div className="flex items-center gap-2 p-0 transition-all duration-200 max-w-full min-h-0 relative bg-transparent border-none rounded-none">
+      <div className="flex-1 min-w-0 flex items-center">
         {loading && !summary && (
-          <span className="ai-text ai-loading-text">Loading...</span>
+          <span className="text-muted-foreground text-[13px] leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis max-w-full">Loading...</span>
         )}
 
         {error && (
-          <span className="ai-text ai-error-text">—</span>
+          <span className="text-muted-foreground text-[13px] leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis max-w-full">&mdash;</span>
         )}
 
         {summary && !loading && !error && (
-          <span className="ai-text">{summary.content}</span>
+          <span className="text-muted-foreground text-[13px] leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis max-w-full">{summary.content}</span>
         )}
 
         {!summary && !loading && !error && (
-          <span className="ai-text">—</span>
+          <span className="text-muted-foreground text-[13px] leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis max-w-full">&mdash;</span>
         )}
       </div>
     </div>

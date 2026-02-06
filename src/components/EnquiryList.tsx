@@ -28,10 +28,8 @@ import {
 } from 'lucide-react';
 import { authService } from '../services/authService';
 import NewEnquiryModal from './NewEnquiry';
-import MetricCard from './analytics/shared/MetricCard';
-import { ColorProvider } from './analytics/shared/ColorProvider';
 import { useComponentLoader } from '../hoc/withLoader';
-import styles from './EnquiryList.module.css';
+import { cn } from '@/lib/utils';
 
 // Types based on enquiries schema
 interface Enquiry {
@@ -63,18 +61,8 @@ interface Enquiry {
   converted_customer_id?: string;
   conversion_date?: string;
   is_active: boolean;
-  // Joined user data
   assigned_to_name?: string;
   created_by_name?: string;
-}
-
-interface EnquiryMetrics {
-  totalEnquiries: number;
-  newEnquiries: number;
-  activeEnquiries: number;
-  totalEstimatedValue: number;
-  conversionRate: number;
-  averageResponseTime: number;
 }
 
 type SortBy = 'date' | 'priority' | 'value' | 'status' | 'followup';
@@ -115,14 +103,6 @@ function EnquiryList() {
   const [selectedEnquiry, setSelectedEnquiry] = useState<Enquiry | null>(null);
   const [assignLoading, setAssignLoading] = useState(false);
   const [showNewEnquiryModal, setShowNewEnquiryModal] = useState(false);
-  const [enquiryMetrics, setEnquiryMetrics] = useState<EnquiryMetrics>({
-    totalEnquiries: 0,
-    newEnquiries: 0,
-    activeEnquiries: 0,
-    totalEstimatedValue: 0,
-    conversionRate: 0,
-    averageResponseTime: 0
-  });
 
   const enquiriesPerPage = viewMode === 'grid' ? 12 : 20;
   const navigate = useNavigate();
@@ -140,7 +120,6 @@ function EnquiryList() {
       showLoader('Fetching Enquiry Data...');
       setProgress(10);
 
-      // Get current agent from auth service
       const agent = authService.getCachedAgent();
       if (!agent) {
         console.error('No authenticated user found');
@@ -150,23 +129,15 @@ function EnquiryList() {
         return;
       }
 
-      // Set user role for permission checking
       setUserRole(agent.is_admin ? 'admin' : 'user');
-
       setProgress(30);
 
       // TODO: Implement /api/v1/enquiries backend endpoint
       console.warn('TODO: Implement GET /api/v1/enquiries backend endpoint');
-
-      // Return empty data since enquiries table is not in the new backend yet
       setEnquiries([]);
-      calculateMetrics([]);
-
       setProgress(100);
 
-      // Wait a moment to ensure all state updates are complete
       await new Promise(resolve => setTimeout(resolve, 300));
-
     } catch (err) {
       console.error('Error in fetchEnquiries:', err);
     } finally {
@@ -176,51 +147,10 @@ function EnquiryList() {
     }
   };
 
-  const calculateMetrics = (enquiriesData: Enquiry[]) => {
-    const now = new Date();
-    const oneWeekAgo = new Date(now.getTime() - (7 * 24 * 60 * 60 * 1000));
-
-    const totalEnquiries = enquiriesData.length;
-
-    const newEnquiries = enquiriesData.filter(enquiry => {
-      const createdDate = new Date(enquiry.created_at);
-      return createdDate >= oneWeekAgo;
-    }).length;
-
-    const activeEnquiries = enquiriesData.filter(enquiry =>
-      ['new', 'contacted', 'quoted', 'negotiating'].includes(enquiry.status)
-    ).length;
-
-    const totalEstimatedValue = enquiriesData.reduce((sum, enquiry) =>
-      sum + (enquiry.estimated_value || 0), 0
-    );
-
-    const convertedEnquiries = enquiriesData.filter(enquiry =>
-      enquiry.converted_to_customer
-    ).length;
-
-    const conversionRate = totalEnquiries > 0 ? (convertedEnquiries / totalEnquiries) * 100 : 0;
-
-    // Calculate average response time (mock data for now)
-    const averageResponseTime = 2.5; // days
-
-    setEnquiryMetrics({
-      totalEnquiries,
-      newEnquiries,
-      activeEnquiries,
-      totalEstimatedValue,
-      conversionRate,
-      averageResponseTime
-    });
-  };
-
   const loadUsers = async () => {
     try {
-      // Get current agent
       const agent = authService.getCachedAgent();
       if (!agent) return;
-
-      // TODO: Implement /api/v1/agents endpoint to list all agents
       console.warn('TODO: Implement GET /api/v1/agents backend endpoint for user listing');
       setUsers([]);
     } catch (error) {
@@ -239,13 +169,9 @@ function EnquiryList() {
 
   const handleAssignSubmit = async (assignToUserId: string) => {
     if (!selectedEnquiry) return;
-
     setAssignLoading(true);
     try {
-      // TODO: Implement enquiry update via backend API
       console.warn('TODO: Implement PUT /api/v1/enquiries/:id backend endpoint');
-
-      // Refresh the enquiries list
       await fetchEnquiries();
       setShowAssignModal(false);
       setSelectedEnquiry(null);
@@ -256,7 +182,6 @@ function EnquiryList() {
     }
   };
 
-  // Filter and sort enquiries
   const filteredEnquiries = useMemo(() => {
     let filtered = enquiries.filter(enquiry => {
       const searchTerm = search.toLowerCase();
@@ -267,14 +192,11 @@ function EnquiryList() {
         enquiry.subject.toLowerCase().includes(searchTerm) ||
         enquiry.enquiry_number.toLowerCase().includes(searchTerm)
       );
-
       const matchesStatus = filterStatus === 'all' || enquiry.status === filterStatus;
       const matchesPriority = filterPriority === 'all' || enquiry.priority === filterPriority;
-
       return matchesSearch && matchesStatus && matchesPriority;
     });
 
-    // Sort enquiries
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'date':
@@ -298,7 +220,6 @@ function EnquiryList() {
     return filtered;
   }, [enquiries, search, sortBy, filterStatus, filterPriority]);
 
-  // Pagination
   const totalPages = Math.ceil(filteredEnquiries.length / enquiriesPerPage);
   const paginatedEnquiries = filteredEnquiries.slice(
     (currentPage - 1) * enquiriesPerPage,
@@ -322,16 +243,6 @@ function EnquiryList() {
     });
   };
 
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   const getDaysUntilFollowUp = (date: string) => {
     const today = new Date();
     const followUpDate = new Date(date);
@@ -350,58 +261,33 @@ function EnquiryList() {
 
   const handleExportEnquiries = () => {
     try {
-      // Prepare CSV headers
       const headers = [
-        'Enquiry Number',
-        'Status',
-        'Priority',
-        'Contact Name',
-        'Company Name',
-        'Email',
-        'Phone',
-        'Subject',
-        'Description',
-        'Estimated Value',
-        'Estimated Quantity',
-        'Lead Source',
-        'Assigned To',
-        'Created By',
-        'Created Date',
-        'Next Follow Up',
-        'Last Contacted'
+        'Enquiry Number', 'Status', 'Priority', 'Contact Name', 'Company Name',
+        'Email', 'Phone', 'Subject', 'Description', 'Estimated Value',
+        'Estimated Quantity', 'Lead Source', 'Assigned To', 'Created By',
+        'Created Date', 'Next Follow Up', 'Last Contacted'
       ];
 
-      // Prepare CSV rows
       const csvRows = [headers.join(',')];
-
       filteredEnquiries.forEach(enquiry => {
         const row = [
-          `"${enquiry.enquiry_number}"`,
-          `"${enquiry.status}"`,
-          `"${enquiry.priority}"`,
-          `"${enquiry.contact_name}"`,
-          `"${enquiry.company_name || ''}"`,
-          `"${enquiry.email}"`,
-          `"${enquiry.phone || ''}"`,
+          `"${enquiry.enquiry_number}"`, `"${enquiry.status}"`, `"${enquiry.priority}"`,
+          `"${enquiry.contact_name}"`, `"${enquiry.company_name || ''}"`,
+          `"${enquiry.email}"`, `"${enquiry.phone || ''}"`,
           `"${enquiry.subject.replace(/"/g, '""')}"`,
           `"${enquiry.description.replace(/"/g, '""')}"`,
-          `"${enquiry.estimated_value || ''}"`,
-          `"${enquiry.estimated_quantity || ''}"`,
-          `"${enquiry.lead_source}"`,
-          `"${enquiry.assigned_to_name || ''}"`,
-          `"${enquiry.created_by_name || ''}"`,
-          `"${formatDate(enquiry.created_at)}"`,
+          `"${enquiry.estimated_value || ''}"`, `"${enquiry.estimated_quantity || ''}"`,
+          `"${enquiry.lead_source}"`, `"${enquiry.assigned_to_name || ''}"`,
+          `"${enquiry.created_by_name || ''}"`, `"${formatDate(enquiry.created_at)}"`,
           `"${enquiry.next_follow_up_date ? formatDate(enquiry.next_follow_up_date) : ''}"`,
           `"${enquiry.last_contacted_at ? formatDate(enquiry.last_contacted_at) : ''}"`
         ];
         csvRows.push(row.join(','));
       });
 
-      // Create and download CSV
       const csvContent = csvRows.join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
       const link = document.createElement('a');
-
       if (link.download !== undefined) {
         const url = URL.createObjectURL(blob);
         link.setAttribute('href', url);
@@ -418,339 +304,177 @@ function EnquiryList() {
   };
 
   return (
-    <ColorProvider barChartColors="multicolored" graphColors={{ primary: 'var(--primary)', secondary: 'var(--primary)', tertiary: 'var(--warning)' }}>
-      <div className={styles.container}>
-          {/* Header */}
-          <div className={styles.header}>
-            <div className={styles.headerLeft}>
-              <div className={styles.titleSection}>
-                <h1 className={styles.pageTitle}>
-                  <MessageSquare className={styles.titleIcon} />
-                  Enquiries
-                </h1>
-                <p className={styles.pageSubtitle}>Manage and track your sales pipeline</p>
-              </div>
-            </div>
-
-            <div className={styles.headerActions}>
-              <button
-                className={styles.exportButton}
-                onClick={handleExportEnquiries}
-                title="Export enquiries"
-              >
-                <Download size={18} />
-                <span className={styles.buttonText}>Export</span>
-              </button>
-              <button
-                className={styles.createButton}
-                onClick={() => setShowNewEnquiryModal(true)}
-              >
-                <Plus size={18} />
-                <span className={styles.buttonText}>New Enquiry</span>
-              </button>
-            </div>
-          </div>
-
-
-        {/* Controls */}
-        <div className={styles.controls}>
-          <div className={styles.searchSection}>
-            <div className={styles.searchBox}>
-              <Search className={styles.searchIcon} size={20} />
-              <input
-                type="text"
-                placeholder="Search by name, company, email, or enquiry number..."
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className={styles.searchInput}
-              />
-            </div>
-          </div>
-
-          <div className={styles.filterSection}>
-            <div className={styles.filterGroup}>
-              <Filter size={16} className={styles.filterIcon} />
-              <select
-                value={filterStatus}
-                onChange={(e) => {
-                  setFilterStatus(e.target.value as FilterStatus);
-                  setCurrentPage(1);
-                }}
-                className={styles.filterSelect}
-              >
-                <option value="all">All Status</option>
-                <option value="new">New</option>
-                <option value="contacted">Contacted</option>
-                <option value="quoted">Quoted</option>
-                <option value="negotiating">Negotiating</option>
-                <option value="won">Won</option>
-                <option value="lost">Lost</option>
-              </select>
-
-              <select
-                value={filterPriority}
-                onChange={(e) => {
-                  setFilterPriority(e.target.value as FilterPriority);
-                  setCurrentPage(1);
-                }}
-                className={styles.filterSelect}
-              >
-                <option value="all">All Priority</option>
-                <option value="urgent">Urgent</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as SortBy)}
-                className={styles.filterSelect}
-              >
-                <option value="date">Sort by Date</option>
-                <option value="priority">Sort by Priority</option>
-                <option value="value">Sort by Value</option>
-                <option value="status">Sort by Status</option>
-                <option value="followup">Sort by Follow-up</option>
-              </select>
-            </div>
-
-            <div className={styles.viewToggle}>
-              <button
-                className={`${styles.viewButton} ${viewMode === 'grid' ? styles.active : ''}`}
-                onClick={() => {
-                  setViewMode('grid');
-                  setCurrentPage(1);
-                }}
-                title="Grid view"
-              >
-                <Grid size={18} />
-              </button>
-              <button
-                className={`${styles.viewButton} ${viewMode === 'list' ? styles.active : ''}`}
-                onClick={() => {
-                  setViewMode('list');
-                  setCurrentPage(1);
-                }}
-                title="List view"
-              >
-                <List size={18} />
-              </button>
-            </div>
+    <div className="p-6 bg-background min-h-screen text-foreground">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-8 pb-8 border-b border-border/40 flex-wrap gap-4">
+        <div className="flex-1">
+          <div className="flex flex-col gap-2">
+            <h1 className="flex items-center gap-3 text-xl font-semibold text-foreground">
+              <MessageSquare size={24} className="text-primary" />
+              Enquiries
+            </h1>
+            <p className="text-sm text-muted-foreground">Manage and track your sales pipeline</p>
           </div>
         </div>
 
-        {/* Enquiries Content */}
-        {loading ? (
-          <div className={styles.loadingContainer}>
-            <div className={styles.loadingSpinner} />
-            <p>Loading enquiries...</p>
+        <div className="flex gap-3 items-center">
+          <button
+            onClick={handleExportEnquiries}
+            title="Export enquiries"
+            className="flex items-center gap-2 px-4 py-2.5 bg-muted/50 text-muted-foreground border border-border rounded-lg text-sm font-medium hover:bg-muted hover:border-border transition-all"
+          >
+            <Download size={16} />
+            <span className="hidden sm:inline">Export</span>
+          </button>
+          <button
+            onClick={() => setShowNewEnquiryModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-all"
+          >
+            <Plus size={16} />
+            <span className="hidden sm:inline">New Enquiry</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Controls */}
+      <div className="flex gap-4 mb-6 flex-wrap">
+        <div className="flex-1 min-w-[200px]">
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-4 h-4 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search by name, company, email, or enquiry number..."
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full py-2.5 pl-10 pr-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+            />
           </div>
-        ) : filteredEnquiries.length === 0 ? (
-          <div className={styles.emptyState}>
-            <MessageSquare size={48} className={styles.emptyIcon} />
-            <h3 className={styles.emptyTitle}>No enquiries found</h3>
-            <p className={styles.emptyDescription}>
-              {search || filterStatus !== 'all' || filterPriority !== 'all'
-                ? 'Try adjusting your filters or search criteria'
-                : 'The enquiries feature is being migrated. Please check back later.'}
-            </p>
-            {!search && filterStatus === 'all' && filterPriority === 'all' && (
-              <button
-                className={styles.createButton}
-                onClick={() => setShowNewEnquiryModal(true)}
+        </div>
+
+        <div className="flex gap-3 items-center flex-wrap">
+          <div className="flex gap-2 items-center flex-wrap">
+            <Filter size={16} className="text-muted-foreground/50" />
+            <select
+              value={filterStatus}
+              onChange={(e) => { setFilterStatus(e.target.value as FilterStatus); setCurrentPage(1); }}
+              className="px-3 py-2.5 bg-muted/50 border border-border rounded-lg text-foreground text-sm cursor-pointer focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+            >
+              <option value="all">All Status</option>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="quoted">Quoted</option>
+              <option value="negotiating">Negotiating</option>
+              <option value="won">Won</option>
+              <option value="lost">Lost</option>
+            </select>
+
+            <select
+              value={filterPriority}
+              onChange={(e) => { setFilterPriority(e.target.value as FilterPriority); setCurrentPage(1); }}
+              className="px-3 py-2.5 bg-muted/50 border border-border rounded-lg text-foreground text-sm cursor-pointer focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+            >
+              <option value="all">All Priority</option>
+              <option value="urgent">Urgent</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortBy)}
+              className="px-3 py-2.5 bg-muted/50 border border-border rounded-lg text-foreground text-sm cursor-pointer focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+            >
+              <option value="date">Sort by Date</option>
+              <option value="priority">Sort by Priority</option>
+              <option value="value">Sort by Value</option>
+              <option value="status">Sort by Status</option>
+              <option value="followup">Sort by Follow-up</option>
+            </select>
+          </div>
+
+          <div className="flex bg-muted/50 border border-border rounded-lg p-0.5 gap-0.5">
+            <button
+              className={cn(
+                'flex items-center justify-center p-2 rounded-md transition-all',
+                viewMode === 'grid'
+                  ? 'bg-primary/20 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              )}
+              onClick={() => { setViewMode('grid'); setCurrentPage(1); }}
+              title="Grid view"
+            >
+              <Grid size={16} />
+            </button>
+            <button
+              className={cn(
+                'flex items-center justify-center p-2 rounded-md transition-all',
+                viewMode === 'list'
+                  ? 'bg-primary/20 text-primary'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              )}
+              onClick={() => { setViewMode('list'); setCurrentPage(1); }}
+              title="List view"
+            >
+              <List size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <p className="text-sm text-muted-foreground">Loading enquiries...</p>
+        </div>
+      ) : filteredEnquiries.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
+          <MessageSquare size={32} className="text-muted-foreground/50 mb-4" />
+          <h3 className="text-lg font-semibold text-foreground mb-1">No enquiries found</h3>
+          <p className="text-sm text-muted-foreground mb-6">
+            {search || filterStatus !== 'all' || filterPriority !== 'all'
+              ? 'Try adjusting your filters or search criteria'
+              : 'The enquiries feature is being migrated. Please check back later.'}
+          </p>
+          {!search && filterStatus === 'all' && filterPriority === 'all' && (
+            <button
+              onClick={() => setShowNewEnquiryModal(true)}
+              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-all"
+            >
+              <Plus size={16} />
+              Create First Enquiry
+            </button>
+          )}
+        </div>
+      ) : viewMode === 'grid' ? (
+        /* Grid View */
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-6">
+          {paginatedEnquiries.map((enquiry) => {
+            const statusInfo = getStatusConfig(enquiry.status);
+            const priorityInfo = getPriorityConfig(enquiry.priority);
+            const StatusIcon = statusInfo.icon;
+            const PriorityIcon = priorityInfo.icon;
+            const daysUntilFollowUp = enquiry.next_follow_up_date ? getDaysUntilFollowUp(enquiry.next_follow_up_date) : null;
+
+            return (
+              <div
+                key={enquiry.id}
+                className="bg-card/50 border border-border/60 rounded-xl p-5 cursor-pointer hover:border-primary hover:-translate-y-0.5 hover:shadow-lg transition-all flex flex-col gap-3 group"
+                onClick={() => navigate(`/enquiries/${enquiry.id}`)}
               >
-                <Plus size={18} />
-                Create First Enquiry
-              </button>
-            )}
-          </div>
-        ) : viewMode === 'grid' ? (
-          <div className={styles.enquiriesGrid}>
-            {paginatedEnquiries.map((enquiry) => {
-              const statusInfo = getStatusConfig(enquiry.status);
-              const priorityInfo = getPriorityConfig(enquiry.priority);
-              const StatusIcon = statusInfo.icon;
-              const PriorityIcon = priorityInfo.icon;
-              const daysUntilFollowUp = enquiry.next_follow_up_date ? getDaysUntilFollowUp(enquiry.next_follow_up_date) : null;
-
-              return (
-                <div
-                  key={enquiry.id}
-                  className={styles.enquiryCard}
-                  onClick={() => navigate(`/enquiries/${enquiry.id}`)}
-                >
-                  <div className={styles.cardHeader}>
-                    <div className={styles.cardHeaderLeft}>
-                      <span className={styles.enquiryNumber}>#{enquiry.enquiry_number}</span>
-                      <div className={styles.badges}>
-                        <span
-                          className={styles.statusBadge}
-                          style={{
-                            backgroundColor: `${statusInfo.color}20`,
-                            color: statusInfo.color,
-                            border: `1px solid ${statusInfo.color}40`
-                          }}
-                        >
-                          <StatusIcon size={12} />
-                          {statusInfo.label}
-                        </span>
-                        <span
-                          className={styles.priorityBadge}
-                          style={{
-                            backgroundColor: `${priorityInfo.color}20`,
-                            color: priorityInfo.color,
-                            border: `1px solid ${priorityInfo.color}40`
-                          }}
-                        >
-                          <PriorityIcon size={12} />
-                          {enquiry.priority}
-                        </span>
-                      </div>
-                    </div>
-                    <div className={styles.cardActions}>
-                      {canAssignEnquiries() && (
-                        <button
-                          className={styles.assignButton}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAssignEnquiry(enquiry);
-                          }}
-                          title="Assign to salesperson"
-                        >
-                          <User size={16} />
-                        </button>
-                      )}
-                      <button
-                        className={styles.moreButton}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          // TODO: Show menu
-                        }}
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className={styles.cardBody}>
-                    <h3 className={styles.enquirySubject}>{enquiry.subject}</h3>
-
-                    <div className={styles.contactInfo}>
-                      <div className={styles.contactName}>
-                        <User size={14} />
-                        <span>{enquiry.contact_name}</span>
-                      </div>
-                      {enquiry.company_name && (
-                        <div className={styles.companyName}>
-                          <Building size={14} />
-                          <span>{enquiry.company_name}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <p className={styles.description}>
-                      {enquiry.description.length > 120
-                        ? enquiry.description.substring(0, 120) + '...'
-                        : enquiry.description
-                      }
-                    </p>
-
-                    {enquiry.estimated_value && (
-                      <div className={styles.valueInfo}>
-                        <DollarSign size={14} />
-                        <span>{formatCurrency(enquiry.estimated_value)}</span>
-                        {enquiry.estimated_quantity && (
-                          <span className={styles.quantity}> {enquiry.estimated_quantity} units</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className={styles.cardFooter}>
-                    <div className={styles.footerInfo}>
-                      <div className={styles.dateInfo}>
-                        <Calendar size={12} />
-                        <span>{formatDate(enquiry.created_at)}</span>
-                      </div>
-                      {daysUntilFollowUp !== null && (
-                        <div className={`${styles.followUpInfo} ${daysUntilFollowUp < 0 ? styles.overdue : daysUntilFollowUp <= 2 ? styles.urgent : ''}`}>
-                          <Clock size={12} />
-                          <span>
-                            {daysUntilFollowUp < 0
-                              ? `${Math.abs(daysUntilFollowUp)} days overdue`
-                              : daysUntilFollowUp === 0
-                              ? 'Follow up today'
-                              : `Follow up in ${daysUntilFollowUp} days`
-                            }
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <ChevronRight size={16} className={styles.arrowIcon} />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className={styles.listContainer}>
-            <div className={styles.listHeader}>
-              <div className={styles.listCol}>Contact</div>
-              <div className={styles.listCol}>Subject</div>
-              <div className={styles.listCol}>Status</div>
-              <div className={styles.listCol}>Priority</div>
-              <div className={styles.listCol}>Value</div>
-              <div className={styles.listCol}>Follow-up</div>
-              <div className={styles.listCol}>Created</div>
-              <div className={styles.listCol}>Actions</div>
-            </div>
-            <div className={styles.listBody}>
-              {paginatedEnquiries.map((enquiry) => {
-                const statusInfo = getStatusConfig(enquiry.status);
-                const priorityInfo = getPriorityConfig(enquiry.priority);
-                const StatusIcon = statusInfo.icon;
-                const PriorityIcon = priorityInfo.icon;
-                const daysUntilFollowUp = enquiry.next_follow_up_date ? getDaysUntilFollowUp(enquiry.next_follow_up_date) : null;
-
-                return (
-                  <div
-                    key={enquiry.id}
-                    className={styles.listRow}
-                    onClick={() => navigate(`/enquiries/${enquiry.id}`)}
-                  >
-                    <div className={styles.listCol}>
-                      <div className={styles.contactCell}>
-                        <div className={styles.contactMain}>
-                          <span className={styles.contactName}>{enquiry.contact_name}</span>
-                          {enquiry.company_name && (
-                            <span className={styles.companyName}>{enquiry.company_name}</span>
-                          )}
-                        </div>
-                        <div className={styles.contactDetails}>
-                          <Mail size={12} />
-                          <span>{enquiry.email}</span>
-                          {enquiry.phone && (
-                            <>
-                              <Phone size={12} />
-                              <span>{enquiry.phone}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    <div className={styles.listCol}>
-                      <div className={styles.subjectCell}>
-                        <span className={styles.enquiryNumber}>#{enquiry.enquiry_number}</span>
-                        <span className={styles.subjectText}>{enquiry.subject}</span>
-                      </div>
-                    </div>
-                    <div className={styles.listCol}>
+                {/* Card Header */}
+                <div className="flex justify-between items-start gap-3">
+                  <div className="flex flex-col gap-2 flex-1">
+                    <span className="text-xs text-muted-foreground font-medium tracking-wider uppercase">
+                      #{enquiry.enquiry_number}
+                    </span>
+                    <div className="flex gap-2 flex-wrap">
                       <span
-                        className={styles.statusBadge}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium capitalize"
                         style={{
                           backgroundColor: `${statusInfo.color}20`,
                           color: statusInfo.color,
@@ -760,10 +484,8 @@ function EnquiryList() {
                         <StatusIcon size={12} />
                         {statusInfo.label}
                       </span>
-                    </div>
-                    <div className={styles.listCol}>
                       <span
-                        className={styles.priorityBadge}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium capitalize"
                         style={{
                           backgroundColor: `${priorityInfo.color}20`,
                           color: priorityInfo.color,
@@ -774,156 +496,338 @@ function EnquiryList() {
                         {enquiry.priority}
                       </span>
                     </div>
-                    <div className={styles.listCol}>
-                      {enquiry.estimated_value ? (
-                        <span className={styles.valueText}>{formatCurrency(enquiry.estimated_value)}</span>
-                      ) : (
-                        <span className={styles.emptyValue}>-</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {canAssignEnquiries() && (
+                      <button
+                        className="flex items-center justify-center w-8 h-8 rounded-md border border-border/40 text-muted-foreground hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all"
+                        onClick={(e) => { e.stopPropagation(); handleAssignEnquiry(enquiry); }}
+                        title="Assign to salesperson"
+                      >
+                        <User size={14} />
+                      </button>
+                    )}
+                    <button
+                      className="flex items-center justify-center w-8 h-8 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                      onClick={(e) => { e.stopPropagation(); }}
+                    >
+                      <MoreVertical size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Card Body */}
+                <div className="flex-1 flex flex-col gap-2">
+                  <h3 className="text-base font-semibold text-foreground leading-snug">{enquiry.subject}</h3>
+
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-2 text-sm text-foreground/80">
+                      <User size={14} />
+                      <span>{enquiry.contact_name}</span>
+                    </div>
+                    {enquiry.company_name && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Building size={14} />
+                        <span>{enquiry.company_name}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                    {enquiry.description.length > 120
+                      ? enquiry.description.substring(0, 120) + '...'
+                      : enquiry.description}
+                  </p>
+
+                  {enquiry.estimated_value && (
+                    <div className="flex items-center gap-2 text-sm text-primary font-medium mt-auto">
+                      <DollarSign size={14} />
+                      <span>{formatCurrency(enquiry.estimated_value)}</span>
+                      {enquiry.estimated_quantity && (
+                        <span className="text-muted-foreground font-normal">{enquiry.estimated_quantity} units</span>
                       )}
                     </div>
-                    <div className={styles.listCol}>
-                      {daysUntilFollowUp !== null ? (
-                        <div className={`${styles.followUpInfo} ${daysUntilFollowUp < 0 ? styles.overdue : daysUntilFollowUp <= 2 ? styles.urgent : ''}`}>
-                          <Clock size={12} />
-                          <span>
-                            {daysUntilFollowUp < 0
-                              ? `${Math.abs(daysUntilFollowUp)}d overdue`
-                              : daysUntilFollowUp === 0
-                              ? 'Today'
-                              : `${daysUntilFollowUp}d`
-                            }
-                          </span>
-                        </div>
-                      ) : (
-                        <span className={styles.emptyValue}>-</span>
-                      )}
+                  )}
+                </div>
+
+                {/* Card Footer */}
+                <div className="flex justify-between items-center pt-3 border-t border-border/40">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Calendar size={12} />
+                      <span>{formatDate(enquiry.created_at)}</span>
                     </div>
-                    <div className={styles.listCol}>
-                      <span className={styles.dateText}>{formatDate(enquiry.created_at)}</span>
-                    </div>
-                    <div className={styles.listCol}>
-                      <div className={styles.listActions}>
-                        <button
-                          className={styles.actionButton}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/enquiries/${enquiry.id}`);
-                          }}
-                          title="View details"
-                        >
-                          <Eye size={16} />
-                        </button>
-                        <button
-                          className={styles.actionButton}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/enquiries/${enquiry.id}/edit`);
-                          }}
-                          title="Edit enquiry"
-                        >
-                          <Edit size={16} />
-                        </button>
+                    {daysUntilFollowUp !== null && (
+                      <div className={cn(
+                        'flex items-center gap-1.5 text-xs',
+                        daysUntilFollowUp < 0 ? 'text-destructive'
+                          : daysUntilFollowUp <= 2 ? 'text-warning'
+                          : 'text-foreground/70'
+                      )}>
+                        <Clock size={12} />
+                        <span>
+                          {daysUntilFollowUp < 0
+                            ? `${Math.abs(daysUntilFollowUp)} days overdue`
+                            : daysUntilFollowUp === 0
+                            ? 'Follow up today'
+                            : `Follow up in ${daysUntilFollowUp} days`}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <ChevronRight size={16} className="text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        /* List View */
+        <div className="bg-card/50 border border-border/60 rounded-xl overflow-hidden mb-6">
+          {/* List Header */}
+          <div className="hidden lg:grid grid-cols-[2fr_2fr_120px_100px_120px_100px_100px_100px] gap-3 px-4 py-3 bg-muted/50 border-b border-border text-[11px] font-semibold text-muted-foreground uppercase tracking-wider items-center">
+            <div>Contact</div>
+            <div>Subject</div>
+            <div>Status</div>
+            <div>Priority</div>
+            <div>Value</div>
+            <div>Follow-up</div>
+            <div>Created</div>
+            <div>Actions</div>
+          </div>
+
+          {/* List Body */}
+          <div className="flex flex-col">
+            {paginatedEnquiries.map((enquiry) => {
+              const statusInfo = getStatusConfig(enquiry.status);
+              const priorityInfo = getPriorityConfig(enquiry.priority);
+              const StatusIcon = statusInfo.icon;
+              const PriorityIcon = priorityInfo.icon;
+              const daysUntilFollowUp = enquiry.next_follow_up_date ? getDaysUntilFollowUp(enquiry.next_follow_up_date) : null;
+
+              return (
+                <div
+                  key={enquiry.id}
+                  className="grid grid-cols-1 lg:grid-cols-[2fr_2fr_120px_100px_120px_100px_100px_100px] gap-3 px-4 py-3 border-b border-border/30 cursor-pointer hover:bg-primary/[0.04] transition-colors items-center"
+                  onClick={() => navigate(`/enquiries/${enquiry.id}`)}
+                >
+                  {/* Contact */}
+                  <div className="flex items-center">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm font-medium text-foreground">{enquiry.contact_name}</span>
+                        {enquiry.company_name && (
+                          <span className="text-xs text-muted-foreground">{enquiry.company_name}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Mail size={12} />
+                        <span className="truncate">{enquiry.email}</span>
+                        {enquiry.phone && (
+                          <>
+                            <Phone size={12} />
+                            <span>{enquiry.phone}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className={styles.pagination}>
-            <button
-              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-              disabled={currentPage === 1}
-              className={styles.paginationButton}
-            >
-              Previous
-            </button>
+                  {/* Subject */}
+                  <div className="flex items-center">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs text-muted-foreground font-medium tracking-wider uppercase">#{enquiry.enquiry_number}</span>
+                      <span className="text-sm text-foreground/90 font-medium truncate">{enquiry.subject}</span>
+                    </div>
+                  </div>
 
-            <div className={styles.paginationInfo}>
-              <span className={styles.paginationCurrent}>Page {currentPage} of {totalPages}</span>
-              <span className={styles.paginationTotal}>({filteredEnquiries.length} enquiries)</span>
-            </div>
+                  {/* Status */}
+                  <div className="flex items-center">
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium capitalize"
+                      style={{
+                        backgroundColor: `${statusInfo.color}20`,
+                        color: statusInfo.color,
+                        border: `1px solid ${statusInfo.color}40`
+                      }}
+                    >
+                      <StatusIcon size={12} />
+                      {statusInfo.label}
+                    </span>
+                  </div>
 
-            <button
-              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-              disabled={currentPage === totalPages}
-              className={styles.paginationButton}
-            >
-              Next
-            </button>
-          </div>
-        )}
+                  {/* Priority */}
+                  <div className="flex items-center">
+                    <span
+                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium capitalize"
+                      style={{
+                        backgroundColor: `${priorityInfo.color}20`,
+                        color: priorityInfo.color,
+                        border: `1px solid ${priorityInfo.color}40`
+                      }}
+                    >
+                      <PriorityIcon size={12} />
+                      {enquiry.priority}
+                    </span>
+                  </div>
 
-        {/* Assignment Modal */}
-        {showAssignModal && selectedEnquiry && (
-          <div className={styles.modalOverlay}>
-            <div className={styles.modal}>
-              <div className={styles.modalHeader}>
-                <h3>Assign Enquiry</h3>
-                <button
-                  onClick={() => {
-                    setShowAssignModal(false);
-                    setSelectedEnquiry(null);
-                  }}
-                  className={styles.modalCloseButton}
-                >
-                  x
-                </button>
-              </div>
-              <div className={styles.modalBody}>
-                <p>Assign enquiry <strong>#{selectedEnquiry.enquiry_number}</strong> to:</p>
-                <div className={styles.assigneeList}>
-                  {users.length === 0 ? (
-                    <p>No users available. User list is being migrated.</p>
-                  ) : (
-                    users.map((user) => (
+                  {/* Value */}
+                  <div className="flex items-center">
+                    {enquiry.estimated_value ? (
+                      <span className="font-medium text-primary tabular-nums">{formatCurrency(enquiry.estimated_value)}</span>
+                    ) : (
+                      <span className="text-muted-foreground/30">-</span>
+                    )}
+                  </div>
+
+                  {/* Follow-up */}
+                  <div className="flex items-center">
+                    {daysUntilFollowUp !== null ? (
+                      <div className={cn(
+                        'flex items-center gap-1.5 text-xs',
+                        daysUntilFollowUp < 0 ? 'text-destructive'
+                          : daysUntilFollowUp <= 2 ? 'text-warning'
+                          : 'text-foreground/70'
+                      )}>
+                        <Clock size={12} />
+                        <span>
+                          {daysUntilFollowUp < 0
+                            ? `${Math.abs(daysUntilFollowUp)}d overdue`
+                            : daysUntilFollowUp === 0
+                            ? 'Today'
+                            : `${daysUntilFollowUp}d`}
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground/30">-</span>
+                    )}
+                  </div>
+
+                  {/* Created */}
+                  <div className="flex items-center">
+                    <span className="text-sm text-muted-foreground tabular-nums">{formatDate(enquiry.created_at)}</span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center">
+                    <div className="flex gap-1 justify-end" onClick={(e) => e.stopPropagation()}>
                       <button
-                        key={user.id}
-                        onClick={() => handleAssignSubmit(user.id)}
-                        disabled={assignLoading}
-                        className={`${styles.assigneeButton} ${selectedEnquiry.assigned_to === user.id ? styles.currentAssignee : ''}`}
+                        onClick={() => navigate(`/enquiries/${enquiry.id}`)}
+                        title="View details"
+                        className="flex items-center justify-center w-8 h-8 border border-border/40 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
                       >
-                        <User size={16} />
-                        <span>{user.first_name} {user.last_name}</span>
-                        {selectedEnquiry.assigned_to === user.id && (
-                          <span className={styles.currentBadge}>Current</span>
-                        )}
+                        <Eye size={14} />
                       </button>
-                    ))
-                  )}
+                      <button
+                        onClick={() => navigate(`/enquiries/${enquiry.id}/edit`)}
+                        title="Edit enquiry"
+                        className="flex items-center justify-center w-8 h-8 border border-border/40 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-all"
+                      >
+                        <Edit size={14} />
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className={styles.modalFooter}>
-                <button
-                  onClick={() => {
-                    setShowAssignModal(false);
-                    setSelectedEnquiry(null);
-                  }}
-                  className={styles.cancelButton}
-                  disabled={assignLoading}
-                >
-                  Cancel
-                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 py-6">
+          <button
+            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+            disabled={currentPage === 1}
+            className="px-4 py-2 bg-muted/50 border border-border rounded-lg text-foreground/80 text-sm font-medium hover:bg-muted transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Previous
+          </button>
+
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="text-foreground/80 font-medium">Page {currentPage} of {totalPages}</span>
+            <span>({filteredEnquiries.length} enquiries)</span>
+          </div>
+
+          <button
+            onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+            disabled={currentPage === totalPages}
+            className="px-4 py-2 bg-muted/50 border border-border rounded-lg text-foreground/80 text-sm font-medium hover:bg-muted transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            Next
+          </button>
+        </div>
+      )}
+
+      {/* Assignment Modal */}
+      {showAssignModal && selectedEnquiry && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000]">
+          <div className="bg-card border border-border rounded-xl w-full max-w-sm max-h-[90vh] overflow-hidden shadow-2xl">
+            <div className="flex justify-between items-center p-6 border-b border-border/40">
+              <h3 className="text-lg font-semibold text-foreground">Assign Enquiry</h3>
+              <button
+                onClick={() => { setShowAssignModal(false); setSelectedEnquiry(null); }}
+                className="flex items-center justify-center w-8 h-8 border border-border/40 rounded-md text-muted-foreground hover:bg-destructive/10 hover:border-destructive hover:text-destructive transition-all text-xl leading-none"
+              >
+                &times;
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-sm text-foreground mb-4">
+                Assign enquiry <strong>#{selectedEnquiry.enquiry_number}</strong> to:
+              </p>
+              <div className="flex flex-col gap-2">
+                {users.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No users available. User list is being migrated.</p>
+                ) : (
+                  users.map((user) => (
+                    <button
+                      key={user.id}
+                      onClick={() => handleAssignSubmit(user.id)}
+                      disabled={assignLoading}
+                      className={cn(
+                        'flex items-center gap-3 px-3 py-2.5 border rounded-lg text-foreground text-sm w-full text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed',
+                        selectedEnquiry.assigned_to === user.id
+                          ? 'bg-primary/20 border-primary text-primary'
+                          : 'bg-card/50 border-border/40 hover:bg-primary/10 hover:border-primary hover:text-primary'
+                      )}
+                    >
+                      <User size={16} />
+                      <span>{user.first_name} {user.last_name}</span>
+                      {selectedEnquiry.assigned_to === user.id && (
+                        <span className="ml-auto px-2 py-0.5 bg-primary/20 border border-primary/30 rounded text-xs font-medium text-primary">
+                          Current
+                        </span>
+                      )}
+                    </button>
+                  ))
+                )}
               </div>
             </div>
+            <div className="flex justify-end gap-3 p-6 border-t border-border/40">
+              <button
+                onClick={() => { setShowAssignModal(false); setSelectedEnquiry(null); }}
+                disabled={assignLoading}
+                className="px-4 py-2 bg-muted/50 border border-border rounded-lg text-foreground/80 text-sm font-medium hover:bg-muted transition-all disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-        )}
+        </div>
+      )}
 
-        {/* New Enquiry Modal */}
-        <NewEnquiryModal
-          isOpen={showNewEnquiryModal}
-          onClose={() => setShowNewEnquiryModal(false)}
-          onCreated={() => {
-            setShowNewEnquiryModal(false);
-            fetchEnquiries();
-          }}
-        />
-      </div>
-    </ColorProvider>
+      {/* New Enquiry Modal */}
+      <NewEnquiryModal
+        isOpen={showNewEnquiryModal}
+        onClose={() => setShowNewEnquiryModal(false)}
+        onCreated={() => {
+          setShowNewEnquiryModal(false);
+          fetchEnquiries();
+        }}
+      />
+    </div>
   );
 }
 

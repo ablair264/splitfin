@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import CardChart from './CardChart';
 import DataTable from './DataTable';
 import type { TableColumn } from './DataTable';
-import styles from './FlexibleChart.module.css';
 
 export interface ChartDataItem {
   name: string;
@@ -64,7 +63,7 @@ const FlexibleChart: React.FC<FlexibleChartProps> = ({
 
   // Process data
   const processedData = maxItems ? data.slice(0, maxItems) : data;
-  
+
   // Prepare data for charts
   const chartData = processedData.map((item, index) => ({
     ...item,
@@ -77,9 +76,9 @@ const FlexibleChart: React.FC<FlexibleChartProps> = ({
       key: 'rank',
       header: '#',
       width: '60px',
-      className: styles.rankColumn,
+      className: 'text-center pr-4',
       render: (_: ChartDataItem, index?: number) => (
-        <span className={styles.rankNumber}>{(index || 0) + 1}</span>
+        <span className="inline-flex items-center justify-center w-7 h-7 bg-white/5 border border-white/10 rounded-md text-xs font-semibold text-muted-foreground">{(index || 0) + 1}</span>
       )
     }] : []),
     {
@@ -87,16 +86,16 @@ const FlexibleChart: React.FC<FlexibleChartProps> = ({
       header: 'NAME',
       width: showRanking ? '60%' : '70%',
       render: (item) => (
-        <span className={styles.itemName}>{item.name}</span>
+        <span className="font-medium text-foreground text-sm">{item.name}</span>
       )
     },
     {
       key: 'value',
       header: 'TOTAL',
       width: showRanking ? '30%' : '30%',
-      className: styles.valueColumn,
+      className: 'text-right',
       render: (item) => (
-        <span className={styles.itemValue}>
+        <span className="font-semibold text-primary text-sm">
           {formatValue(item.value)}
         </span>
       )
@@ -108,7 +107,7 @@ const FlexibleChart: React.FC<FlexibleChartProps> = ({
     key: col.key,
     header: col.header,
     width: col.width,
-    className: col.key === 'value' ? styles.valueColumn : undefined,
+    className: col.key === 'value' ? 'text-right' : undefined,
     render: col.render ? (item: ChartDataItem, index?: number) => col.render!(item, index) : undefined
   })) : defaultTableColumns;
 
@@ -117,12 +116,12 @@ const FlexibleChart: React.FC<FlexibleChartProps> = ({
     if (!showTypeSwitcher) return null;
 
     return (
-      <div className={styles.typeSwitcher}>
+      <div className="flex gap-1 shrink-0 max-md:flex-col">
         {chartTypeOptions.map(option => (
           <button
             key={option.value}
-            className={`${styles.switcherButton} ${
-              currentType === option.value ? styles.active : ''
+            className={`w-8 h-8 border rounded-md bg-white/5 text-muted-foreground cursor-pointer transition-all duration-200 flex items-center justify-center text-sm p-0 hover:bg-white/10 hover:border-white/20 hover:text-foreground ${
+              currentType === option.value ? 'bg-primary/20 border-primary text-primary' : 'border-white/10'
             }`}
             onClick={() => setCurrentType(option.value as any)}
             title={option.label}
@@ -138,8 +137,8 @@ const FlexibleChart: React.FC<FlexibleChartProps> = ({
   const renderContent = () => {
     if (loading) {
       return (
-        <div className={styles.loadingState}>
-          <div className={styles.loadingSpinner}></div>
+        <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm gap-3">
+          <div className="w-6 h-6 border-2 border-white/10 border-t-primary rounded-full animate-spin"></div>
           <span>Loading data...</span>
         </div>
       );
@@ -147,7 +146,7 @@ const FlexibleChart: React.FC<FlexibleChartProps> = ({
 
     if (error) {
       return (
-        <div className={styles.errorState}>
+        <div className="flex flex-col items-center justify-center h-[200px] text-destructive text-sm gap-3">
           <span>⚠️ {error}</span>
         </div>
       );
@@ -155,7 +154,7 @@ const FlexibleChart: React.FC<FlexibleChartProps> = ({
 
     if (processedData.length === 0) {
       return (
-        <div className={styles.emptyState}>
+        <div className="flex flex-col items-center justify-center h-[200px] text-muted-foreground text-sm gap-3">
           <span>📊 {emptyMessage}</span>
         </div>
       );
@@ -163,12 +162,12 @@ const FlexibleChart: React.FC<FlexibleChartProps> = ({
 
     if (currentType === 'table') {
       return (
-        <div className={styles.tableWrapper}>
+        <div className="-my-1">
           <DataTable
             columns={columns}
             data={processedData}
             keyExtractor={(item: ChartDataItem) => item.id || item.name || Math.random().toString()}
-            className={styles.dataTable}
+            className="bg-transparent border-none"
           />
         </div>
       );
@@ -194,7 +193,7 @@ const FlexibleChart: React.FC<FlexibleChartProps> = ({
     }
 
     return (
-      <div className={styles.chartWrapper}>
+      <div className="-my-2">
         <CardChart
           id={id}
           title=""
@@ -212,15 +211,15 @@ const FlexibleChart: React.FC<FlexibleChartProps> = ({
   };
 
   return (
-    <div className={styles.container} onClick={onClick}>
-      <div className={styles.header}>
-        <div className={styles.headerContent}>
-          <h3 className={styles.title}>{title}</h3>
-          {subtitle && <p className={styles.subtitle}>{subtitle}</p>}
+    <div className="bg-card border border-border/60 rounded-xl overflow-hidden transition-all duration-200 cursor-pointer hover:border-white/20 hover:shadow-md" onClick={onClick}>
+      <div className="flex justify-between items-start px-5 pt-5 gap-4 max-md:px-4 max-md:pt-4">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-lg font-semibold text-foreground m-0 mb-1 leading-snug max-md:text-base">{title}</h3>
+          {subtitle && <p className="text-[13px] text-muted-foreground m-0 leading-normal max-md:text-xs">{subtitle}</p>}
         </div>
         {renderTypeSwitcher()}
       </div>
-      <div className={styles.content}>
+      <div className="p-5 max-md:p-4">
         {renderContent()}
       </div>
     </div>

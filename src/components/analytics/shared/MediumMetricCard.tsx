@@ -4,7 +4,6 @@ import {
   ResponsiveContainer, XAxis, YAxis, Tooltip
 } from 'recharts';
 import CountUp from 'react-countup';
-import styles from './MediumMetricCard.module.css';
 
 export interface MediumMetricCardProps {
   id: string;
@@ -45,7 +44,7 @@ const MediumMetricCard: React.FC<MediumMetricCardProps> = ({
 
   const formatValue = (val: number | string) => {
     if (typeof val === 'string') return val;
-    
+
     switch (format) {
       case 'currency':
         return new Intl.NumberFormat('en-GB', {
@@ -125,10 +124,16 @@ const MediumMetricCard: React.FC<MediumMetricCardProps> = ({
     );
   };
 
+  const variantClasses = {
+    variant1: 'bg-white/5 backdrop-blur-[10px] border border-white/10 hover:bg-white/[0.08] hover:border-primary/30',
+    variant2: 'bg-[#2a2f3a] border border-white/10 border-l-4 border-l-primary hover:opacity-95',
+    variant3: 'bg-[#2a2f3a] border border-white/10 border-t-[3px] border-t-primary shadow-[0_4px_20px_rgba(0,0,0,0.2)] hover:shadow-[0_6px_24px_rgba(0,0,0,0.3)]',
+  };
+
   return (
-    <div 
-      className={`${styles.mediumMetricCard} ${styles[`metricCard${design.charAt(0).toUpperCase() + design.slice(1)}`]}`} 
-      onClick={onClick} 
+    <div
+      className={`rounded-2xl p-4 relative transition-all duration-300 h-[220px] flex flex-col cursor-pointer overflow-hidden min-w-[240px] box-border w-full hover:-translate-y-0.5 hover:shadow-[0_8px_24px_rgba(0,0,0,0.4)] ${variantClasses[design]}`}
+      onClick={onClick}
       style={{
         ...(design === 'variant1' && {
           borderTopColor: color,
@@ -145,19 +150,19 @@ const MediumMetricCard: React.FC<MediumMetricCardProps> = ({
         background: design === 'variant1' ? `linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, ${color}15 100%)` : undefined
       }}
     >
-      <div className={styles.cardHeader}>
-        <div className={styles.headerLeft}>
-          <h3 className={styles.cardTitle}>{title}</h3>
+      <div className="flex justify-between items-start mb-1.5">
+        <div className="flex items-center gap-2.5">
+          <h3 className="text-xs font-medium text-white/70 m-0 uppercase tracking-wide">{title}</h3>
         </div>
-        <div className={styles.headerRight}>
+        <div className="flex items-center gap-1.5">
           {trend && (
-            <div className={`${styles.trendIndicator} ${trend.isPositive ? styles.positive : styles.negative}`}>
-              <span className={styles.trendIcon}>{trend.isPositive ? '↑' : '↓'}</span>
-              <span className={styles.trendValue}>{Math.abs(trend.value).toFixed(0)}%</span>
+            <div className={`flex items-center gap-1 text-xs font-semibold ${trend.isPositive ? 'text-success' : 'text-destructive'}`}>
+              <span className="text-sm">{trend.isPositive ? '↑' : '↓'}</span>
+              <span className="text-xs">{Math.abs(trend.value).toFixed(0)}%</span>
             </div>
           )}
           {onOptionsClick && (
-            <button className={styles.optionsButton} onClick={(e) => {
+            <button className="bg-transparent border-none text-white/70 cursor-pointer p-1 rounded transition-all duration-200 opacity-50 hover:bg-white/5 hover:text-white" onClick={(e) => {
               e.stopPropagation();
               onOptionsClick();
             }}>
@@ -170,8 +175,8 @@ const MediumMetricCard: React.FC<MediumMetricCardProps> = ({
           )}
         </div>
       </div>
-      
-      <div className={styles.cardValue}>
+
+      <div className="text-[28px] font-bold text-white mt-1 mb-0.5 -tracking-wide leading-none">
         {typeof value === 'number' ? (
           <CountUp
             end={value}
@@ -185,17 +190,17 @@ const MediumMetricCard: React.FC<MediumMetricCardProps> = ({
           value
         )}
       </div>
-      
-      {subtitle && <div className={styles.cardSubtitle}>{subtitle}</div>}
-      
+
+      {subtitle && <div className="text-[11px] text-white/70 mb-2">{subtitle}</div>}
+
       {chartData && chartData.length > 0 && (
-        <div className={styles.cardChart}>
+        <div className="flex-1 mt-1 -mx-2 min-h-[60px] max-h-[80px] overflow-hidden relative">
           {renderChart()}
         </div>
       )}
-      
+
       {chartData && chartData.length > 0 && (
-        <div className={styles.cardDateRange}>
+        <div className="flex justify-between text-[10px] text-white/70 mt-1 px-2 opacity-70">
           <span>{chartData[0]?.name}</span>
           <span>{chartData[chartData.length - 1]?.name}</span>
         </div>

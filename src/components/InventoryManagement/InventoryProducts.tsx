@@ -721,7 +721,7 @@ const InventoryProducts: React.FC = () => {
   // Loading skeleton
   if (loading && items.length === 0 && !error) {
     return (
-      <div className="min-h-screen p-4">
+      <div className="min-h-screen p-6">
         <div className="bg-card rounded-xl border border-border overflow-hidden p-4">
           <DataTableSkeleton
             columnCount={7}
@@ -737,7 +737,7 @@ const InventoryProducts: React.FC = () => {
   // Empty state
   if (!loading && items.length === 0 && !error && !hasActiveFilters) {
     return (
-      <div className="min-h-screen p-4">
+      <div className="min-h-screen p-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -784,7 +784,7 @@ const InventoryProducts: React.FC = () => {
   const totalPages = Math.ceil(totalItems / pagination.pageSize);
 
   return (
-    <div className="min-h-screen p-4 space-y-3">
+    <div className="min-h-screen p-6 space-y-3">
       {/* Toolbar */}
       <div className="flex items-center gap-3">
         {/* Left: Search + Filters */}

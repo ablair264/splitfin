@@ -1,6 +1,5 @@
 import React from 'react';
 import { ShoppingCart, Package, DollarSign, FileText, User } from 'lucide-react';
-import styles from './ActivityFeed.module.css';
 
 export interface Activity {
   id: string;
@@ -38,10 +37,10 @@ const getTextColor = (backgroundColor: string) => {
   const r = parseInt(hex.substr(0, 2), 16);
   const g = parseInt(hex.substr(2, 2), 16);
   const b = parseInt(hex.substr(4, 2), 16);
-  
+
   // Calculate luminance
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  
+
   // Return white text for dark backgrounds, dark text for light backgrounds
   return luminance > 0.5 ? '#1a1f2a' : '#ffffff';
 };
@@ -114,18 +113,18 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
 
   if (loading) {
     return (
-      <div 
-        className={styles.activityFeedContainer}
+      <div
+        className="rounded-xl p-4 h-full flex flex-col overflow-hidden min-h-[300px]"
         style={{
           background: color,
           color: textColor
         }}
       >
-        <div className={styles.cardHeader}>
+        <div className="pb-4 mb-5 flex justify-between items-start shrink-0">
           <h3 style={{ color: textColor }}>{title}</h3>
           <p style={{ color: secondaryColor }}>{subtitle}</p>
         </div>
-        <div className={styles.loadingState} style={{ color: secondaryColor }}>
+        <div className="flex-1 flex items-center justify-center text-sm" style={{ color: secondaryColor }}>
           Loading activities...
         </div>
       </div>
@@ -133,46 +132,46 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
   }
 
   return (
-    <div 
-      className={styles.activityFeedContainer}
+    <div
+      className="rounded-xl p-4 h-full flex flex-col overflow-hidden min-h-[300px]"
       style={{
         background: color,
         color: textColor
       }}
     >
-      <div 
-        className={styles.cardHeader}
+      <div
+        className="pb-4 mb-5 flex justify-between items-start shrink-0"
         style={{
           borderBottom: `1px solid ${textColor === '#ffffff' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(26, 31, 42, 0.15)'}`
         }}
       >
         <div>
-          <h3 className={styles.cardTitle} style={{ color: textColor }}>{title}</h3>
-          <p className={styles.cardSubtitle} style={{ color: secondaryColor }}>
+          <h3 className="m-0 text-lg font-semibold leading-[1.4]" style={{ color: textColor }}>{title}</h3>
+          <p className="mt-1 mb-0 text-sm leading-[1.4]" style={{ color: secondaryColor }}>
             {subtitle}
           </p>
         </div>
       </div>
 
       {showFilters && filters.length > 0 && (
-        <div 
-          className={styles.filterBar}
+        <div
+          className="px-4 py-3 bg-white/[0.02]"
           style={{
             borderBottom: `1px solid ${textColor === '#ffffff' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(26, 31, 42, 0.15)'}`
           }}
         >
-          <div className={styles.filterList}>
+          <div className="flex gap-2 flex-wrap">
             {filters.map(filter => (
               <button
                 key={filter.id}
-                className={`${styles.filterButton} ${filter.active ? styles.active : ''}`}
+                className={`px-3 py-1.5 rounded-2xl text-xs cursor-pointer transition-all duration-200 outline-none bg-transparent hover:-translate-y-px ${filter.active ? 'font-semibold' : 'font-medium'}`}
                 onClick={() => handleFilterClick(filter.id)}
                 style={{
-                  background: filter.active 
+                  background: filter.active
                     ? (textColor === '#ffffff' ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)')
                     : 'transparent',
                   color: filter.active ? textColor : secondaryColor,
-                  border: `1px solid ${filter.active 
+                  border: `1px solid ${filter.active
                     ? (textColor === '#ffffff' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)')
                     : (textColor === '#ffffff' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)')}`
                 }}
@@ -184,50 +183,50 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
         </div>
       )}
 
-      <div className={styles.activitiesSimple}>
+      <div className="flex-1 overflow-y-auto scrollbar-none">
         {filteredActivities.slice(0, maxActivities).map((activity) => {
           const activityInfo = getActivityTypeInfo(activity);
-          
+
           return (
-            <div key={activity.id} className={styles.activityItem}>
+            <div key={activity.id} className="relative mb-4 flex items-start gap-4 hover:-translate-y-px hover:opacity-95">
               {/* Content area with icon and card */}
-              <div className={styles.activityContent}>
+              <div className="flex-1 flex flex-col gap-0">
                 {/* Icon box positioned above the card */}
-                <div 
-                  className={styles.activityIcon}
+                <div
+                  className="w-[72px] h-8 rounded-lg flex items-center justify-center mb-2 text-white text-base font-semibold shadow-sm z-[2] relative shrink-0"
                   style={{
                     background: activityInfo.bgColor
                   }}
                 >
                   {activityInfo.icon}
                 </div>
-                
+
                 {/* Activity card - full width */}
-                <div 
-                  className={styles.activityCard}
+                <div
+                  className="rounded-xl transition-all duration-200 relative flex-1 -mt-4 pt-4 group-hover:translate-x-0.5"
                   style={{
                     background: textColor === '#ffffff' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
                     border: `1px solid ${textColor === '#ffffff' ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)'}`
                   }}
                 >
-                  <div className={styles.activityMain}>
-                    <div className={styles.activityInfo}>
-                      <div className={styles.activityTitle} style={{ color: textColor }}>
+                  <div className="px-6 py-4 flex justify-between items-start relative">
+                    <div className="flex-1 flex flex-col gap-1 pr-[120px]">
+                      <div className="text-sm font-semibold leading-[1.3]" style={{ color: textColor }}>
                         {activityInfo.title}
                       </div>
-                      <div className={styles.activityCompany} style={{ color: secondaryColor }}>
+                      <div className="text-[13px] leading-[1.3]" style={{ color: secondaryColor }}>
                         {activity.customerName}
                       </div>
                     </div>
-                    <div className={styles.activityRight}>
+                    <div className="flex flex-col items-end gap-1 absolute top-4 right-5">
                       {activityInfo.showAmount && activity.amount > 0 && (
-                        <div className={styles.activityAmount} style={{ color: textColor }}>
+                        <div className="text-base font-bold text-right" style={{ color: textColor }}>
                           £{activity.amount.toLocaleString()}
                         </div>
                       )}
                       {/* Time indicator in top right */}
-                      <div 
-                        className={styles.activityTime}
+                      <div
+                        className="text-xs font-medium opacity-80"
                         style={{ color: secondaryColor }}
                       >
                         {activity.time.replace(' ago', '').replace('hours', 'hr').replace('hour', 'hr').replace('minutes', 'min').replace('minute', 'min')}
@@ -239,9 +238,9 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({
             </div>
           );
         })}
-        
+
         {filteredActivities.length === 0 && (
-          <div className={styles.emptyState} style={{ color: secondaryColor }}>
+          <div className="text-center py-12 px-6 text-sm" style={{ color: secondaryColor }}>
             No recent activities
           </div>
         )}

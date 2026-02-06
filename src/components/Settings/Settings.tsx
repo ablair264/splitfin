@@ -4,7 +4,6 @@ import { authService } from '../../services/authService';
 import { ArrowLeft } from 'lucide-react';
 import { ProgressLoader } from '../ProgressLoader';
 import FixOrder from '../FixOrder';
-import './Settings.css';
 
 export default function Settings() {
   const [userRole, setUserRole] = useState<string>('');
@@ -70,26 +69,26 @@ export default function Settings() {
   }
 
   return (
-    <div className="settings-container">
-      <div className="settings-header">
-        <button 
-          className="back-button"
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="flex items-center gap-4 p-8 bg-card border-b border-foreground/10">
+        <button
+          className="flex items-center gap-2 bg-foreground/10 border border-foreground/20 rounded-lg px-3 py-2 text-foreground cursor-pointer transition-all duration-200 hover:bg-foreground/15 hover:border-foreground/30"
           onClick={() => navigate(-1)}
           title="Go back"
         >
           <ArrowLeft size={20} />
         </button>
-        <h1>Settings - {currentTab.charAt(0).toUpperCase() + currentTab.slice(1)}</h1>
+        <h1 className="m-0 text-3xl font-semibold">Settings - {currentTab.charAt(0).toUpperCase() + currentTab.slice(1)}</h1>
       </div>
 
-      <div className="settings-content">
-        <div className="settings-main">
-          <div className="settings-section">
-            <div className="section-content">
+      <div className="flex min-h-[calc(100vh-100px)] flex-col md:flex-row">
+        <div className="flex-1 p-8 md:p-8 max-sm:p-4 overflow-y-auto">
+          <div className="max-w-[900px]">
+            <div className="bg-card rounded-xl p-8 max-sm:p-6">
               {currentTab === 'general' && <GeneralSettings userName={userName} userEmail={userEmail} userRole={userRole} />}
               {currentTab === 'profile' && (
-                <ProfileSettings 
-                  userName={userName} 
+                <ProfileSettings
+                  userName={userName}
                   onProfileUpdate={(name) => setUserName(name)}
                   savingProfile={savingProfile}
                   setSavingProfile={setSavingProfile}
@@ -112,61 +111,61 @@ function GeneralSettings({ userName, userEmail, userRole }: { userName: string; 
   const navigate = useNavigate();
 
   return (
-    <div className="general-settings">
-      <div className="setting-group">
-        <h3>Account Information</h3>
-        <div className="info-grid">
-          <div className="info-item">
-            <label>Name</label>
-            <p>{userName || 'Not set'}</p>
+    <div>
+      <div className="mb-10 last:mb-0">
+        <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Account Information</h3>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-6 max-sm:grid-cols-1">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-muted-foreground uppercase tracking-wide">Name</label>
+            <p className="m-0 text-base text-foreground">{userName || 'Not set'}</p>
           </div>
-          <div className="info-item">
-            <label>Email</label>
-            <p>{userEmail}</p>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-muted-foreground uppercase tracking-wide">Email</label>
+            <p className="m-0 text-base text-foreground">{userEmail}</p>
           </div>
-          <div className="info-item">
-            <label>Role</label>
-            <p className="role-badge">{userRole || 'User'}</p>
+          <div className="flex flex-col gap-2">
+            <label className="text-sm text-muted-foreground uppercase tracking-wide">Role</label>
+            <p className="m-0 inline-block px-3 py-1 bg-primary/20 text-primary rounded text-[0.9rem] capitalize">{userRole || 'User'}</p>
           </div>
         </div>
       </div>
 
       {/* Admin Tools Section */}
       {userRole === 'Admin' && (
-        <div className="setting-group">
-          <h3>Management Tools</h3>
-          <div className="tools-grid">
-            <button 
-              className="tool-button" 
+        <div className="mb-10 last:mb-0">
+          <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Management Tools</h3>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 max-sm:grid-cols-1">
+            <button
+              className="flex flex-col items-center gap-2 py-8 px-4 bg-foreground/5 border border-foreground/10 rounded-lg text-foreground cursor-pointer transition-all duration-200 text-center hover:bg-foreground/[0.08] hover:border-foreground/20 hover:-translate-y-0.5"
               onClick={() => navigate('/settings/fix-order')}
             >
-              <span>🔧</span>
-              <span>Fix Order</span>
-              <small>Edit and re-submit orders to Zoho</small>
+              <span className="text-2xl text-primary">&#128295;</span>
+              <span className="text-base font-medium">Fix Order</span>
+              <small className="text-xs text-muted-foreground">Edit and re-submit orders to Zoho</small>
             </button>
           </div>
         </div>
       )}
 
-      <div className="setting-group">
-        <h3>Application Preferences</h3>
-        <div className="preference-item">
-          <div className="preference-info">
-            <h4>Theme</h4>
-            <p>Choose your preferred color theme</p>
+      <div className="mb-10 last:mb-0">
+        <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Application Preferences</h3>
+        <div className="flex items-center justify-between py-4 border-b border-foreground/5 max-sm:flex-col max-sm:items-start max-sm:gap-4">
+          <div>
+            <h4 className="m-0 mb-1 text-base text-foreground">Theme</h4>
+            <p className="m-0 text-sm text-muted-foreground">Choose your preferred color theme</p>
           </div>
-          <select className="preference-select" defaultValue="dark">
+          <select className="px-4 py-2 bg-foreground/5 border border-foreground/10 rounded-md text-foreground text-[0.9rem] cursor-pointer" defaultValue="dark">
             <option value="dark">Dark</option>
             <option value="light">Light (Coming soon)</option>
           </select>
         </div>
-        
-        <div className="preference-item">
-          <div className="preference-info">
-            <h4>Language</h4>
-            <p>Select your preferred language</p>
+
+        <div className="flex items-center justify-between py-4 border-b-0 pb-0 max-sm:flex-col max-sm:items-start max-sm:gap-4">
+          <div>
+            <h4 className="m-0 mb-1 text-base text-foreground">Language</h4>
+            <p className="m-0 text-sm text-muted-foreground">Select your preferred language</p>
           </div>
-          <select className="preference-select" defaultValue="en">
+          <select className="px-4 py-2 bg-foreground/5 border border-foreground/10 rounded-md text-foreground text-[0.9rem] cursor-pointer" defaultValue="en">
             <option value="en">English</option>
             <option value="es">Spanish (Coming soon)</option>
             <option value="fr">French (Coming soon)</option>
@@ -178,13 +177,13 @@ function GeneralSettings({ userName, userEmail, userRole }: { userName: string; 
 }
 
 // Profile Settings Component
-function ProfileSettings({ 
-  userName, 
-  onProfileUpdate, 
-  savingProfile, 
-  setSavingProfile 
-}: { 
-  userName: string; 
+function ProfileSettings({
+  userName,
+  onProfileUpdate,
+  savingProfile,
+  setSavingProfile
+}: {
+  userName: string;
   onProfileUpdate: (name: string) => void;
   savingProfile: boolean;
   setSavingProfile: (saving: boolean) => void;
@@ -224,59 +223,63 @@ function ProfileSettings({
   };
 
   return (
-    <div className="profile-settings">
-      <div className="setting-group">
-        <h3>Profile Information</h3>
-        <form className="profile-form" onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="firstName">First Name</label>
-            <input 
-              type="text" 
-              id="firstName" 
+    <div>
+      <div className="mb-10 last:mb-0">
+        <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Profile Information</h3>
+        <form className="flex flex-col gap-6" onSubmit={handleSubmit}>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="firstName" className="text-[0.9rem] text-foreground font-medium">First Name</label>
+            <input
+              type="text"
+              id="firstName"
               value={formData.firstName}
               onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
               placeholder="Enter your first name"
-              className="form-input"
+              className="px-4 py-3 bg-foreground/5 border border-foreground/10 rounded-md text-foreground text-[0.95rem] transition-all duration-200 focus:outline-none focus:border-primary focus:bg-foreground/[0.08]"
             />
           </div>
-          
-          <div className="form-group">
-            <label htmlFor="lastName">Last Name</label>
-            <input 
-              type="text" 
-              id="lastName" 
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="lastName" className="text-[0.9rem] text-foreground font-medium">Last Name</label>
+            <input
+              type="text"
+              id="lastName"
               value={formData.lastName}
               onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
               placeholder="Enter your last name"
-              className="form-input"
+              className="px-4 py-3 bg-foreground/5 border border-foreground/10 rounded-md text-foreground text-[0.95rem] transition-all duration-200 focus:outline-none focus:border-primary focus:bg-foreground/[0.08]"
             />
           </div>
-          
-          <div className="form-group">
-            <label htmlFor="phone">Phone Number</label>
-            <input 
-              type="tel" 
-              id="phone" 
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="phone" className="text-[0.9rem] text-foreground font-medium">Phone Number</label>
+            <input
+              type="tel"
+              id="phone"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               placeholder="Enter your phone number"
-              className="form-input"
+              className="px-4 py-3 bg-foreground/5 border border-foreground/10 rounded-md text-foreground text-[0.95rem] transition-all duration-200 focus:outline-none focus:border-primary focus:bg-foreground/[0.08]"
             />
           </div>
-          
-          <div className="form-group">
-            <label htmlFor="department">Department</label>
-            <input 
-              type="text" 
-              id="department" 
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="department" className="text-[0.9rem] text-foreground font-medium">Department</label>
+            <input
+              type="text"
+              id="department"
               value={formData.department}
               onChange={(e) => setFormData({ ...formData, department: e.target.value })}
               placeholder="Enter your department"
-              className="form-input"
+              className="px-4 py-3 bg-foreground/5 border border-foreground/10 rounded-md text-foreground text-[0.95rem] transition-all duration-200 focus:outline-none focus:border-primary focus:bg-foreground/[0.08]"
             />
           </div>
-          
-          <button type="submit" className="save-button" disabled={savingProfile}>
+
+          <button
+            type="submit"
+            className="self-start px-8 py-3 bg-primary text-white border-none rounded-lg text-base font-medium cursor-pointer transition-all duration-200 hover:brightness-90 hover:-translate-y-px hover:shadow-[0_4px_12px_var(--primary)/30] disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={savingProfile}
+          >
             {savingProfile ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
@@ -299,89 +302,66 @@ function NotificationSettings() {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const ToggleSwitch = ({ checked, onChange }: { checked: boolean; onChange: () => void }) => (
+    <label className="relative inline-block w-12 h-6">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        className="opacity-0 w-0 h-0 peer"
+      />
+      <span className="absolute cursor-pointer inset-0 bg-foreground/10 rounded-full transition-colors duration-300 before:absolute before:content-[''] before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-muted-foreground before:rounded-full before:transition-all before:duration-300 peer-checked:bg-primary peer-checked:before:translate-x-6 peer-checked:before:bg-white" />
+    </label>
+  );
+
   return (
-    <div className="notification-settings">
-      <div className="setting-group">
-        <h3>Email Notifications</h3>
-        <div className="notification-list">
-          <div className="notification-item">
-            <div className="notification-info">
-              <h4>Order Updates</h4>
-              <p>Receive notifications when order status changes</p>
+    <div>
+      <div className="mb-10 last:mb-0">
+        <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Email Notifications</h3>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between p-4 bg-foreground/[0.03] rounded-lg transition-all duration-200 hover:bg-foreground/5">
+            <div>
+              <h4 className="m-0 mb-1 text-[0.95rem] text-foreground">Order Updates</h4>
+              <p className="m-0 text-sm text-muted-foreground">Receive notifications when order status changes</p>
             </div>
-            <label className="toggle-switch">
-              <input 
-                type="checkbox" 
-                checked={notifications.orderUpdates}
-                onChange={() => handleToggle('orderUpdates')}
-              />
-              <span className="toggle-slider"></span>
-            </label>
+            <ToggleSwitch checked={notifications.orderUpdates} onChange={() => handleToggle('orderUpdates')} />
           </div>
-          
-          <div className="notification-item">
-            <div className="notification-info">
-              <h4>New Customers</h4>
-              <p>Get notified when new customers are added</p>
+
+          <div className="flex items-center justify-between p-4 bg-foreground/[0.03] rounded-lg transition-all duration-200 hover:bg-foreground/5">
+            <div>
+              <h4 className="m-0 mb-1 text-[0.95rem] text-foreground">New Customers</h4>
+              <p className="m-0 text-sm text-muted-foreground">Get notified when new customers are added</p>
             </div>
-            <label className="toggle-switch">
-              <input 
-                type="checkbox" 
-                checked={notifications.newCustomers}
-                onChange={() => handleToggle('newCustomers')}
-              />
-              <span className="toggle-slider"></span>
-            </label>
+            <ToggleSwitch checked={notifications.newCustomers} onChange={() => handleToggle('newCustomers')} />
           </div>
-          
-          <div className="notification-item">
-            <div className="notification-info">
-              <h4>Low Inventory Alerts</h4>
-              <p>Alerts when inventory falls below threshold</p>
+
+          <div className="flex items-center justify-between p-4 bg-foreground/[0.03] rounded-lg transition-all duration-200 hover:bg-foreground/5">
+            <div>
+              <h4 className="m-0 mb-1 text-[0.95rem] text-foreground">Low Inventory Alerts</h4>
+              <p className="m-0 text-sm text-muted-foreground">Alerts when inventory falls below threshold</p>
             </div>
-            <label className="toggle-switch">
-              <input 
-                type="checkbox" 
-                checked={notifications.lowInventory}
-                onChange={() => handleToggle('lowInventory')}
-              />
-              <span className="toggle-slider"></span>
-            </label>
+            <ToggleSwitch checked={notifications.lowInventory} onChange={() => handleToggle('lowInventory')} />
           </div>
         </div>
       </div>
 
-      <div className="setting-group">
-        <h3>Report Emails</h3>
-        <div className="notification-list">
-          <div className="notification-item">
-            <div className="notification-info">
-              <h4>Daily Reports</h4>
-              <p>Receive daily sales and activity reports</p>
+      <div className="mb-10 last:mb-0">
+        <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Report Emails</h3>
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between p-4 bg-foreground/[0.03] rounded-lg transition-all duration-200 hover:bg-foreground/5">
+            <div>
+              <h4 className="m-0 mb-1 text-[0.95rem] text-foreground">Daily Reports</h4>
+              <p className="m-0 text-sm text-muted-foreground">Receive daily sales and activity reports</p>
             </div>
-            <label className="toggle-switch">
-              <input 
-                type="checkbox" 
-                checked={notifications.dailyReports}
-                onChange={() => handleToggle('dailyReports')}
-              />
-              <span className="toggle-slider"></span>
-            </label>
+            <ToggleSwitch checked={notifications.dailyReports} onChange={() => handleToggle('dailyReports')} />
           </div>
-          
-          <div className="notification-item">
-            <div className="notification-info">
-              <h4>Weekly Summary</h4>
-              <p>Get weekly performance summaries</p>
+
+          <div className="flex items-center justify-between p-4 bg-foreground/[0.03] rounded-lg transition-all duration-200 hover:bg-foreground/5">
+            <div>
+              <h4 className="m-0 mb-1 text-[0.95rem] text-foreground">Weekly Summary</h4>
+              <p className="m-0 text-sm text-muted-foreground">Get weekly performance summaries</p>
             </div>
-            <label className="toggle-switch">
-              <input 
-                type="checkbox" 
-                checked={notifications.weeklyReports}
-                onChange={() => handleToggle('weeklyReports')}
-              />
-              <span className="toggle-slider"></span>
-            </label>
+            <ToggleSwitch checked={notifications.weeklyReports} onChange={() => handleToggle('weeklyReports')} />
           </div>
         </div>
       </div>
@@ -392,75 +372,83 @@ function NotificationSettings() {
 // Database Settings Component - Admin only
 function DatabaseSettings() {
   const [activeTab, setActiveTab] = useState<'maintenance' | 'export'>('maintenance');
-  
+
   return (
-    <div className="database-settings">
-      <div className="setting-group">
-        <h3>Database Management</h3>
-        <p className="setting-description">
+    <div>
+      <div className="mb-10 last:mb-0">
+        <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Database Management</h3>
+        <p className="text-muted-foreground m-0 mb-6 leading-relaxed">
           Manage database operations and maintenance tasks. These operations should be performed during off-peak hours.
-          <br /><small style={{ color: 'var(--muted-foreground)', marginTop: '0.5rem', display: 'block' }}>Access restricted to Admins</small>
+          <br /><small className="text-muted-foreground mt-2 block">Access restricted to Admins</small>
         </p>
       </div>
 
       {/* Database Tools Tabs */}
-      <div className="setting-group">
-        <div className="migration-tabs">
-          <button 
-            className={`migration-tab ${activeTab === 'maintenance' ? 'active' : ''}`}
+      <div className="mb-10 last:mb-0">
+        <div className="flex gap-2 mb-6 bg-foreground/[0.03] p-1 rounded-lg">
+          <button
+            className={`flex-1 py-3 px-4 border-none rounded-md text-[0.9rem] font-medium cursor-pointer transition-all duration-200 whitespace-nowrap ${
+              activeTab === 'maintenance'
+                ? 'bg-primary text-white hover:brightness-90'
+                : 'bg-transparent text-muted-foreground hover:bg-foreground/5 hover:text-foreground'
+            }`}
             onClick={() => setActiveTab('maintenance')}
           >
             Database Maintenance
           </button>
-          <button 
-            className={`migration-tab ${activeTab === 'export' ? 'active' : ''}`}
+          <button
+            className={`flex-1 py-3 px-4 border-none rounded-md text-[0.9rem] font-medium cursor-pointer transition-all duration-200 whitespace-nowrap ${
+              activeTab === 'export'
+                ? 'bg-primary text-white hover:brightness-90'
+                : 'bg-transparent text-muted-foreground hover:bg-foreground/5 hover:text-foreground'
+            }`}
             onClick={() => setActiveTab('export')}
           >
             Data Export
           </button>
         </div>
-        
+
         {/* Tab Content */}
         {activeTab === 'maintenance' && (
-          <div className="tools-grid">
-            <button className="tool-button" onClick={() => alert('Feature coming soon')}>
-              <span>🔧</span>
-              <span>Optimize Tables</span>
-              <small>Improve database performance</small>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 max-sm:grid-cols-1">
+            <button className="flex flex-col items-center gap-2 py-8 px-4 bg-foreground/5 border border-foreground/10 rounded-lg text-foreground cursor-pointer transition-all duration-200 text-center hover:enabled:bg-foreground/[0.08] hover:enabled:border-foreground/20 hover:enabled:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:text-primary" onClick={() => alert('Feature coming soon')}>
+              <span className="text-2xl text-primary">&#128295;</span>
+              <span className="text-base font-medium">Optimize Tables</span>
+              <small className="text-xs text-muted-foreground">Improve database performance</small>
             </button>
-            
-            <button className="tool-button" onClick={() => alert('Feature coming soon')}>
-              <span>🗑️</span>
-              <span>Clean Up Data</span>
-              <small>Remove old records</small>
+
+            <button className="flex flex-col items-center gap-2 py-8 px-4 bg-foreground/5 border border-foreground/10 rounded-lg text-foreground cursor-pointer transition-all duration-200 text-center hover:enabled:bg-foreground/[0.08] hover:enabled:border-foreground/20 hover:enabled:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:text-primary" onClick={() => alert('Feature coming soon')}>
+              <span className="text-2xl text-primary">&#128465;&#65039;</span>
+              <span className="text-base font-medium">Clean Up Data</span>
+              <small className="text-xs text-muted-foreground">Remove old records</small>
             </button>
-            
-            <button className="tool-button" onClick={() => alert('Feature coming soon')}>
-              <span>♻️</span>
-              <span>Rebuild Indexes</span>
-              <small>Optimize query performance</small>
+
+            <button className="flex flex-col items-center gap-2 py-8 px-4 bg-foreground/5 border border-foreground/10 rounded-lg text-foreground cursor-pointer transition-all duration-200 text-center hover:enabled:bg-foreground/[0.08] hover:enabled:border-foreground/20 hover:enabled:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:text-primary" onClick={() => alert('Feature coming soon')}>
+              <span className="text-2xl text-primary">&#9851;&#65039;</span>
+              <span className="text-base font-medium">Rebuild Indexes</span>
+              <small className="text-xs text-muted-foreground">Optimize query performance</small>
             </button>
           </div>
         )}
-        
+
         {activeTab === 'export' && (
-          <div className="tools-grid">
-            <button className="tool-button" onClick={() => alert('Feature coming soon')}>
-              <span>📊</span>
-              <span>Export Orders</span>
-              <small>Download order data</small>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 max-sm:grid-cols-1">
+            <button className="flex flex-col items-center gap-2 py-8 px-4 bg-foreground/5 border border-foreground/10 rounded-lg text-foreground cursor-pointer transition-all duration-200 text-center hover:enabled:bg-foreground/[0.08] hover:enabled:border-foreground/20 hover:enabled:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:text-primary" onClick={() => alert('Feature coming soon')}>
+              <span className="text-2xl text-primary">&#128202;</span>
+              <span className="text-base font-medium">Export Orders</span>
+              <small className="text-xs text-muted-foreground">Download order data</small>
             </button>
-            
-            <button className="tool-button" onClick={() => alert('Feature coming soon')}>
-              <span>👥</span>
-              <span>Export Customers</span>
-              <small>Download customer data</small>
+
+            <button className="flex flex-col items-center gap-2 py-8 px-4 bg-foreground/5 border border-foreground/10 rounded-lg text-foreground cursor-pointer transition-all duration-200 text-center hover:enabled:bg-foreground/[0.08] hover:enabled:border-foreground/20 hover:enabled:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:text-primary" onClick={() => alert('Feature coming soon')}>
+              <span className="text-2xl text-primary">&#128101;</span>
+              <span className="text-base font-medium">Export Customers</span>
+              <small className="text-xs text-muted-foreground">Download customer data</small>
             </button>
-            
-            <button className="tool-button" onClick={() => alert('Feature coming soon')}>
-              <span>📦</span>
-              <span>Export Inventory</span>
-              <small>Download inventory data</small>
+
+            <button className="flex flex-col items-center gap-2 py-8 px-4 bg-foreground/5 border border-foreground/10 rounded-lg text-foreground cursor-pointer transition-all duration-200 text-center hover:enabled:bg-foreground/[0.08] hover:enabled:border-foreground/20 hover:enabled:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:text-primary" onClick={() => alert('Feature coming soon')}>
+              <span className="text-2xl text-primary">&#128230;</span>
+              <span className="text-base font-medium">Export Inventory</span>
+              <small className="text-xs text-muted-foreground">Download inventory data</small>
             </button>
           </div>
         )}
@@ -476,27 +464,30 @@ function SecuritySettings() {
   };
 
   return (
-    <div className="security-settings">
-      <div className="setting-group">
-        <h3>PIN Authentication</h3>
-        <p className="setting-description">
+    <div>
+      <div className="mb-10 last:mb-0">
+        <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">PIN Authentication</h3>
+        <p className="text-muted-foreground m-0 mb-6 leading-relaxed">
           Your account uses a PIN for authentication.
         </p>
-        <button className="action-button" onClick={handlePinChange}>
+        <button
+          className="px-6 py-3 bg-primary text-white border-none rounded-lg text-[0.95rem] font-medium cursor-pointer transition-all duration-200 hover:enabled:brightness-90 hover:enabled:-translate-y-px hover:enabled:shadow-[0_4px_12px_var(--primary)/30] disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={handlePinChange}
+        >
           Change PIN
         </button>
       </div>
 
-      <div className="setting-group">
-        <h3>Active Sessions</h3>
-        <p className="setting-description">
+      <div className="mb-10 last:mb-0">
+        <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Active Sessions</h3>
+        <p className="text-muted-foreground m-0 mb-6 leading-relaxed">
           View and manage your active sessions across different devices.
         </p>
-        <div className="session-list">
-          <div className="session-item">
-            <div className="session-info">
-              <h4>Current Session</h4>
-              <p>Active now</p>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between p-4 bg-foreground/[0.03] rounded-lg">
+            <div>
+              <h4 className="m-0 mb-1 text-[0.95rem] text-foreground">Current Session</h4>
+              <p className="m-0 text-sm text-muted-foreground">Active now</p>
             </div>
           </div>
         </div>

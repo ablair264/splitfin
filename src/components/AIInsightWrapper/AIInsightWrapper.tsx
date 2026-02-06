@@ -2,7 +2,6 @@ import React from 'react';
 import AIInsightButton from '../AIInsightButton/AIInsightButton';
 import AIInsightModal from '../AIInsightModal/AIInsightModal';
 import { useAIInsight } from '../../hooks/useAIInsight';
-import './AIInsightWrapper.css';
 
 interface DataPoint {
   name: string;
@@ -23,6 +22,13 @@ interface AIInsightWrapperProps {
   buttonSize?: 'small' | 'medium' | 'large';
   buttonVariant?: 'primary' | 'secondary' | 'ghost';
 }
+
+const positionClasses = {
+  'top-right': 'top-2 right-2',
+  'top-left': 'top-2 left-2',
+  'bottom-right': 'bottom-2 right-2',
+  'bottom-left': 'bottom-2 left-2',
+} as const;
 
 const AIInsightWrapper: React.FC<AIInsightWrapperProps> = ({
   children,
@@ -49,12 +55,12 @@ const AIInsightWrapper: React.FC<AIInsightWrapperProps> = ({
   };
 
   return (
-    <div className="ai-insight-wrapper">
-      <div className="ai-insight-wrapper__content">
+    <div className="relative w-full h-full group">
+      <div className="w-full h-full">
         {children}
       </div>
-      
-      <div className={`ai-insight-wrapper__button ai-insight-wrapper__button--${buttonPosition}`}>
+
+      <div className={`absolute z-10 opacity-70 transition-opacity duration-200 group-hover:opacity-100 ${positionClasses[buttonPosition]}`}>
         <AIInsightButton
           onClick={handleInsightClick}
           isLoading={isLoading}

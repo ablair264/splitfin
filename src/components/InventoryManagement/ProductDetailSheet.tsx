@@ -14,7 +14,6 @@ import {
   AlertTriangle,
   ImagePlus,
   TrendingUp,
-  ArrowUpRight,
   RotateCcw,
   Upload,
 } from 'lucide-react';
@@ -61,46 +60,6 @@ const formatCurrency = (value?: number | null) => {
     currency: 'GBP',
   }).format(value);
 };
-
-// Visual margin indicator component
-function MarginGauge({ margin }: { margin: number | null }) {
-  const pct = margin ? Math.min(Math.max(margin, 0), 100) : 0;
-  const color = !margin
-    ? 'text-muted-foreground'
-    : margin >= 40
-      ? 'text-emerald-400'
-      : margin >= 20
-        ? 'text-primary'
-        : margin >= 0
-          ? 'text-amber-400'
-          : 'text-red-400';
-  const barColor = !margin
-    ? 'bg-muted'
-    : margin >= 40
-      ? 'bg-emerald-500'
-      : margin >= 20
-        ? 'bg-primary'
-        : margin >= 0
-          ? 'bg-amber-500'
-          : 'bg-red-500';
-
-  return (
-    <div className="flex flex-col items-center gap-1">
-      <span className={cn('text-2xl font-bold tabular-nums', color)}>
-        {margin !== null ? `${Math.round(margin)}%` : '—'}
-      </span>
-      <div className="w-full h-1.5 rounded-full bg-muted/30 overflow-hidden">
-        <motion.div
-          className={cn('h-full rounded-full', barColor)}
-          initial={{ width: 0 }}
-          animate={{ width: `${pct}%` }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-        />
-      </div>
-      <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider">Margin</span>
-    </div>
-  );
-}
 
 // Delete confirmation modal
 function DeleteConfirmation({
@@ -512,70 +471,82 @@ export function ProductDetailSheet({
             </SheetHeader>
 
             <SheetBody className="px-5 py-4 space-y-4 overflow-y-auto">
-              {/* Pricing Card — most business-critical info */}
+              {/* Pricing — flat rows */}
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 }}
-                className="rounded-xl border border-border/60 bg-gradient-to-br from-card to-secondary/20 p-4"
+                className="rounded-xl border border-border/40 divide-y divide-border/30"
               >
-                <div className="grid grid-cols-4 gap-4">
-                  {/* Cost */}
-                  <div className="text-center">
-                    <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider block mb-1">
-                      Cost
+                <DetailRow label="Cost" editing={isEditing}>
+                  {isEditing ? (
+                    <Editable
+                      key={`cost_price-${pk}`}
+                      defaultValue={String(p.cost_price ?? '')}
+                      placeholder="—"
+                      onSubmit={(val) => handleNumericFieldSubmit('cost_price', val)}
+                    >
+                      <EditableArea>
+                        <EditablePreview className="text-sm font-medium text-foreground/70 tabular-nums py-0" />
+                        <EditableInput className="text-sm font-medium px-1 w-20 text-right" type="number" />
+                      </EditableArea>
+                    </Editable>
+                  ) : (
+                    <span className="text-sm font-medium text-foreground/70 tabular-nums">
+                      {formatCurrency(effectiveCost)}
                     </span>
-                    {isEditing ? (
-                      <Editable
-                        key={`cost_price-${pk}`}
-                        defaultValue={String(p.cost_price ?? '')}
-                        placeholder="—"
-                        onSubmit={(val) => handleNumericFieldSubmit('cost_price', val)}
-                      >
-                        <EditableArea>
-                          <EditablePreview className="text-lg font-semibold text-foreground/70 tabular-nums py-0" />
-                          <EditableInput className="text-lg font-semibold px-1 w-20 text-center" type="number" />
-                        </EditableArea>
-                      </Editable>
-                    ) : (
-                      <span className="text-lg font-semibold text-foreground/70 tabular-nums">
-                        {formatCurrency(effectiveCost)}
-                      </span>
-                    )}
-                  </div>
+                  )}
+                </DetailRow>
 
-                  {/* Arrow */}
-                  <div className="flex items-center justify-center">
-                    <ArrowUpRight size={16} className="text-muted-foreground/30" />
-                  </div>
-
-                  {/* Rate */}
-                  <div className="text-center">
-                    <span className="text-[10px] text-muted-foreground/60 uppercase tracking-wider block mb-1">
-                      Rate
+                <DetailRow label="Rate" editing={isEditing}>
+                  {isEditing ? (
+                    <Editable
+                      key={`rate-${pk}`}
+                      defaultValue={String(p.rate ?? '')}
+                      placeholder="—"
+                      onSubmit={(val) => handleNumericFieldSubmit('rate', val)}
+                    >
+                      <EditableArea>
+                        <EditablePreview className="text-sm font-semibold text-foreground tabular-nums py-0" />
+                        <EditableInput className="text-sm font-semibold px-1 w-20 text-right" type="number" />
+                      </EditableArea>
+                    </Editable>
+                  ) : (
+                    <span className="text-sm font-semibold text-foreground tabular-nums">
+                      {formatCurrency(effectiveRate)}
                     </span>
-                    {isEditing ? (
-                      <Editable
-                        key={`rate-${pk}`}
-                        defaultValue={String(p.rate ?? '')}
-                        placeholder="—"
-                        onSubmit={(val) => handleNumericFieldSubmit('rate', val)}
-                      >
-                        <EditableArea>
-                          <EditablePreview className="text-lg font-bold text-foreground tabular-nums py-0" />
-                          <EditableInput className="text-lg font-bold px-1 w-20 text-center" type="number" />
-                        </EditableArea>
-                      </Editable>
-                    ) : (
-                      <span className="text-lg font-bold text-foreground tabular-nums">
-                        {formatCurrency(effectiveRate)}
-                      </span>
-                    )}
-                  </div>
+                  )}
+                </DetailRow>
 
-                  {/* Margin gauge */}
-                  <MarginGauge margin={margin} />
-                </div>
+                <DetailRow label="Margin" editing={false}>
+                  <div className="flex items-center gap-2.5 justify-end">
+                    <span className={cn(
+                      'text-sm font-semibold tabular-nums',
+                      !margin ? 'text-muted-foreground'
+                        : margin >= 40 ? 'text-emerald-400'
+                        : margin >= 20 ? 'text-primary'
+                        : margin >= 0 ? 'text-amber-400'
+                        : 'text-red-400'
+                    )}>
+                      {margin !== null ? `${Math.round(margin)}%` : '—'}
+                    </span>
+                    <div className="w-20 h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                      <motion.div
+                        className={cn(
+                          'h-full rounded-full',
+                          !margin ? 'bg-muted'
+                            : margin >= 40 ? 'bg-emerald-500'
+                            : margin >= 20 ? 'bg-primary'
+                            : margin >= 0 ? 'bg-amber-500'
+                            : 'bg-red-500'
+                        )}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(Math.max(margin || 0, 0), 100)}%` }}
+                        transition={{ duration: 0.6, ease: 'easeOut' }}
+                      />
+                    </div>
+                  </div>
+                </DetailRow>
               </motion.div>
 
               {/* Stock Status */}

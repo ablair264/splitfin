@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, PoundSterling, Boxes, Trophy, Users, Package, DollarSign, Calendar } from 'lucide-react';
+import { ShoppingCart, PoundSterling, Boxes, Trophy, Users, Package, Calendar } from 'lucide-react';
+import { motion } from 'motion/react';
+import { type ColumnDef } from '@tanstack/react-table';
 import { apiClient } from '../api/client';
 import { ColorProvider } from './analytics/shared/ColorProvider';
 import MetricCard from './analytics/shared/MetricCard';
-import DataTable, { TableColumn } from './analytics/shared/DataTable';
+import SplitfinTable from './shared/SplitfinTable';
 import CompactAISummary from './CompactAISummary';
 
 interface TopAgent {
@@ -42,6 +44,7 @@ const DATE_RANGE_OPTIONS: { value: DateRange; label: string }[] = [
 interface RecentOrder {
   id: number;
   orderNumber: string;
+  referenceNumber: string | null;
   customer: string;
   date: string;
   status: string;
@@ -55,6 +58,7 @@ interface RecentProduct {
   brand: string;
   price: number;
   stock: number;
+  imageUrl: string | null;
   addedAt: string;
 }
 
@@ -65,8 +69,43 @@ interface RecentCustomer {
   email: string;
   status: string;
   totalSpent: number;
+  orderCount: number;
   addedAt: string;
 }
+
+const formatCurrency = (value: number) =>
+  new Intl.NumberFormat('en-GB', {
+    style: 'currency',
+    currency: 'GBP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+
+const formatDate = (dateStr: string) =>
+  new Date(dateStr).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+
+const getStatusColor = (status: string) => {
+  const colors: Record<string, string> = {
+    confirmed: 'bg-success/10 text-success',
+    pending: 'bg-warning/10 text-warning',
+    draft: 'bg-muted/30 text-muted-foreground',
+    shipped: 'bg-info/10 text-info',
+    delivered: 'bg-success/10 text-success',
+    active: 'bg-success/10 text-success',
+    inactive: 'bg-destructive/10 text-destructive',
+  };
+  return colors[status] || 'bg-muted/30 text-muted-foreground';
+};
+
+const StatusBadge: React.FC<{ status: string }> = ({ status }) => (
+  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+    {status}
+  </span>
+);
 
 const DashboardContent: React.FC = () => {
   const [dateRange, setDateRange] = useState<DateRange>('30_days');
@@ -98,12 +137,10 @@ const DashboardContent: React.FC = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      // Load metrics with date range filter
       const metricsResponse = await apiClient.get(`/analytics/dashboard?date_range=${dateRange}`);
       setMetrics(metricsResponse.data);
       setLoading(false);
 
-      // Then load tables in parallel (tables are always recent, not filtered)
       const [ordersRes, productsRes, customersRes] = await Promise.all([
         apiClient.get('/analytics/recent-orders?limit=5'),
         apiClient.get('/analytics/recent-products?limit=5'),
@@ -121,78 +158,106 @@ const DashboardContent: React.FC = () => {
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
-
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  };
-
-  const getStatusColor = (status: string) => {
-    const colors: Record<string, string> = {
-      confirmed: 'bg-success/10 text-success',
-      pending: 'bg-warning/10 text-warning',
-      draft: 'bg-muted/30 text-muted-foreground',
-      shipped: 'bg-info/10 text-info',
-      delivered: 'bg-success/10 text-success',
-      active: 'bg-success/10 text-success',
-      inactive: 'bg-destructive/10 text-destructive',
-    };
-    return colors[status] || 'bg-muted/30 text-muted-foreground';
-  };
-
-  // Table columns
-  const orderColumns: TableColumn<RecentOrder>[] = [
-    { key: 'orderNumber', header: 'Order #', width: '20%' },
-    { key: 'customer', header: 'Customer', width: '30%' },
-    { key: 'date', header: 'Date', width: '20%', render: (item) => formatDate(item.date) },
+  const orderColumns = useMemo<ColumnDef<RecentOrder>[]>(() => [
     {
-      key: 'status',
-      header: 'Status',
-      width: '15%',
-      render: (item) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
-          {item.status}
-        </span>
+      accessorKey: 'orderNumber',
+      header: 'Order #',
+      size: 140,
+      cell: ({ row }) => (
+        <div>
+          <div className="font-medium">{row.original.orderNumber}</div>
+          {row.original.referenceNumber && (
+            <div className="text-[11px] text-muted-foreground">{row.original.referenceNumber}</div>
+          )}
+        </div>
       ),
     },
-    { key: 'total', header: 'Total', width: '15%', render: (item) => formatCurrency(item.total) },
-  ];
-
-  const productColumns: TableColumn<RecentProduct>[] = [
-    { key: 'sku', header: 'SKU', width: '20%' },
-    { key: 'name', header: 'Product', width: '35%' },
-    { key: 'brand', header: 'Brand', width: '20%' },
-    { key: 'price', header: 'Price', width: '15%', render: (item) => formatCurrency(item.price) },
-    { key: 'stock', header: 'Stock', width: '10%' },
-  ];
-
-  const customerColumns: TableColumn<RecentCustomer>[] = [
-    { key: 'companyName', header: 'Company', width: '30%' },
-    { key: 'contactName', header: 'Contact', width: '25%' },
-    { key: 'email', header: 'Email', width: '25%' },
+    { accessorKey: 'customer', header: 'Customer', size: 180 },
     {
-      key: 'status',
+      accessorKey: 'date',
+      header: 'Date',
+      size: 100,
+      cell: ({ row }) => <span className="text-muted-foreground">{formatDate(row.original.date)}</span>,
+    },
+    {
+      accessorKey: 'status',
       header: 'Status',
-      width: '10%',
-      render: (item) => (
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
-          {item.status}
-        </span>
+      size: 100,
+      cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    },
+    {
+      accessorKey: 'total',
+      header: 'Total',
+      size: 90,
+      cell: ({ row }) => (
+        <span className="font-medium tabular-nums">{formatCurrency(row.original.total)}</span>
       ),
     },
-    { key: 'totalSpent', header: 'Spent', width: '10%', render: (item) => formatCurrency(item.totalSpent) },
-  ];
+  ], []);
+
+  const customerColumns = useMemo<ColumnDef<RecentCustomer>[]>(() => [
+    { accessorKey: 'companyName', header: 'Company', size: 170 },
+    { accessorKey: 'contactName', header: 'Contact', size: 130 },
+    { accessorKey: 'email', header: 'Email', size: 150 },
+    {
+      accessorKey: 'orderCount',
+      header: 'Orders',
+      size: 65,
+      cell: ({ row }) => (
+        <span className="tabular-nums text-muted-foreground">{row.original.orderCount}</span>
+      ),
+    },
+    {
+      accessorKey: 'totalSpent',
+      header: 'Spent',
+      size: 80,
+      cell: ({ row }) => (
+        <span className="font-medium tabular-nums">{formatCurrency(row.original.totalSpent)}</span>
+      ),
+    },
+  ], []);
+
+  const productColumns = useMemo<ColumnDef<RecentProduct>[]>(() => [
+    {
+      accessorKey: 'name',
+      header: 'Product',
+      size: 240,
+      cell: ({ row }) => (
+        <div className="flex items-center gap-2.5">
+          {row.original.imageUrl ? (
+            <img
+              src={row.original.imageUrl}
+              alt=""
+              className="w-7 h-7 rounded object-cover bg-muted shrink-0"
+            />
+          ) : (
+            <div className="w-7 h-7 rounded bg-muted/60 shrink-0 flex items-center justify-center">
+              <Package size={14} className="text-muted-foreground/40" />
+            </div>
+          )}
+          <div className="min-w-0">
+            <div className="truncate font-medium">{row.original.name}</div>
+            <div className="text-[11px] text-muted-foreground">{row.original.sku}</div>
+          </div>
+        </div>
+      ),
+    },
+    { accessorKey: 'brand', header: 'Brand', size: 120 },
+    {
+      accessorKey: 'price',
+      header: 'Price',
+      size: 90,
+      cell: ({ row }) => (
+        <span className="font-medium tabular-nums">{formatCurrency(row.original.price)}</span>
+      ),
+    },
+    {
+      accessorKey: 'stock',
+      header: 'Stock',
+      size: 70,
+      cell: ({ row }) => <span className="tabular-nums">{row.original.stock}</span>,
+    },
+  ], []);
 
   if (loading) {
     return (
@@ -206,9 +271,13 @@ const DashboardContent: React.FC = () => {
   return (
     <div className="p-6">
       {/* Header Section */}
-      <div className="mb-6">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+        className="mb-6"
+      >
         <div className="flex items-start justify-between gap-4">
-          {/* Left side: Title + AI Summary */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2">
               <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
@@ -227,14 +296,14 @@ const DashboardContent: React.FC = () => {
                 </select>
               </div>
             </div>
-            {/* Inline AI Summary */}
             <CompactAISummary companyId="dm-brands" />
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Main Metrics Row - Using MetricCard */}
+      {/* Main Metrics Row */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0 }}>
         <MetricCard
           id="orders-count"
           title="Orders"
@@ -249,7 +318,9 @@ const DashboardContent: React.FC = () => {
           chartData={metrics.orderCountChartData}
           onClick={() => navigate('/orders')}
         />
+        </motion.div>
 
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}>
         <MetricCard
           id="orders-revenue"
           title="Revenue"
@@ -264,7 +335,9 @@ const DashboardContent: React.FC = () => {
           chartData={metrics.orderRevenueChartData}
           onClick={() => navigate('/orders')}
         />
+        </motion.div>
 
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.1 }}>
         <MetricCard
           id="stock-total"
           title="Stock Total"
@@ -279,7 +352,9 @@ const DashboardContent: React.FC = () => {
           chartData={metrics.stockChartData}
           onClick={() => navigate('/inventory')}
         />
+        </motion.div>
 
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.15 }}>
         <MetricCard
           id="top-agent"
           title="Top Agent"
@@ -294,16 +369,17 @@ const DashboardContent: React.FC = () => {
           chartData={metrics.topAgentChartData}
           onClick={() => navigate('/analytics')}
         />
+        </motion.div>
       </div>
 
       {/* Data Tables Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <DataTable
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.2 }}>
+        <SplitfinTable
           title="Latest Orders"
           viewAllLink={{ onClick: () => navigate('/orders') }}
           columns={orderColumns}
           data={recentOrders}
-          keyExtractor={(item) => String(item.id)}
           onRowClick={(item) => navigate(`/orders/${item.id}`)}
           loading={tablesLoading}
           emptyState={{
@@ -312,13 +388,14 @@ const DashboardContent: React.FC = () => {
             description: 'Orders will appear here once created',
           }}
         />
+        </motion.div>
 
-        <DataTable
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.25 }}>
+        <SplitfinTable
           title="New Customers"
           viewAllLink={{ onClick: () => navigate('/customers') }}
           columns={customerColumns}
           data={recentCustomers}
-          keyExtractor={(item) => String(item.id)}
           onRowClick={(item) => navigate(`/customers/${item.id}`)}
           loading={tablesLoading}
           emptyState={{
@@ -327,16 +404,17 @@ const DashboardContent: React.FC = () => {
             description: 'Customers will appear here once added',
           }}
         />
+        </motion.div>
       </div>
 
       {/* Recently Added Products - Full Width */}
-      <DataTable
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.3 }}>
+      <SplitfinTable
         className="mb-6"
         title="Recently Added Products"
         viewAllLink={{ onClick: () => navigate('/inventory') }}
         columns={productColumns}
         data={recentProducts}
-        keyExtractor={(item) => String(item.id)}
         onRowClick={(item) => navigate(`/inventory/${item.id}`)}
         loading={tablesLoading}
         emptyState={{
@@ -345,11 +423,11 @@ const DashboardContent: React.FC = () => {
           description: 'Products will appear here once added',
         }}
       />
+      </motion.div>
     </div>
   );
 };
 
-// Wrap with ColorProvider for theming
 const Dashboard: React.FC = () => {
   return (
     <ColorProvider

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { productService } from '../../services/productService';
-import styles from './BrandInventoryShare.module.css';
 
 interface BrandInventoryData {
   brand_id: string;
@@ -119,54 +118,54 @@ const BrandInventoryShare: React.FC<BrandInventoryShareProps> = ({ companyId }) 
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Loading inventory data...</div>
+      <div className="bg-gradient-to-br from-[var(--secondary)] to-card border border-border rounded-2xl relative flex min-h-[400px] w-full overflow-hidden shadow-md">
+        <div className="flex items-center justify-center min-h-[120px] text-muted-foreground text-sm p-6">Loading inventory data...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className={styles.container}>
-        <div className={styles.error}>{error}</div>
+      <div className="bg-gradient-to-br from-[var(--secondary)] to-card border border-border rounded-2xl relative flex min-h-[400px] w-full overflow-hidden shadow-md">
+        <div className="flex items-center justify-center min-h-[120px] text-destructive text-sm p-6">{error}</div>
       </div>
     );
   }
 
   if (data.length === 0) {
     return (
-      <div className={styles.container}>
-        <div className={styles.empty}>No inventory data available</div>
+      <div className="bg-gradient-to-br from-[var(--secondary)] to-card border border-border rounded-2xl relative flex min-h-[400px] w-full overflow-hidden shadow-md">
+        <div className="flex items-center justify-center min-h-[120px] text-muted-foreground text-sm p-6">No inventory data available</div>
       </div>
     );
   }
 
   return (
-    <div className={styles.container}>
-      <div className={styles.accent} />
-      <div className={styles.content}>
-        <h3 className={styles.title}>Brand Inventory Share</h3>
-        
-        <div className={styles.barsContainer}>
+    <div className="bg-gradient-to-br from-[var(--secondary)] to-card border border-border rounded-2xl relative flex min-h-[400px] w-full overflow-hidden shadow-md max-md:min-h-[320px] max-[480px]:min-h-[140px]">
+      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-success via-[#06b6d4] to-[#8b5cf6]" />
+      <div className="flex-1 p-5 px-6 flex flex-col gap-4 min-h-0 max-md:p-4 max-md:px-5 max-md:gap-3 max-[480px]:p-3.5 max-[480px]:px-4 max-[480px]:gap-2.5">
+        <h3 className="m-0 text-base font-semibold text-foreground max-md:text-[0.9rem] max-[480px]:text-[0.85rem]">Brand Inventory Share</h3>
+
+        <div className="flex flex-col gap-2 flex-1 min-h-0 max-[480px]:gap-1.5">
           {data.map((brand, index) => (
-            <div 
-              key={brand.brand_id} 
-              className={styles.brandItem}
+            <div
+              key={brand.brand_id}
+              className="flex flex-col gap-1 cursor-pointer transition-all duration-200 py-1 rounded-md hover:bg-foreground/5 hover:px-2 max-[480px]:gap-[3px]"
               onMouseEnter={() => handleBrandHover(brand)}
               onMouseLeave={handleBrandLeave}
               onTouchStart={() => handleBrandHover(brand)}
             >
-              <div className={styles.brandHeader}>
-                <span className={styles.brandLabel}>{brand.brand_name}</span>
-                <span className={styles.brandPercent}>{brand.percentage.toFixed(1)}%</span>
+              <div className="flex justify-between items-center">
+                <span className="text-[0.8rem] text-foreground/90 font-normal max-md:text-[0.75rem]">{brand.brand_name}</span>
+                <span className="text-[0.75rem] text-muted-foreground font-medium max-md:text-[0.7rem]">{brand.percentage.toFixed(1)}%</span>
               </div>
-              <div className={styles.brandBarContainer}>
-                <div className={styles.brandBar}>
-                  <div 
-                    className={styles.brandProgress} 
-                    style={{ 
+              <div className="w-full">
+                <div className="h-2 bg-foreground/10 rounded-full overflow-hidden relative w-full max-md:h-1.5">
+                  <div
+                    className="h-full transition-all duration-300 rounded-full relative hover:scale-y-[1.2]"
+                    style={{
                       width: `${brand.percentage}%`,
-                      backgroundColor: brand.color 
+                      backgroundColor: brand.color
                     }}
                   />
                 </div>
@@ -176,18 +175,18 @@ const BrandInventoryShare: React.FC<BrandInventoryShareProps> = ({ companyId }) 
         </div>
 
         {/* Fixed position tooltip at bottom */}
-        <div className={styles.tooltipArea}>
+        <div className="mt-auto pt-4 border-t border-foreground/10 min-h-[60px]">
           {hoveredBrand && (
-            <div className={styles.tooltip}>
-              <p className={styles.tooltipLabel}>{hoveredBrand.brand_name}</p>
-              <div className={styles.tooltipDetails}>
-                <span className={styles.tooltipItems}>
+            <div className="bg-gradient-to-br from-success to-[#06b6d4] rounded-lg p-3 px-4 shadow-[0_4px_12px_rgba(16,185,129,0.2)]">
+              <p className="m-0 mb-2 font-semibold text-white text-sm">{hoveredBrand.brand_name}</p>
+              <div className="flex flex-col gap-1">
+                <span className="m-0 text-xs text-white/90 font-medium">
                   Items: {hoveredBrand.total_stock.toLocaleString()}
                 </span>
-                <span className={styles.tooltipPercent}>
+                <span className="m-0 text-xs text-white/90 font-medium">
                   {hoveredBrand.percentage.toFixed(1)}% share
                 </span>
-                <span className={styles.tooltipValue}>
+                <span className="m-0 text-xs text-white/90 font-medium">
                   {formatValue(hoveredBrand.total_value)}
                 </span>
               </div>

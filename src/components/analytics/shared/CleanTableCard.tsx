@@ -1,5 +1,4 @@
 import React from 'react';
-import styles from './CleanTableCard.module.css';
 
 interface TableColumn {
   key: string;
@@ -32,7 +31,7 @@ const CleanTableCard: React.FC<CleanTableCardProps> = ({
 
   const formatValue = (value: any, format?: string) => {
     if (value === null || value === undefined) return '-';
-    
+
     switch (format) {
       case 'currency':
         return typeof value === 'number' ? `£${value.toLocaleString()}` : value;
@@ -48,21 +47,21 @@ const CleanTableCard: React.FC<CleanTableCardProps> = ({
   };
 
   return (
-    <div 
-      className={styles.tableContainer}
-      style={{ 
+    <div
+      className="w-full h-full rounded-xl overflow-hidden flex flex-col"
+      style={{
         backgroundColor,
         color: textColor,
         borderColor
       }}
     >
-      <table className={styles.table}>
+      <table className="w-full border-collapse flex-1">
         <thead>
-          <tr className={styles.headerRow}>
+          <tr className="bg-white/5 border-b border-white/10">
             {columns.map((column) => (
               <th
                 key={column.key}
-                className={styles.headerCell}
+                className="p-4 text-xs font-semibold uppercase tracking-wide whitespace-nowrap max-md:p-3 max-md:text-[11px]"
                 style={{
                   width: column.width,
                   textAlign: column.align || 'left',
@@ -76,11 +75,11 @@ const CleanTableCard: React.FC<CleanTableCardProps> = ({
         </thead>
         <tbody>
           {displayData.map((row, index) => (
-            <tr key={index} className={styles.dataRow}>
+            <tr key={index} className="transition-colors duration-200 border-b border-white/5 last:border-b-0 hover:bg-white/[0.03]">
               {columns.map((column) => (
                 <td
                   key={column.key}
-                  className={styles.dataCell}
+                  className="py-3.5 px-4 text-sm whitespace-nowrap overflow-hidden text-ellipsis max-md:p-3 max-md:text-xs"
                   style={{
                     textAlign: column.align || 'left'
                   }}
@@ -93,7 +92,7 @@ const CleanTableCard: React.FC<CleanTableCardProps> = ({
         </tbody>
       </table>
       {displayData.length === 0 && (
-        <div className={styles.emptyState}>
+        <div className="flex-1 flex items-center justify-center py-12 px-6 text-white/50 text-sm">
           <p>No data available</p>
         </div>
       )}

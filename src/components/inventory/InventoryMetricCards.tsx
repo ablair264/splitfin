@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { productService } from '../../services/productService';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, ResponsiveContainer } from 'recharts';
-import styles from './InventoryMetricCards.module.css';
 
 interface InventoryMetrics {
   totalSurplus: number;
@@ -163,31 +162,31 @@ const InventoryMetricCards: React.FC<InventoryMetricCardsProps> = ({ companyId }
 
   if (loading) {
     return (
-      <div className={styles.container}>
-        <div className={styles.loading}>Loading metrics...</div>
+      <div className="grid grid-cols-3 grid-rows-2 gap-3 w-full max-md:grid-cols-1 max-md:gap-4">
+        <div className="flex items-center justify-center min-h-[180px] text-muted-foreground text-sm col-span-full bg-card rounded-xl">Loading metrics...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className={styles.container}>
-        <div className={styles.error}>{error}</div>
+      <div className="grid grid-cols-3 grid-rows-2 gap-3 w-full max-md:grid-cols-1 max-md:gap-4">
+        <div className="flex items-center justify-center min-h-[180px] text-destructive text-sm col-span-full bg-card rounded-xl">{error}</div>
       </div>
     );
   }
 
   return (
-    <div className={styles.container}>
+    <div className="grid grid-cols-3 grid-rows-2 gap-3 w-full max-md:grid-cols-1 max-md:gap-4">
       {/* Total Surplus Card */}
-      <div className={styles.card}>
-        <div className={`${styles.accent} ${styles.accentRed}`} />
-        <div className={styles.content}>
-          <div className={styles.header}>
-            <h3 className={styles.title}>Total Surplus</h3>
-            <p className={styles.subtitle}>All Suppliers</p>
+      <div className="bg-card rounded-xl relative flex flex-col min-h-[100px] overflow-hidden shadow-md max-md:min-h-[140px]">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-destructive" />
+        <div className="flex-1 px-4 py-3.5 flex flex-col justify-center text-center gap-1.5">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="m-0 text-[0.8rem] font-medium text-card-foreground leading-tight">Total Surplus</h3>
+            <p className="m-0 text-[0.7rem] text-muted-foreground font-normal opacity-80 leading-tight">All Suppliers</p>
           </div>
-          <div className={styles.chartArea}>
+          <div className="hidden">
             <ResponsiveContainer width="100%" height={60}>
               <LineChart data={generateSurplusChartData()}>
                 <Line
@@ -201,21 +200,21 @@ const InventoryMetricCards: React.FC<InventoryMetricCardsProps> = ({ companyId }
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div className={`${styles.value} ${styles.valueRed}`}>
+          <div className="text-[1.75rem] font-bold leading-none mt-1 text-destructive">
             {formatNumber(metrics.totalSurplus)}
           </div>
         </div>
       </div>
 
       {/* Total Items Card */}
-      <div className={styles.card}>
-        <div className={`${styles.accent} ${styles.accentCyan}`} />
-        <div className={styles.content}>
-          <div className={styles.header}>
-            <h3 className={styles.title}>Total Items</h3>
-            <p className={styles.subtitle}>All Suppliers</p>
+      <div className="bg-card rounded-xl relative flex flex-col min-h-[100px] overflow-hidden shadow-md max-md:min-h-[140px]">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#06b6d4]" />
+        <div className="flex-1 px-4 py-3.5 flex flex-col justify-center text-center gap-1.5">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="m-0 text-[0.8rem] font-medium text-card-foreground leading-tight">Total Items</h3>
+            <p className="m-0 text-[0.7rem] text-muted-foreground font-normal opacity-80 leading-tight">All Suppliers</p>
           </div>
-          <div className={styles.chartArea}>
+          <div className="hidden">
             <ResponsiveContainer width="100%" height={60}>
               <AreaChart data={generateItemsChartData()}>
                 <Area
@@ -229,21 +228,21 @@ const InventoryMetricCards: React.FC<InventoryMetricCardsProps> = ({ companyId }
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className={`${styles.value} ${styles.valueCyan}`}>
+          <div className="text-[1.75rem] font-bold leading-none mt-1 text-[#06b6d4]">
             {formatNumber(metrics.totalItems)}
           </div>
         </div>
       </div>
 
       {/* New Items Card */}
-      <div className={styles.card}>
-        <div className={`${styles.accent} ${styles.accentGreen}`} />
-        <div className={styles.content}>
-          <div className={styles.header}>
-            <h3 className={styles.title}>New Items</h3>
-            <p className={styles.subtitle}>This Week</p>
+      <div className="bg-card rounded-xl relative flex flex-col min-h-[100px] overflow-hidden shadow-md max-md:min-h-[140px]">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-success" />
+        <div className="flex-1 px-4 py-3.5 flex flex-col justify-center text-center gap-1.5">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="m-0 text-[0.8rem] font-medium text-card-foreground leading-tight">New Items</h3>
+            <p className="m-0 text-[0.7rem] text-muted-foreground font-normal opacity-80 leading-tight">This Week</p>
           </div>
-          <div className={styles.chartArea}>
+          <div className="hidden">
             <ResponsiveContainer width="100%" height={60}>
               <BarChart data={generateNewItemsChartData()}>
                 <Bar
@@ -254,21 +253,21 @@ const InventoryMetricCards: React.FC<InventoryMetricCardsProps> = ({ companyId }
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className={`${styles.value} ${styles.valueGreen}`}>
+          <div className="text-[1.75rem] font-bold leading-none mt-1 text-success">
             {formatNumber(metrics.newItemsThisWeek)}
           </div>
         </div>
       </div>
 
       {/* Low Stock Items Card */}
-      <div className={styles.card}>
-        <div className={`${styles.accent} ${styles.accentOrange}`} />
-        <div className={styles.content}>
-          <div className={styles.header}>
-            <h3 className={styles.title}>Low Stock Alert</h3>
-            <p className={styles.subtitle}>Items Below Reorder</p>
+      <div className="bg-card rounded-xl relative flex flex-col min-h-[100px] overflow-hidden shadow-md max-md:min-h-[140px]">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-warning" />
+        <div className="flex-1 px-4 py-3.5 flex flex-col justify-center text-center gap-1.5">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="m-0 text-[0.8rem] font-medium text-card-foreground leading-tight">Low Stock Alert</h3>
+            <p className="m-0 text-[0.7rem] text-muted-foreground font-normal opacity-80 leading-tight">Items Below Reorder</p>
           </div>
-          <div className={styles.chartArea}>
+          <div className="hidden">
             <ResponsiveContainer width="100%" height={60}>
               <BarChart data={generateLowStockChartData()}>
                 <Bar
@@ -279,21 +278,21 @@ const InventoryMetricCards: React.FC<InventoryMetricCardsProps> = ({ companyId }
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className={`${styles.value} ${styles.valueOrange}`}>
+          <div className="text-[1.75rem] font-bold leading-none mt-1 text-warning">
             {formatNumber(metrics.lowStockItems)}
           </div>
         </div>
       </div>
 
       {/* Total Value Card */}
-      <div className={styles.card}>
-        <div className={`${styles.accent} ${styles.accentPurple}`} />
-        <div className={styles.content}>
-          <div className={styles.header}>
-            <h3 className={styles.title}>Total Value</h3>
-            <p className={styles.subtitle}>Stock Worth</p>
+      <div className="bg-card rounded-xl relative flex flex-col min-h-[100px] overflow-hidden shadow-md max-md:min-h-[140px]">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[#8b5cf6]" />
+        <div className="flex-1 px-4 py-3.5 flex flex-col justify-center text-center gap-1.5">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="m-0 text-[0.8rem] font-medium text-card-foreground leading-tight">Total Value</h3>
+            <p className="m-0 text-[0.7rem] text-muted-foreground font-normal opacity-80 leading-tight">Stock Worth</p>
           </div>
-          <div className={styles.chartArea}>
+          <div className="hidden">
             <ResponsiveContainer width="100%" height={60}>
               <LineChart data={generateValueChartData()}>
                 <Line
@@ -307,21 +306,21 @@ const InventoryMetricCards: React.FC<InventoryMetricCardsProps> = ({ companyId }
               </LineChart>
             </ResponsiveContainer>
           </div>
-          <div className={`${styles.value} ${styles.valuePurple}`}>
+          <div className="text-[1.75rem] font-bold leading-none mt-1 text-[#8b5cf6]">
             £{formatNumber(metrics.totalValue)}
           </div>
         </div>
       </div>
 
       {/* Top Selling Brands Card */}
-      <div className={styles.card}>
-        <div className={`${styles.accent} ${styles.accentBlue}`} />
-        <div className={styles.content}>
-          <div className={styles.header}>
-            <h3 className={styles.title}>Active Brands</h3>
-            <p className={styles.subtitle}>In Catalog</p>
+      <div className="bg-card rounded-xl relative flex flex-col min-h-[100px] overflow-hidden shadow-md max-md:min-h-[140px]">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-[var(--info)]" />
+        <div className="flex-1 px-4 py-3.5 flex flex-col justify-center text-center gap-1.5">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="m-0 text-[0.8rem] font-medium text-card-foreground leading-tight">Active Brands</h3>
+            <p className="m-0 text-[0.7rem] text-muted-foreground font-normal opacity-80 leading-tight">In Catalog</p>
           </div>
-          <div className={styles.chartArea}>
+          <div className="hidden">
             <ResponsiveContainer width="100%" height={60}>
               <AreaChart data={generateBrandsChartData()}>
                 <Area
@@ -335,7 +334,7 @@ const InventoryMetricCards: React.FC<InventoryMetricCardsProps> = ({ companyId }
               </AreaChart>
             </ResponsiveContainer>
           </div>
-          <div className={`${styles.value} ${styles.valueBlue}`}>
+          <div className="text-[1.75rem] font-bold leading-none mt-1 text-[var(--info)]">
             {formatNumber(metrics.topSellingBrands)}
           </div>
         </div>

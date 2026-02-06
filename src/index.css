@@ -59,7 +59,7 @@
   --surface: #f0f4f8;
 
   /* Borders & inputs */
-  --border: #e2e8f0;
+  --border: #d8dee8;
   --input: #e2e8f0;
   --ring: #4daebc;
 
@@ -77,7 +77,7 @@
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #e0f7fa;
   --sidebar-accent-foreground: #0f1419;
-  --sidebar-border: #e2e8f0;
+  --sidebar-border: #d8dee8;
   --sidebar-ring: #4daebc;
 
   /* Typography */
@@ -109,11 +109,11 @@
   --foreground: #f8f9fa;
 
   /* Cards & surfaces - slightly lighter than bg */
-  --card: #1a1f2a;
+  --card: #1c2333;
   --card-foreground: #f8f9fa;
 
   /* Popovers, dropdowns, modals */
-  --popover: #1a1f2a;
+  --popover: #1c2333;
   --popover-foreground: #f8f9fa;
 
   /* Primary brand - teal */
@@ -121,15 +121,15 @@
   --primary-foreground: #0f1419;
 
   /* Secondary - dark surfaces */
-  --secondary: #1a1f2a;
+  --secondary: #1c2333;
   --secondary-foreground: #f8f9fa;
 
   /* Muted/subtle elements */
-  --muted: #21262d;
-  --muted-foreground: #8b949e;
+  --muted: #252d38;
+  --muted-foreground: #94a0b0;
 
   /* Accent - dark teal tint */
-  --accent: #12181f;
+  --accent: #151c26;
   --accent-foreground: #79d5e9;
 
   /* Destructive/danger */
@@ -152,8 +152,8 @@
   --surface: #2c3e50;
 
   /* Borders & inputs */
-  --border: #30363d;
-  --input: #21262d;
+  --border: #343d4a;
+  --input: #252d38;
   --ring: #4daebc;
 
   /* Chart colors - brighter for dark bg */
@@ -168,9 +168,9 @@
   --sidebar-foreground: #f8f9fa;
   --sidebar-primary: rgba(77, 174, 188, 0.15);
   --sidebar-primary-foreground: #79d5e9;
-  --sidebar-accent: #1a1f2a;
+  --sidebar-accent: #1c2333;
   --sidebar-accent-foreground: #f8f9fa;
-  --sidebar-border: #21262d;
+  --sidebar-border: #2a3140;
   --sidebar-ring: #4daebc;
 
   /* Shadows - darker, more pronounced for depth */
@@ -382,6 +382,21 @@
   animation: shimmer 2s linear infinite;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
   background-size: 200% 100%;
+}
+
+/* ============================================
+   SHARED TABLE STYLES
+   ============================================ */
+
+@utility table-row-hover {
+  &:hover {
+    background: color-mix(in srgb, var(--primary) 4%, transparent);
+  }
+}
+
+.dark .table-row-hover:hover,
+:is(.dark *) .table-row-hover:hover {
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
 }
 
 /* ============================================

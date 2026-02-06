@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Mail, Phone, MapPin, ExternalLink, Save, X, Loader2, ShoppingCart,
+  Mail, Phone, MapPin, ExternalLink, Save, X, Loader2, ShoppingCart,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { customerService } from '../services/customerService';
@@ -230,18 +230,7 @@ export default function CustomerDetail() {
   const ek = `${customerData.id}-${discardCount}`;
 
   return (
-    <div className="w-full px-6 py-2">
-      {/* Back link */}
-      <Button
-        intent="plain"
-        size="xs"
-        onPress={() => navigate('/customers')}
-        className="mb-5 text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft size={14} />
-        Customers
-      </Button>
-
+    <div className="w-full p-6">
       {/* ── Identity + Metrics strip ── */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -291,7 +280,7 @@ export default function CustomerDetail() {
         <Separator orientation="vertical" className="h-10" />
 
         {/* Metrics */}
-        <div className="flex items-center gap-6 flex-1 min-w-0">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-7 gap-x-6 gap-y-3 flex-1 min-w-0">
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Spent</div>
             <div className="text-lg font-semibold text-foreground tabular-nums">{formatCurrency(customerData.total_spent)}</div>
@@ -386,20 +375,7 @@ export default function CustomerDetail() {
             >
               <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-4">Company</h3>
 
-              <DetailRow label="Company Name">
-                <Editable
-                  key={`company_name-${ek}`}
-                  defaultValue={customerData.company_name}
-                  onSubmit={val => handleFieldSubmit('company_name', val)}
-                >
-                  <EditableArea>
-                    <EditablePreview className="text-[13px] font-medium text-foreground py-0" />
-                    <EditableInput className="text-[13px] font-medium px-1 text-right" />
-                  </EditableArea>
-                </Editable>
-              </DetailRow>
-
-              <DetailRow label="Contact Name">
+              <DetailRow label="Contact">
                 <Editable
                   key={`contact_name-${ek}`}
                   defaultValue={customerData.contact_name || ''}

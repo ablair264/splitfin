@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Line, Bar, Pie, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js';
-import styles from './FullGraph.module.css';
 
 // Register required Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
@@ -65,11 +64,11 @@ const FullGraph: React.FC<FullGraphProps> = ({
     try {
       const date = new Date(value);
       if (isNaN(date.getTime())) return value; // Return original if invalid date
-      return date.toLocaleDateString('en-GB', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
+      return date.toLocaleDateString('en-GB', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
       });
     } catch {
       return value;
@@ -106,7 +105,7 @@ const FullGraph: React.FC<FullGraphProps> = ({
           data: filteredData?.map(item => item[lines[0]?.dataKey || 'value']) || [],
           backgroundColor: [
             '#79d5e9',
-            '#799de9', 
+            '#799de9',
             '#79e9c5',
             '#FF9F00',
             '#C96868',
@@ -157,7 +156,7 @@ const FullGraph: React.FC<FullGraphProps> = ({
       };
 
       const ChartComponent = type === 'pie' ? Pie : Doughnut; // 'donut' is handled as 'doughnut'
-      
+
       return (
         <div style={{ width: '100%', height: height }}>
           <ChartComponent data={pieData} options={pieOptions} />
@@ -257,18 +256,18 @@ const FullGraph: React.FC<FullGraphProps> = ({
   };
 
   return (
-    <div className={styles.fullGraphContainer}>
-      <div className={styles.fullGraphHeader}>
-        <div className={styles.graphHeaderLeft}>
-          <h2 className={styles.graphTitle}>{title}</h2>
-          {subtitle && <p className={styles.graphSubtitle}>{subtitle}</p>}
+    <div className="bg-white/5 backdrop-blur-[10px] rounded-2xl p-4 border-none shadow-md max-md:p-5 max-md:mx-4">
+      <div className="flex justify-between items-start mb-4 flex-wrap gap-3 max-md:flex-col max-md:gap-3">
+        <div className="flex-1 min-w-[200px]">
+          <h2 className="text-xl font-semibold text-foreground m-0 mb-1 max-md:text-lg">{title}</h2>
+          {subtitle && <p className="text-sm text-muted-foreground m-0 max-md:text-[13px]">{subtitle}</p>}
         </div>
-        <div className={styles.graphHeaderRight}>
-          <div className={styles.graphActions}>
+        <div className="flex items-center gap-4 flex-wrap max-md:w-full max-md:justify-between">
+          <div className="flex gap-2">
             {onExport && (
-              <button 
-                className={styles.graphActionButton} 
-                onClick={onExport} 
+              <button
+                className="bg-transparent border border-border rounded-md text-muted-foreground cursor-pointer transition-all duration-200 flex items-center justify-center w-9 h-9 p-2 hover:bg-muted hover:text-foreground hover:border-primary/30 max-md:w-8 max-md:h-8 max-md:p-1.5"
+                onClick={onExport}
                 title="Export"
                 aria-label="Export graph data"
               >
@@ -278,9 +277,9 @@ const FullGraph: React.FC<FullGraphProps> = ({
               </button>
             )}
             {onFullscreen && (
-              <button 
-                className={styles.graphActionButton} 
-                onClick={onFullscreen} 
+              <button
+                className="bg-transparent border border-border rounded-md text-muted-foreground cursor-pointer transition-all duration-200 flex items-center justify-center w-9 h-9 p-2 hover:bg-muted hover:text-foreground hover:border-primary/30 max-md:w-8 max-md:h-8 max-md:p-1.5"
+                onClick={onFullscreen}
                 title="Fullscreen"
                 aria-label="Toggle fullscreen view"
               >
@@ -292,7 +291,7 @@ const FullGraph: React.FC<FullGraphProps> = ({
           </div>
         </div>
       </div>
-      <div className={styles.fullGraphContent}>
+      <div className="relative w-full pb-2">
         {filteredData && filteredData.length > 0 ? (
           renderChart()
         ) : (
