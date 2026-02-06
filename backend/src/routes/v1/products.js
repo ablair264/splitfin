@@ -4,32 +4,48 @@ import { logger } from '../../utils/logger.js';
 
 const router = express.Router();
 
+// Helper: build common WHERE clause for product queries
+function buildProductWhere(filters) {
+  const { status, brand, search, stock_filter } = filters;
+  const conditions = ['1=1'];
+  const params = [];
+  let idx = 1;
+
+  if (status) {
+    conditions.push(`status = $${idx++}`);
+    params.push(status);
+  }
+
+  if (brand) {
+    conditions.push(`brand = $${idx++}`);
+    params.push(brand);
+  }
+
+  if (search) {
+    conditions.push(`(name ILIKE $${idx} OR sku ILIKE $${idx} OR ean ILIKE $${idx})`);
+    params.push(`%${search}%`);
+    idx++;
+  }
+
+  if (stock_filter === 'in-stock') {
+    conditions.push('stock_on_hand > 5');
+  } else if (stock_filter === 'low-stock') {
+    conditions.push('stock_on_hand > 0 AND stock_on_hand <= 5');
+  } else if (stock_filter === 'out-of-stock') {
+    conditions.push('stock_on_hand = 0');
+  }
+
+  return { where: conditions.join(' AND '), params, nextIdx: idx };
+}
+
 // GET /api/v1/products
 router.get('/', async (req, res) => {
   try {
-    const { status, brand, search, limit = 100, offset = 0 } = req.query;
+    const { limit = 100, offset = 0 } = req.query;
+    const { where, params, nextIdx } = buildProductWhere(req.query);
+    let idx = nextIdx;
 
-    let sql = 'SELECT * FROM products WHERE 1=1';
-    const params = [];
-    let paramIdx = 1;
-
-    if (status) {
-      sql += ` AND status = $${paramIdx++}`;
-      params.push(status);
-    }
-
-    if (brand) {
-      sql += ` AND brand = $${paramIdx++}`;
-      params.push(brand);
-    }
-
-    if (search) {
-      sql += ` AND (name ILIKE $${paramIdx} OR sku ILIKE $${paramIdx} OR ean ILIKE $${paramIdx})`;
-      params.push(`%${search}%`);
-      paramIdx++;
-    }
-
-    sql += ` ORDER BY name ASC LIMIT $${paramIdx++} OFFSET $${paramIdx++}`;
+    const sql = `SELECT * FROM products WHERE ${where} ORDER BY name ASC LIMIT $${idx++} OFFSET $${idx++}`;
     params.push(parseInt(limit), parseInt(offset));
 
     const { rows } = await query(sql, params);
@@ -43,24 +59,43 @@ router.get('/', async (req, res) => {
 // GET /api/v1/products/count
 router.get('/count', async (req, res) => {
   try {
-    const { status, brand } = req.query;
-    let sql = 'SELECT COUNT(*) as count FROM products WHERE 1=1';
-    const params = [];
-    let paramIdx = 1;
-
-    if (status) {
-      sql += ` AND status = $${paramIdx++}`;
-      params.push(status);
-    }
-    if (brand) {
-      sql += ` AND brand = $${paramIdx++}`;
-      params.push(brand);
-    }
+    const { where, params } = buildProductWhere(req.query);
+    const sql = `SELECT COUNT(*) as count FROM products WHERE ${where}`;
 
     const { rows } = await query(sql, params);
     res.json({ count: parseInt(rows[0].count) });
   } catch (err) {
     logger.error('[Products] Count error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/v1/products/stock-counts
+// Returns breakdown of stock levels for the given filters (excluding stock_filter itself)
+router.get('/stock-counts', async (req, res) => {
+  try {
+    // Build WHERE without stock_filter so we get counts across all stock levels
+    const filters = { ...req.query };
+    delete filters.stock_filter;
+    const { where, params } = buildProductWhere(filters);
+
+    const sql = `
+      SELECT
+        COUNT(*) FILTER (WHERE stock_on_hand > 5) as in_stock,
+        COUNT(*) FILTER (WHERE stock_on_hand > 0 AND stock_on_hand <= 5) as low_stock,
+        COUNT(*) FILTER (WHERE stock_on_hand = 0) as out_of_stock
+      FROM products
+      WHERE ${where}
+    `;
+
+    const { rows } = await query(sql, params);
+    res.json({
+      in_stock: parseInt(rows[0].in_stock),
+      low_stock: parseInt(rows[0].low_stock),
+      out_of_stock: parseInt(rows[0].out_of_stock),
+    });
+  } catch (err) {
+    logger.error('[Products] Stock counts error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

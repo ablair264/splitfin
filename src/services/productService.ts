@@ -5,8 +5,15 @@ interface ProductFilters {
   status?: string;
   brand?: string;
   search?: string;
+  stock_filter?: string;
   limit?: number;
   offset?: number;
+}
+
+interface StockCounts {
+  in_stock: number;
+  low_stock: number;
+  out_of_stock: number;
 }
 
 export const productService = {
@@ -19,9 +26,13 @@ export const productService = {
     return result.data;
   },
 
-  async count(filters: { status?: string; brand?: string } = {}): Promise<number> {
+  async count(filters: { status?: string; brand?: string; search?: string; stock_filter?: string } = {}): Promise<number> {
     const result = await api.get<CountResponse>('/api/v1/products/count', filters);
     return result.count;
+  },
+
+  async stockCounts(filters: { status?: string; brand?: string; search?: string } = {}): Promise<StockCounts> {
+    return api.get<StockCounts>('/api/v1/products/stock-counts', filters);
   },
 
   async getBrands(): Promise<{ brand: string; count: number }[]> {
