@@ -399,7 +399,7 @@ function DatabaseSettings() {
         <h3>Database Management</h3>
         <p className="setting-description">
           Manage database operations and maintenance tasks. These operations should be performed during off-peak hours.
-          <br /><small style={{ color: '#a0a0a0', marginTop: '0.5rem', display: 'block' }}>Access restricted to Admins</small>
+          <br /><small style={{ color: 'var(--muted-foreground)', marginTop: '0.5rem', display: 'block' }}>Access restricted to Admins</small>
         </p>
       </div>
 

@@ -125,14 +125,14 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComple
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-[#1a1f2a] rounded-xl border border-gray-700 w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
+      <div className="relative bg-card rounded-xl border border-border w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
           <div className="flex items-center gap-2.5">
             <Sparkles size={18} className="text-brand-300" />
-            <h2 className="text-base font-semibold text-white">AI Product Enrichment</h2>
+            <h2 className="text-base font-semibold text-foreground">AI Product Enrichment</h2>
           </div>
-          <button onClick={onClose} className="p-1 text-gray-500 hover:text-gray-300 transition-colors">
+          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
             <X size={18} />
           </button>
         </div>
@@ -143,28 +143,28 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComple
             <div className="space-y-5">
               {/* Stats */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-[#0f1419] rounded-lg border border-gray-700/60 p-3 text-center">
-                  <div className="text-lg font-semibold text-white tabular-nums">{products.length}</div>
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wider">Total</div>
+                <div className="bg-background rounded-lg border border-border p-3 text-center">
+                  <div className="text-lg font-semibold text-foreground tabular-nums">{products.length}</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Total</div>
                 </div>
-                <div className="bg-[#0f1419] rounded-lg border border-gray-700/60 p-3 text-center">
+                <div className="bg-background rounded-lg border border-border p-3 text-center">
                   <div className="text-lg font-semibold text-emerald-400 tabular-nums">{enrichedCount}</div>
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wider">Enriched</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Enriched</div>
                 </div>
-                <div className="bg-[#0f1419] rounded-lg border border-gray-700/60 p-3 text-center">
+                <div className="bg-background rounded-lg border border-border p-3 text-center">
                   <div className="text-lg font-semibold text-brand-300 tabular-nums">{toProcess.length}</div>
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wider">Will Process</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Will Process</div>
                 </div>
               </div>
 
               {/* Options */}
               <div className="space-y-3">
                 <div>
-                  <label className="text-[12px] font-medium text-gray-400 block mb-1">Brand Filter</label>
+                  <label className="text-[12px] font-medium text-muted-foreground block mb-1">Brand Filter</label>
                   <select
                     value={brandFilter}
                     onChange={(e) => setBrandFilter(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-brand-300"
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-brand-300"
                   >
                     <option value="">All Brands</option>
                     {brands.map(b => (
@@ -174,14 +174,14 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComple
                 </div>
 
                 <div>
-                  <label className="text-[12px] font-medium text-gray-400 block mb-1">Max Products</label>
+                  <label className="text-[12px] font-medium text-muted-foreground block mb-1">Max Products</label>
                   <input
                     type="number"
                     min={1}
                     max={100}
                     value={maxProducts}
                     onChange={(e) => setMaxProducts(Math.max(1, Math.min(100, parseInt(e.target.value) || 25)))}
-                    className="w-full px-3 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white text-sm focus:outline-none focus:border-brand-300"
+                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-brand-300"
                   />
                 </div>
 
@@ -190,13 +190,13 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComple
                     type="checkbox"
                     checked={onlyUnenriched}
                     onChange={(e) => setOnlyUnenriched(e.target.checked)}
-                    className="rounded border-gray-600 bg-[#0f1419] text-brand-300 focus:ring-brand-300/30"
+                    className="rounded border-border bg-background text-brand-300 focus:ring-brand-300/30"
                   />
-                  <span className="text-sm text-gray-300">Only products without AI descriptions</span>
+                  <span className="text-sm text-foreground/80">Only products without AI descriptions</span>
                 </label>
               </div>
 
-              <p className="text-[12px] text-gray-500">
+              <p className="text-[12px] text-muted-foreground">
                 Each product will get an AI-generated description and category classification. Results are saved automatically.
               </p>
             </div>
@@ -207,16 +207,16 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComple
               {/* Progress bar */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-300">
+                  <span className="text-sm text-foreground/80">
                     Processing {processed} / {results.length}
                   </span>
-                  <span className="text-sm text-gray-500 tabular-nums">
+                  <span className="text-sm text-muted-foreground tabular-nums">
                     {Math.round((processed / (results.length || 1)) * 100)}%
                   </span>
                 </div>
-                <div className="h-2 bg-[#0f1419] rounded-full border border-gray-700/60 overflow-hidden">
+                <div className="h-2 bg-background rounded-full border border-border overflow-hidden">
                   <div
-                    className="h-full bg-gradient-to-r from-brand-300 to-[#4daeac] rounded-full transition-all duration-300"
+                    className="h-full bg-primary rounded-full transition-all duration-300"
                     style={{ width: `${(processed / (results.length || 1)) * 100}%` }}
                   />
                 </div>
@@ -224,7 +224,7 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComple
 
               {/* Current item */}
               {results[processed] && processed < results.length && (
-                <div className="flex items-center gap-2 text-sm text-gray-400">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 size={14} className="animate-spin text-brand-300" />
                   <span className="truncate">{results[processed]?.name}</span>
                 </div>
@@ -237,8 +237,8 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComple
                     {r.status === 'done' && <CheckCircle size={12} className="text-emerald-400 shrink-0" />}
                     {r.status === 'error' && <AlertTriangle size={12} className="text-red-400 shrink-0" />}
                     {r.status === 'processing' && <Loader2 size={12} className="text-brand-300 animate-spin shrink-0" />}
-                    {r.status === 'pending' && <div className="w-3 h-3 rounded-full border border-gray-700 shrink-0" />}
-                    <span className={cn('truncate', r.status === 'done' ? 'text-gray-300' : r.status === 'error' ? 'text-red-400' : 'text-gray-500')}>
+                    {r.status === 'pending' && <div className="w-3 h-3 rounded-full border border-border shrink-0" />}
+                    <span className={cn('truncate', r.status === 'done' ? 'text-foreground/80' : r.status === 'error' ? 'text-red-400' : 'text-muted-foreground')}>
                       {r.sku} — {r.name}
                     </span>
                   </div>
@@ -266,18 +266,18 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComple
               {/* Sample results */}
               <div className="space-y-2 max-h-[300px] overflow-y-auto">
                 {results.filter(r => r.status === 'done').slice(0, 10).map(r => (
-                  <div key={r.id} className="bg-[#0f1419] rounded-lg border border-gray-700/60 p-3">
+                  <div key={r.id} className="bg-background rounded-lg border border-border p-3">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[11px] text-gray-500">{r.sku}</span>
+                      <span className="text-[11px] text-muted-foreground">{r.sku}</span>
                       {r.category && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-300/10 text-brand-300 border border-brand-300/20">
                           {r.category}
                         </span>
                       )}
                     </div>
-                    <div className="text-[13px] font-medium text-white mb-1">{r.name}</div>
+                    <div className="text-[13px] font-medium text-foreground mb-1">{r.name}</div>
                     {r.description && (
-                      <div className="text-[12px] text-gray-400 line-clamp-2">{r.description}</div>
+                      <div className="text-[12px] text-muted-foreground line-clamp-2">{r.description}</div>
                     )}
                   </div>
                 ))}
@@ -287,19 +287,19 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComple
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-gray-700">
+        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border">
           {step === 'configure' && (
             <>
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-sm text-gray-400 hover:text-gray-200 transition-colors"
+                className="px-4 py-2 text-sm text-muted-foreground hover:text-gray-200 transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleStart}
                 disabled={toProcess.length === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-300 to-[#4daeac] text-white rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-brand-300/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-foreground rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-brand-300/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Sparkles size={14} />
                 Enrich {toProcess.length} Product{toProcess.length !== 1 ? 's' : ''}
@@ -317,7 +317,7 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComple
           {step === 'results' && (
             <button
               onClick={() => { onComplete?.(); onClose(); }}
-              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-300 to-[#4daeac] text-white rounded-lg text-sm font-medium"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-foreground rounded-lg text-sm font-medium"
             >
               Done
             </button>

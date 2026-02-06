@@ -83,9 +83,7 @@ const getNavItems = (isAdmin: boolean) => {
         icon: Package,
         path: '/inventory',
         children: [
-          { title: 'Overview', path: '/inventory/overview' },
           { title: 'Inventory Management', path: '/inventory/products' },
-          { title: 'Product List', path: '/inventory/product-list' },
           { title: 'Stocklists', path: '/inventory/stocklists' },
         ],
       },
@@ -167,8 +165,8 @@ export function AppSidebar({ user }: AppSidebarProps) {
     <Sidebar className="border-r-0">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <Avatar className="h-10 w-10 bg-[#79d5e9]">
-            <AvatarFallback className="bg-[#79d5e9] text-white font-semibold">
+          <Avatar className="h-10 w-10 bg-primary">
+            <AvatarFallback className="bg-primary text-white font-semibold">
               {(user.name || user.id).charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
@@ -196,7 +194,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                       <SidebarMenuItem>
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton
-                            className={`w-full justify-between ${isActive ? 'bg-[#1e8d8d] text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
+                            className={`w-full justify-between ${isActive ? 'bg-sidebar-primary text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
                           >
                             <span className="flex items-center gap-3">
                               <Icon size={18} />
@@ -211,7 +209,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                               <SidebarMenuSubItem key={child.path}>
                                 <SidebarMenuSubButton
                                   onClick={() => navigate(child.path)}
-                                  className={`${location.pathname === child.path ? 'text-[#79d5e9]' : 'text-white/60 hover:text-white'}`}
+                                  className={`${location.pathname === child.path ? 'text-primary' : 'text-white/60 hover:text-white'}`}
                                 >
                                   {child.title}
                                 </SidebarMenuSubButton>
@@ -228,7 +226,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       onClick={() => navigate(item.path)}
-                      className={`${isActive ? 'bg-[#1e8d8d] text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
+                      className={`${isActive ? 'bg-sidebar-primary text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}
                     >
                       <Icon size={18} />
                       <span>{item.title}</span>

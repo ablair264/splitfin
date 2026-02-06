@@ -31,19 +31,18 @@ export function DataTable<TData>({
       {...props}
     >
       {children}
-      <div className="overflow-hidden rounded-xl border border-gray-700 bg-[#1a1f2a]">
-        <Table>
-          <TableHeader>
+      <div className="overflow-hidden rounded-xl border border-border bg-card">
+        <Table className="bg-card">
+          <TableHeader className="bg-secondary">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
-                className="border-b border-gray-700 bg-gradient-to-r from-[#2a3441] to-[#1e2532] hover:bg-[#2a3441]"
+                className="border-b border-border bg-secondary hover:bg-secondary"
               >
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
                     colSpan={header.colSpan}
-                    className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider h-10"
                     style={{
                       ...getColumnPinningStyle({ column: header.column }),
                     }}
@@ -59,18 +58,17 @@ export function DataTable<TData>({
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <TableBody className="bg-card">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-gray-700/40 hover:bg-white/[0.02] transition-colors data-[state=selected]:bg-brand-300/10"
+                  className="border-b border-border bg-card hover:bg-muted/30 data-[state=selected]:bg-primary/10"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className="py-2.5 text-[13px] text-gray-300"
                       style={{
                         ...getColumnPinningStyle({ column: cell.column }),
                       }}
@@ -84,10 +82,10 @@ export function DataTable<TData>({
                 </TableRow>
               ))
             ) : (
-              <TableRow>
+              <TableRow className="bg-card">
                 <TableCell
                   colSpan={table.getAllColumns().length}
-                  className="h-24 text-center text-gray-500"
+                  className="h-24 text-center text-muted-foreground"
                 >
                   No results.
                 </TableCell>

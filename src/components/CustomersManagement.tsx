@@ -120,7 +120,7 @@ function CustomersManagement() {
   const renderListView = () => (
     <div>
       {/* Table Header */}
-      <div className="hidden lg:grid grid-cols-[1fr_1.2fr_70px_55px_78px_68px_auto] gap-2 px-4 py-3 bg-gradient-to-r from-[#2a3441] to-[#1e2532] border-b border-gray-700 text-[11px] font-semibold text-gray-400 uppercase tracking-wider items-center">
+      <div className="hidden lg:grid grid-cols-[1fr_1.2fr_70px_55px_78px_68px_auto] gap-2 px-4 py-3 bg-muted border-b border-border text-[11px] font-semibold text-muted-foreground uppercase tracking-wider items-center">
         <div>Customer</div>
         <div>Contact</div>
         <div>Spent</div>
@@ -133,10 +133,10 @@ function CustomersManagement() {
       {/* Table Body */}
       <div>
         {currentCustomers.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
             <div className="text-4xl mb-3 opacity-50">👥</div>
-            <h3 className="text-lg font-semibold text-gray-300 mb-1">No customers found</h3>
-            <p className="text-sm text-gray-500">Try adjusting your search criteria or add a new customer.</p>
+            <h3 className="text-lg font-semibold text-foreground mb-1">No customers found</h3>
+            <p className="text-sm text-muted-foreground">Try adjusting your search criteria or add a new customer.</p>
           </div>
         ) : (
           currentCustomers.map((customer) => {
@@ -148,52 +148,52 @@ function CustomersManagement() {
             return (
               <div
                 key={customer.id}
-                className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr_70px_55px_78px_68px_auto] gap-2 px-4 py-3 border-b border-gray-700/40 hover:bg-white/[0.02] transition-colors items-center group cursor-pointer"
+                className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr_70px_55px_78px_68px_auto] gap-2 px-4 py-3 border-b border-border/40 hover:bg-white/[0.02] transition-colors items-center group cursor-pointer"
                 onClick={() => handleViewCustomer(customer)}
               >
                 {/* Customer */}
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="relative shrink-0">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-300 to-[#4daeac] flex items-center justify-center text-white font-semibold text-xs">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-300 to-primary flex items-center justify-center text-white font-semibold text-xs">
                       {customer.company_name.charAt(0).toUpperCase()}
                     </div>
                     {hasLoggedIn && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#1a1f2a]" title="Has logged in" />
+                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-success border-2 border-card" title="Has logged in" />
                     )}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-medium text-white truncate group-hover:text-brand-300 transition-colors">
+                    <div className="text-sm font-medium text-foreground truncate group-hover:text-brand-300 transition-colors">
                       {customer.company_name}
                     </div>
                     {customer.location_region && (
-                      <div className="text-[11px] text-gray-500 truncate">{customer.location_region}</div>
+                      <div className="text-[11px] text-muted-foreground truncate">{customer.location_region}</div>
                     )}
                   </div>
                 </div>
 
                 {/* Contact */}
                 <div className="hidden lg:flex flex-col min-w-0">
-                  <span className="text-[13px] text-gray-300 truncate">{email || 'No email'}</span>
-                  {phone && <span className="text-[11px] text-gray-500">{phone}</span>}
+                  <span className="text-[13px] text-foreground truncate">{email || 'No email'}</span>
+                  {phone && <span className="text-[11px] text-muted-foreground">{phone}</span>}
                 </div>
 
                 {/* Total Spent */}
-                <div className="text-[13px] font-medium text-white tabular-nums">
-                  <span className="lg:hidden text-xs text-gray-500 mr-2">Spent:</span>
+                <div className="text-[13px] font-medium text-foreground tabular-nums">
+                  <span className="lg:hidden text-xs text-muted-foreground mr-2">Spent:</span>
                   {formatCurrency(customer.total_spent || 0)}
                 </div>
 
                 {/* Outstanding */}
                 <div className={cn(
                   'text-[13px] font-medium tabular-nums',
-                  outstanding > 0 ? 'text-amber-400' : 'text-gray-600'
+                  outstanding > 0 ? 'text-warning' : 'text-muted-foreground'
                 )}>
-                  <span className="lg:hidden text-xs text-gray-500 mr-2">Owed:</span>
+                  <span className="lg:hidden text-xs text-muted-foreground mr-2">Owed:</span>
                   {outstanding > 0 ? formatCurrency(outstanding) : '-'}
                 </div>
 
                 {/* Last Order */}
-                <div className="hidden lg:block text-[11px] text-gray-400 tabular-nums">
+                <div className="hidden lg:block text-[11px] text-muted-foreground tabular-nums">
                   {formatDate(customer.last_order_date)}
                 </div>
 
@@ -204,7 +204,7 @@ function CustomersManagement() {
                       {customer.payment_terms_label}
                     </span>
                   ) : (
-                    <span className="text-xs text-gray-600">-</span>
+                    <span className="text-xs text-muted-foreground">-</span>
                   )}
                 </div>
 
@@ -220,7 +220,7 @@ function CustomersManagement() {
                   </button>
                   <button
                     onClick={() => handleViewOrders(customer)}
-                    className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-emerald-400/80 border border-emerald-400/25 bg-emerald-400/5 rounded-md hover:text-emerald-400 hover:border-emerald-400/40 hover:bg-emerald-400/10 transition-all"
+                    className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-success/80 border border-success/20 bg-success/5 rounded-md hover:text-success hover:border-success/20 hover:bg-success/10 transition-all"
                     title="View Orders"
                   >
                     <Eye size={11} />
@@ -238,10 +238,10 @@ function CustomersManagement() {
   const renderGridView = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
       {currentCustomers.length === 0 ? (
-        <div className="col-span-full flex flex-col items-center justify-center py-16 text-gray-500">
+        <div className="col-span-full flex flex-col items-center justify-center py-16 text-muted-foreground">
           <div className="text-4xl mb-3 opacity-50">👥</div>
-          <h3 className="text-lg font-semibold text-gray-300 mb-1">No customers found</h3>
-          <p className="text-sm text-gray-500">Try adjusting your search criteria or add a new customer.</p>
+          <h3 className="text-lg font-semibold text-foreground mb-1">No customers found</h3>
+          <p className="text-sm text-muted-foreground">Try adjusting your search criteria or add a new customer.</p>
         </div>
       ) : (
         currentCustomers.map((customer) => {
@@ -252,69 +252,69 @@ function CustomersManagement() {
           return (
             <div
               key={customer.id}
-              className="bg-[#0f1419] border border-gray-700/60 rounded-xl p-5 hover:border-gray-600 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 transition-all cursor-pointer group"
+              className="bg-background border border-border/60 rounded-xl p-5 hover:border-border hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/20 transition-all cursor-pointer group"
               onClick={() => handleViewCustomer(customer)}
             >
               {/* Card Header */}
               <div className="flex items-center gap-3 mb-4">
                 <div className="relative shrink-0">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-brand-300 to-[#4daeac] flex items-center justify-center text-white font-semibold text-sm">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-brand-300 to-primary flex items-center justify-center text-white font-semibold text-sm">
                     {customer.company_name.charAt(0).toUpperCase()}
                   </div>
                   {hasLoggedIn && (
-                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0f1419]" title="Has logged in" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-success border-2 border-background" title="Has logged in" />
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-semibold text-white truncate group-hover:text-brand-300 transition-colors">
+                  <h3 className="text-sm font-semibold text-foreground truncate group-hover:text-brand-300 transition-colors">
                     {customer.company_name}
                   </h3>
-                  <p className="text-xs text-gray-500 truncate">
+                  <p className="text-xs text-muted-foreground truncate">
                     {email || 'No email'}
                   </p>
                 </div>
               </div>
 
               {/* Card Stats */}
-              <div className="grid grid-cols-4 gap-2 mb-4 p-3 bg-[#1a1f2a] rounded-lg border border-gray-700/40">
+              <div className="grid grid-cols-4 gap-2 mb-4 p-3 bg-card rounded-lg border border-border/40">
                 <div className="text-center">
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Spent</div>
-                  <div className="text-sm font-semibold text-white tabular-nums">{formatCurrency(customer.total_spent || 0)}</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Spent</div>
+                  <div className="text-sm font-semibold text-foreground tabular-nums">{formatCurrency(customer.total_spent || 0)}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Owed</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Owed</div>
                   <div className={cn(
                     'text-sm font-semibold tabular-nums',
-                    outstanding > 0 ? 'text-amber-400' : 'text-gray-600'
+                    outstanding > 0 ? 'text-warning' : 'text-muted-foreground'
                   )}>
                     {outstanding > 0 ? formatCurrency(outstanding) : '-'}
                   </div>
                 </div>
                 <div className="text-center">
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Last Order</div>
-                  <div className="text-[11px] font-medium text-gray-400 tabular-nums">{formatDate(customer.last_order_date)}</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Last Order</div>
+                  <div className="text-[11px] font-medium text-muted-foreground tabular-nums">{formatDate(customer.last_order_date)}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Terms</div>
-                  <div className="text-sm font-medium text-gray-400">{customer.payment_terms_label || '-'}</div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Terms</div>
+                  <div className="text-sm font-medium text-muted-foreground">{customer.payment_terms_label || '-'}</div>
                 </div>
               </div>
 
               {/* Card Footer */}
               <div className="flex items-center justify-between">
-                <span className="text-xs text-gray-500">
+                <span className="text-xs text-muted-foreground">
                   {customer.location_region || 'No region'}
                 </span>
                 <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleViewCustomer(customer)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-gray-400 border border-gray-700 rounded-md hover:text-brand-300 hover:border-brand-300/40 transition-all"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-muted-foreground border border-border rounded-md hover:text-brand-300 hover:border-brand-300/40 transition-all"
                   >
                     <User size={11} /> View
                   </button>
                   <button
                     onClick={() => handleViewOrders(customer)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-gray-400 border border-gray-700 rounded-md hover:text-emerald-400 hover:border-emerald-400/40 transition-all"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-muted-foreground border border-border rounded-md hover:text-success hover:border-success/20 transition-all"
                   >
                     <Eye size={11} /> Orders
                   </button>
@@ -328,31 +328,31 @@ function CustomersManagement() {
   );
 
   return (
-    <div className="min-h-screen text-white bg-gradient-to-br from-[#0f1419] via-[#1a1f2a] to-[#2c3e50] p-4 relative overflow-hidden">
+    <div className="min-h-screen text-foreground bg-background p-4 relative overflow-hidden">
       {/* Table Card */}
-      <div className="bg-[#1a1f2a] rounded-xl border border-gray-700 overflow-hidden">
+      <div className="bg-card rounded-xl border border-border overflow-hidden">
         {/* Integrated Toolbar */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-700 flex-wrap">
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border flex-wrap">
           {/* Search */}
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <input
               type="text"
               placeholder="Search customers..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-              className="w-full pl-9 pr-3 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white text-sm placeholder-gray-500 transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30"
+              className="w-full pl-9 pr-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm placeholder-muted-foreground transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30"
             />
           </div>
 
           {/* View Toggle */}
-          <div className="flex bg-[#0f1419] border border-gray-700 rounded-lg overflow-hidden">
+          <div className="flex bg-background border border-border rounded-lg overflow-hidden">
             <button
               className={cn(
                 'p-2 transition-all',
                 viewMode === 'list'
-                  ? 'bg-gradient-to-r from-brand-300 to-[#4daeac] text-white'
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               )}
               onClick={() => setViewMode('list')}
               title="List View"
@@ -363,8 +363,8 @@ function CustomersManagement() {
               className={cn(
                 'p-2 transition-all',
                 viewMode === 'grid'
-                  ? 'bg-gradient-to-r from-brand-300 to-[#4daeac] text-white'
-                  : 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
               )}
               onClick={() => setViewMode('grid')}
               title="Grid View"
@@ -377,7 +377,7 @@ function CustomersManagement() {
           <select
             value={sortBy}
             onChange={(e) => { setSortBy(e.target.value as SortBy); setCurrentPage(1); }}
-            className="px-3 py-2 bg-[#0f1419] border border-gray-700 rounded-lg text-white text-sm cursor-pointer transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30"
+            className="px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm cursor-pointer transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30"
           >
             <option value="name">Sort by Name</option>
             <option value="date">Sort by Date Created</option>
@@ -388,7 +388,7 @@ function CustomersManagement() {
           {/* New Customer */}
           <button
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-brand-300 to-[#4daeac] text-white rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-brand-300/25 transition-all shrink-0"
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-all shrink-0"
           >
             <Plus size={16} />
             New Customer
@@ -396,7 +396,7 @@ function CustomersManagement() {
         </div>
 
         {/* Results count */}
-        <div className="px-5 py-2 text-xs text-gray-500 border-b border-gray-700/40">
+        <div className="px-5 py-2 text-xs text-muted-foreground border-b border-border/40">
           {filteredAndSortedCustomers.length} customer{filteredAndSortedCustomers.length !== 1 ? 's' : ''}
           {search && ` matching "${search}"`}
         </div>
@@ -406,25 +406,25 @@ function CustomersManagement() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-gray-700">
-            <span className="text-sm text-gray-500">
+          <div className="flex items-center justify-between px-5 py-3 border-t border-border">
+            <span className="text-sm text-muted-foreground">
               {(currentPage - 1) * customersPerPage + 1}–{Math.min(currentPage * customersPerPage, filteredAndSortedCustomers.length)} of {filteredAndSortedCustomers.length}
             </span>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="p-2 text-gray-400 border border-gray-700 rounded-md hover:bg-gray-700/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="p-2 text-muted-foreground border border-border rounded-md hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft size={16} />
               </button>
-              <span className="text-sm text-gray-300 font-medium px-2">
+              <span className="text-sm text-foreground font-medium px-2">
                 {currentPage} / {totalPages}
               </span>
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
-                className="p-2 text-gray-400 border border-gray-700 rounded-md hover:bg-gray-700/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                className="p-2 text-muted-foreground border border-border rounded-md hover:bg-muted disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight size={16} />
               </button>

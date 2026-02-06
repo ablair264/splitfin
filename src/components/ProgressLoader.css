@@ -24,7 +24,7 @@
   bottom: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  background: rgba(15, 20, 25, 0.85) !important;
+  background: color-mix(in srgb, var(--background) 85%, transparent) !important;
   backdrop-filter: blur(8px) !important;
   -webkit-backdrop-filter: blur(8px) !important;
 }
@@ -49,12 +49,12 @@
   max-width: 400px;
   width: 100%;
   padding: 2rem;
-  background: rgba(26, 31, 42, 0.9);
+  background: color-mix(in srgb, var(--card) 90%, transparent);
   border-radius: 16px;
-  border: 1px solid rgba(121, 213, 233, 0.2);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
               0 10px 10px -5px rgba(0, 0, 0, 0.04),
-              0 0 0 1px rgba(121, 213, 233, 0.1);
+              0 0 0 1px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 /* Animation container */
@@ -73,7 +73,7 @@
 .progress-message {
   font-size: 1.25rem !important;
   font-weight: 600 !important;
-  color: #ffffff !important;
+  color: var(--foreground) !important;
   margin: 0 !important;
   letter-spacing: -0.025em !important;
 }
@@ -91,7 +91,7 @@
 .progress-loader-bar {
   width: 100% !important;
   height: 8px !important;
-  background: rgba(121, 213, 233, 0.2) !important;
+  background: color-mix(in srgb, var(--primary) 20%, transparent) !important;
   border-radius: 9999px !important;
   overflow: hidden !important;
   position: relative !important;
@@ -100,12 +100,12 @@
 /* Progress bar fill */
 .progress-bar-fill {
   height: 100% !important;
-  background: linear-gradient(90deg, #79d5e9 0%, #4daebc 100%) !important;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary) 100%) !important;
   border-radius: 9999px !important;
   transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   position: relative !important;
   overflow: hidden !important;
-  box-shadow: 0 0 20px rgba(121, 213, 233, 0.5) !important;
+  box-shadow: 0 0 20px color-mix(in srgb, var(--primary) 50%, transparent) !important;
 }
 
 /* Animated shimmer effect */
@@ -129,8 +129,8 @@
 .progress-percentage {
   font-size: 1.125rem !important;
   font-weight: 600 !important;
-  color: #79d5e9 !important;
-  text-shadow: 0 0 10px rgba(121, 213, 233, 0.5) !important;
+  color: var(--primary) !important;
+  text-shadow: 0 0 10px color-mix(in srgb, var(--primary) 50%, transparent) !important;
 }
 
 /* Animations */

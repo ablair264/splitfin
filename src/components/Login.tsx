@@ -50,7 +50,7 @@ export default function Login() {
                 }}
               />
             </div>
-            <p className="text-sm text-gray-300 font-medium opacity-90">
+            <p className="text-sm text-muted-foreground font-medium opacity-90">
               Access your dashboard
             </p>
           </div>
@@ -74,7 +74,7 @@ export default function Login() {
                 placeholder="Enter your agent ID"
                 value={agentId}
                 onChange={(e) => setAgentId(e.target.value)}
-                className="w-full px-5 py-3 border-2 border-transparent rounded-xl text-sm font-medium bg-[rgba(31,41,55,0.8)] text-white placeholder-gray-500 outline-none transition-all duration-300 shadow-md min-h-[48px] focus:border-brand-300 focus:bg-[rgba(31,41,55,0.9)] focus:shadow-[0_0_0_3px_rgba(121,213,233,0.1),0_8px_25px_rgba(0,0,0,0.15)] focus:-translate-y-0.5 disabled:bg-gray-800/50 disabled:text-gray-500 disabled:cursor-not-allowed md:text-base"
+                className="w-full px-5 py-3 border-2 border-transparent rounded-xl text-sm font-medium bg-input text-foreground placeholder-muted-foreground outline-none transition-all duration-300 shadow-md min-h-[48px] focus:border-primary focus:bg-muted focus:shadow-[0_0_0_3px_rgba(121,213,233,0.1),0_8px_25px_rgba(0,0,0,0.15)] focus:-translate-y-0.5 disabled:bg-muted/50 disabled:text-muted-foreground disabled:cursor-not-allowed md:text-base"
                 required
                 disabled={loading}
                 autoComplete="username"
@@ -91,7 +91,7 @@ export default function Login() {
                 placeholder="Enter your PIN"
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                className="w-full px-5 py-3 border-2 border-transparent rounded-xl text-sm font-medium bg-[rgba(31,41,55,0.8)] text-white placeholder-gray-500 outline-none transition-all duration-300 shadow-md min-h-[48px] focus:border-brand-300 focus:bg-[rgba(31,41,55,0.9)] focus:shadow-[0_0_0_3px_rgba(121,213,233,0.1),0_8px_25px_rgba(0,0,0,0.15)] focus:-translate-y-0.5 disabled:bg-gray-800/50 disabled:text-gray-500 disabled:cursor-not-allowed md:text-base"
+                className="w-full px-5 py-3 border-2 border-transparent rounded-xl text-sm font-medium bg-input text-foreground placeholder-muted-foreground outline-none transition-all duration-300 shadow-md min-h-[48px] focus:border-primary focus:bg-muted focus:shadow-[0_0_0_3px_rgba(121,213,233,0.1),0_8px_25px_rgba(0,0,0,0.15)] focus:-translate-y-0.5 disabled:bg-muted/50 disabled:text-muted-foreground disabled:cursor-not-allowed md:text-base"
                 required
                 disabled={loading}
                 autoComplete="current-password"
@@ -124,7 +124,7 @@ export default function Login() {
 
           {/* Footer */}
           <div className="mt-6 text-center">
-            <p className="text-xs text-gray-300 leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               Need help? Contact your administrator for assistance.
             </p>
           </div>

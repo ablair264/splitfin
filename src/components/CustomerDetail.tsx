@@ -140,10 +140,10 @@ export default function CustomerDetail() {
   const orderStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'confirmed': case 'invoiced': return 'text-brand-300 bg-brand-300/10';
-      case 'draft': return 'text-gray-400 bg-gray-400/10';
-      case 'void': case 'cancelled': return 'text-red-400 bg-red-400/10';
-      case 'closed': return 'text-gray-500 bg-gray-500/10';
-      default: return 'text-gray-400 bg-gray-400/10';
+      case 'draft': return 'text-muted-foreground bg-muted/30';
+      case 'void': case 'cancelled': return 'text-destructive bg-destructive/10';
+      case 'closed': return 'text-muted-foreground bg-muted/30';
+      default: return 'text-muted-foreground bg-muted/30';
     }
   };
 
@@ -155,7 +155,7 @@ export default function CustomerDetail() {
   if (!customerData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <p className="text-gray-400">Customer not found</p>
+        <p className="text-muted-foreground">Customer not found</p>
         <button onClick={() => navigate('/customers')} className="text-sm text-brand-300 hover:underline">
           Back to Customers
         </button>
@@ -169,7 +169,7 @@ export default function CustomerDetail() {
   const lastOrderDate = orders.length > 0 ? orders[0]?.date : undefined;
 
   // -- Shared input classes --
-  const inputCls = 'w-full bg-white/[0.04] border border-white/[0.08] rounded px-2 py-1.5 text-[13px] text-gray-200 placeholder-gray-600 focus:outline-none focus:border-brand-300/40 transition-colors';
+  const inputCls = 'w-full bg-white/[0.04] border border-white/[0.08] rounded px-2 py-1.5 text-[13px] text-foreground placeholder-muted-foreground focus:outline-none focus:border-brand-300/40 transition-colors';
 
   // Inline helper for key-value rows (view & edit modes)
   const InfoRow = ({
@@ -186,7 +186,7 @@ export default function CustomerDetail() {
     if (isEditing && editKey) {
       return (
         <div className="flex items-center justify-between gap-3 py-2 border-b border-white/[0.04] last:border-0">
-          <span className="text-[13px] text-gray-500 shrink-0">{label}</span>
+          <span className="text-[13px] text-muted-foreground shrink-0">{label}</span>
           <input
             type="text"
             value={(editData[editKey] as string) ?? ''}
@@ -199,8 +199,8 @@ export default function CustomerDetail() {
     }
     return (
       <div className="flex items-baseline justify-between py-2.5 border-b border-white/[0.04] last:border-0">
-        <span className="text-[13px] text-gray-500">{label}</span>
-        <span className={cn('text-[13px] font-medium tabular-nums', accent ? 'text-brand-300' : 'text-gray-200')}>
+        <span className="text-[13px] text-muted-foreground">{label}</span>
+        <span className={cn('text-[13px] font-medium tabular-nums', accent ? 'text-brand-300' : 'text-foreground')}>
           {value}
         </span>
       </div>
@@ -219,8 +219,8 @@ export default function CustomerDetail() {
     return (
       <div>
         <div className="flex items-center gap-1.5 mb-2">
-          <MapPin size={11} className="text-gray-600" />
-          <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">{label}</span>
+          <MapPin size={11} className="text-muted-foreground" />
+          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
         </div>
         <div className="space-y-2 pl-[17px]">
           {ADDRESS_FIELDS.map(({ key, label: fieldLabel }) => (
@@ -252,7 +252,7 @@ export default function CustomerDetail() {
       {/* Back link */}
       <button
         onClick={() => navigate('/customers')}
-        className="flex items-center gap-1.5 text-[13px] text-gray-500 hover:text-gray-300 transition-colors mb-5"
+        className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors mb-5"
       >
         <ArrowLeft size={14} />
         Customers
@@ -262,7 +262,7 @@ export default function CustomerDetail() {
       <div className="flex items-center gap-6 pb-7 mb-8 border-b border-white/[0.06]">
         {/* Customer identity */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-300 to-[#4daeac] flex items-center justify-center text-white font-semibold text-[14px] shrink-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-300 to-primary flex items-center justify-center text-white font-semibold text-[14px] shrink-0">
             {customerData.company_name.charAt(0).toUpperCase()}
           </div>
           <div>
@@ -271,17 +271,17 @@ export default function CustomerDetail() {
               <span className={cn(
                 'inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider',
                 customerData.status === 'active'
-                  ? 'bg-emerald-400/10 text-emerald-400'
-                  : 'bg-gray-500/10 text-gray-500'
+                  ? 'bg-success/10 text-success'
+                  : 'bg-muted/30 text-muted-foreground'
               )}>
                 {customerData.status}
               </span>
               {customerData.location_region && (
-                <span className="text-[11px] text-gray-500">{customerData.location_region}</span>
+                <span className="text-[11px] text-muted-foreground">{customerData.location_region}</span>
               )}
               {customerData.brand_preferences && customerData.brand_preferences.length > 0 && (
                 <>
-                  <span className="text-gray-700">·</span>
+                  <span className="text-border">·</span>
                   {customerData.brand_preferences.map((brand, i) => {
                     const label = typeof brand === 'string' ? brand : (brand as any)?.brand || String(brand);
                     return (
@@ -304,34 +304,34 @@ export default function CustomerDetail() {
         {/* Metrics */}
         <div className="flex items-center gap-6 flex-1 min-w-0">
           <div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Spent</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Spent</div>
             <div className="text-lg font-semibold text-white tabular-nums">{formatCurrency(customerData.total_spent)}</div>
           </div>
           <div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Outstanding</div>
-            <div className={cn('text-lg font-semibold tabular-nums', outstandingAmount > 0 ? 'text-amber-400' : 'text-gray-600')}>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Outstanding</div>
+            <div className={cn('text-lg font-semibold tabular-nums', outstandingAmount > 0 ? 'text-warning' : 'text-muted-foreground')}>
               {outstandingAmount > 0 ? formatCurrency(outstandingAmount) : '\u00A30'}
             </div>
           </div>
           <div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Terms</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Terms</div>
             <div className="text-lg font-semibold text-white">{customerData.payment_terms_label || customerData.payment_terms || '-'}</div>
           </div>
           <div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Orders</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Orders</div>
             <div className="text-lg font-semibold text-white tabular-nums">{orders.length}</div>
           </div>
           <div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Avg Order</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Avg Order</div>
             <div className="text-lg font-semibold text-white tabular-nums">{formatCurrency(customerData.average_order_value)}</div>
           </div>
           <div>
-            <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Since</div>
-            <div className="text-sm font-medium text-gray-300">{formatDate(customerData.created_at)}</div>
+            <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Since</div>
+            <div className="text-sm font-medium text-foreground">{formatDate(customerData.created_at)}</div>
           </div>
           {customerData.segment && (
             <div>
-              <div className="text-[10px] text-gray-500 uppercase tracking-wider mb-0.5">Segment</div>
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Segment</div>
               <div className="text-sm font-medium text-brand-300">{customerData.segment}</div>
             </div>
           )}
@@ -344,7 +344,7 @@ export default function CustomerDetail() {
               <button
                 onClick={handleCancel}
                 disabled={saving}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium text-gray-400 hover:text-gray-200 bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.06] transition-colors"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium text-muted-foreground hover:text-foreground bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.06] transition-colors"
               >
                 <X size={13} /> Cancel
               </button>
@@ -378,7 +378,7 @@ export default function CustomerDetail() {
 
       {/* Save error banner */}
       {saveError && (
-        <div className="mb-6 px-4 py-2.5 rounded-md bg-red-400/10 border border-red-400/20 text-[13px] text-red-400">
+        <div className="mb-6 px-4 py-2.5 rounded-md bg-destructive/10 border border-destructive/20 text-[13px] text-destructive">
           {saveError}
         </div>
       )}
@@ -391,20 +391,20 @@ export default function CustomerDetail() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Company details */}
             <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-4">Company</h3>
+              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">Company</h3>
               <InfoRow label="Company Name" value={customerData.company_name} editKey="company_name" />
               <InfoRow label="Contact Name" value={customerData.contact_name || '-'} editKey="contact_name" />
               {isEditing ? (
                 <InfoRow label="Email" value={customerData.email || primaryContact?.email || '-'} editKey="email" />
               ) : (
                 <div className="flex items-baseline justify-between py-2.5 border-b border-white/[0.04]">
-                  <span className="text-[13px] text-gray-500">Email</span>
+                  <span className="text-[13px] text-muted-foreground">Email</span>
                   {(customerData.email || primaryContact?.email) ? (
-                    <a href={`mailto:${customerData.email || primaryContact?.email}`} className="text-[13px] font-medium text-gray-200 hover:text-brand-300 transition-colors">
+                    <a href={`mailto:${customerData.email || primaryContact?.email}`} className="text-[13px] font-medium text-foreground hover:text-brand-300 transition-colors">
                       {customerData.email || primaryContact?.email}
                     </a>
                   ) : (
-                    <span className="text-[13px] font-medium text-gray-200">-</span>
+                    <span className="text-[13px] font-medium text-foreground">-</span>
                   )}
                 </div>
               )}
@@ -412,13 +412,13 @@ export default function CustomerDetail() {
                 <InfoRow label="Phone" value={customerData.phone || '-'} editKey="phone" />
               ) : (
                 <div className="flex items-baseline justify-between py-2.5 border-b border-white/[0.04]">
-                  <span className="text-[13px] text-gray-500">Phone</span>
+                  <span className="text-[13px] text-muted-foreground">Phone</span>
                   {customerData.phone ? (
-                    <a href={`tel:${customerData.phone}`} className="text-[13px] font-medium text-gray-200 hover:text-brand-300 transition-colors tabular-nums">
+                    <a href={`tel:${customerData.phone}`} className="text-[13px] font-medium text-foreground hover:text-brand-300 transition-colors tabular-nums">
                       {customerData.phone}
                     </a>
                   ) : (
-                    <span className="text-[13px] font-medium text-gray-200">-</span>
+                    <span className="text-[13px] font-medium text-foreground">-</span>
                   )}
                 </div>
               )}
@@ -426,13 +426,13 @@ export default function CustomerDetail() {
                 <InfoRow label="Mobile" value={customerData.mobile || '-'} editKey="mobile" />
               ) : (
                 <div className="flex items-baseline justify-between py-2.5 border-b border-white/[0.04]">
-                  <span className="text-[13px] text-gray-500">Mobile</span>
+                  <span className="text-[13px] text-muted-foreground">Mobile</span>
                   {customerData.mobile ? (
-                    <a href={`tel:${customerData.mobile}`} className="text-[13px] font-medium text-gray-200 hover:text-brand-300 transition-colors tabular-nums">
+                    <a href={`tel:${customerData.mobile}`} className="text-[13px] font-medium text-foreground hover:text-brand-300 transition-colors tabular-nums">
                       {customerData.mobile}
                     </a>
                   ) : (
-                    <span className="text-[13px] font-medium text-gray-200">-</span>
+                    <span className="text-[13px] font-medium text-foreground">-</span>
                   )}
                 </div>
               )}
@@ -441,7 +441,7 @@ export default function CustomerDetail() {
 
             {/* Financial — always read-only */}
             <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-4">Financial</h3>
+              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">Financial</h3>
               <InfoRow label="Total Spent" value={formatCurrency(customerData.total_spent)} accent />
               <InfoRow label="Outstanding" value={formatCurrency(outstandingAmount)} />
               <InfoRow label="Unused Credits" value={formatCurrency(customerData.unused_credits)} />
@@ -453,7 +453,7 @@ export default function CustomerDetail() {
           {/* Payment terms (editable) */}
           {isEditing && (
             <div className="mt-6">
-              <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-4">Payment Terms</h3>
+              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">Payment Terms</h3>
               <InfoRow label="Payment Terms" value={customerData.payment_terms || '-'} editKey="payment_terms" />
             </div>
           )}
@@ -464,7 +464,7 @@ export default function CustomerDetail() {
           {/* Orders */}
           <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
+              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Orders ({orders.length})
               </h3>
               {orders.length > 0 && (
@@ -478,10 +478,10 @@ export default function CustomerDetail() {
             </div>
 
             {ordersLoading ? (
-              <div className="py-8 text-center text-sm text-gray-500">Loading orders...</div>
+              <div className="py-8 text-center text-sm text-muted-foreground">Loading orders...</div>
             ) : orders.length === 0 ? (
               <div className="py-8 text-center">
-                <p className="text-sm text-gray-500 mb-3">No orders found</p>
+                <p className="text-sm text-muted-foreground mb-3">No orders found</p>
                 <button
                   onClick={() => navigate('/orders/new', { state: { fromCustomerDetail: true, customer: { id: customerData.id, display_name: customerData.company_name } } })}
                   className="text-[13px] text-brand-300 hover:underline"
@@ -492,7 +492,7 @@ export default function CustomerDetail() {
             ) : (
               <div className="rounded-lg border border-white/[0.06] overflow-hidden">
                 {/* Orders header */}
-                <div className="grid grid-cols-[1fr_90px_80px_80px_60px] gap-3 px-4 py-2.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider bg-white/[0.02]">
+                <div className="grid grid-cols-[1fr_90px_80px_80px_60px] gap-3 px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-white/[0.02]">
                   <div>Order</div>
                   <div>Date</div>
                   <div>Status</div>
@@ -505,23 +505,23 @@ export default function CustomerDetail() {
                     className="grid grid-cols-[1fr_90px_80px_80px_60px] gap-3 px-4 py-2.5 border-t border-white/[0.04] hover:bg-white/[0.015] transition-colors cursor-pointer items-center"
                     onClick={() => navigate(`/order/${order.id}`)}
                   >
-                    <div className="text-[13px] text-gray-200 font-medium truncate">
+                    <div className="text-[13px] text-foreground font-medium truncate">
                       #{order.salesorder_number || order.id}
                       {order.reference_number && (
-                        <span className="ml-2 text-[11px] text-gray-600">{order.reference_number}</span>
+                        <span className="ml-2 text-[11px] text-muted-foreground">{order.reference_number}</span>
                       )}
                     </div>
-                    <div className="text-[12px] text-gray-500 tabular-nums">{formatDate(order.date)}</div>
+                    <div className="text-[12px] text-muted-foreground tabular-nums">{formatDate(order.date)}</div>
                     <div>
                       <span className={cn('inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium capitalize', orderStatusColor(order.status))}>
                         {order.status}
                       </span>
                     </div>
-                    <div className="text-[13px] font-medium text-gray-200 text-right tabular-nums">
+                    <div className="text-[13px] font-medium text-foreground text-right tabular-nums">
                       {formatCurrency(order.total)}
                     </div>
                     <div className="text-right">
-                      <ExternalLink size={12} className="text-gray-600 inline-block" />
+                      <ExternalLink size={12} className="text-muted-foreground inline-block" />
                     </div>
                   </div>
                 ))}
@@ -544,7 +544,7 @@ export default function CustomerDetail() {
         <div className="flex flex-col gap-6">
           {/* Contact Persons — always read-only */}
           <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5">
-            <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-4">
+            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">
               Contacts ({contactPersons.length})
             </h3>
             {contactPersons.length > 0 ? (
@@ -552,7 +552,7 @@ export default function CustomerDetail() {
                 {contactPersons.map((contact, i) => (
                   <div key={contact.contact_person_id || i} className="py-3 border-b border-white/[0.04] last:border-0">
                     <div className="flex items-center gap-2 mb-1.5">
-                      <span className="text-[13px] font-medium text-gray-200">
+                      <span className="text-[13px] font-medium text-foreground">
                         {`${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'Unnamed'}
                       </span>
                       {contact.is_primary_contact && (
@@ -562,17 +562,17 @@ export default function CustomerDetail() {
                       )}
                     </div>
                     {contact.email && (
-                      <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 text-[12px] text-gray-400 hover:text-brand-300 transition-colors mb-0.5">
+                      <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-brand-300 transition-colors mb-0.5">
                         <Mail size={11} /> {contact.email}
                       </a>
                     )}
                     {contact.phone && (
-                      <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
+                      <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
                         <Phone size={11} /> {contact.phone}
                       </div>
                     )}
                     {contact.mobile && (
-                      <div className="flex items-center gap-1.5 text-[12px] text-gray-500">
+                      <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
                         <Phone size={11} /> {contact.mobile}
                       </div>
                     )}
@@ -580,13 +580,13 @@ export default function CustomerDetail() {
                 ))}
               </div>
             ) : (
-              <p className="text-[13px] text-gray-600">No contacts</p>
+              <p className="text-[13px] text-muted-foreground">No contacts</p>
             )}
           </div>
 
           {/* Addresses */}
           <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5">
-            <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-4">Addresses</h3>
+            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">Addresses</h3>
 
             {isEditing ? (
               <div className="space-y-6">
@@ -599,10 +599,10 @@ export default function CustomerDetail() {
                 {billingParts && (
                   <div>
                     <div className="flex items-center gap-1.5 mb-1.5">
-                      <MapPin size={11} className="text-gray-600" />
-                      <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Billing</span>
+                      <MapPin size={11} className="text-muted-foreground" />
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Billing</span>
                     </div>
-                    <div className="text-[13px] text-gray-300 leading-relaxed pl-[17px]">
+                    <div className="text-[13px] text-foreground leading-relaxed pl-[17px]">
                       {billingParts.map((part, i) => <div key={i}>{part}</div>)}
                     </div>
                   </div>
@@ -611,16 +611,16 @@ export default function CustomerDetail() {
                 {shippingParts && (
                   <div>
                     <div className="flex items-center gap-1.5 mb-1.5">
-                      <MapPin size={11} className="text-gray-600" />
-                      <span className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">Shipping</span>
+                      <MapPin size={11} className="text-muted-foreground" />
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Shipping</span>
                     </div>
-                    <div className="text-[13px] text-gray-300 leading-relaxed pl-[17px]">
+                    <div className="text-[13px] text-foreground leading-relaxed pl-[17px]">
                       {shippingParts.map((part, i) => <div key={i}>{part}</div>)}
                     </div>
                   </div>
                 )}
                 {!billingParts && !shippingParts && (
-                  <p className="text-[13px] text-gray-600">No addresses on file</p>
+                  <p className="text-[13px] text-muted-foreground">No addresses on file</p>
                 )}
               </div>
             )}
@@ -629,7 +629,7 @@ export default function CustomerDetail() {
           {/* Sync info — always read-only */}
           {customerData.zoho_contact_id && (
             <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-4">Integration</h3>
+              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">Integration</h3>
               <InfoRow label="Zoho ID" value={customerData.zoho_contact_id} />
               <InfoRow label="Sync Status" value={customerData.sync_status} />
             </div>

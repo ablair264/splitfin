@@ -11736,3 +11736,4 @@
 2026-02-06 00:32:57 [32minfo[39m: Rate limiter initialized:
 2026-02-06 00:32:57 [32minfo[39m: [Server] Zoho Sync Service started
 2026-02-06 00:32:57 [33mwarn[39m: [Security] ADMIN_API_KEY not configured - admin endpoints disabled
+2026-02-06 02:01:40 [32minfo[39m: [Server] SIGINT signal received - closing HTTP server

@@ -1,7 +1,7 @@
 .settings-container {
   min-height: 100vh;
-  background: #0a0f1b;
-  color: #e0e0e0;
+  background: var(--background);
+  color: var(--foreground);
 }
 
 .settings-loading {
@@ -18,16 +18,16 @@
   align-items: center;
   gap: 1rem;
   padding: 2rem;
-  background: #1a1f2a;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--card);
+  border-bottom: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
 }
 
 .back-button {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 20%, transparent);
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
-  color: #e0e0e0;
+  color: var(--foreground);
   cursor: pointer;
   transition: all 0.2s;
   display: flex;
@@ -36,8 +36,8 @@
 }
 
 .back-button:hover {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: color-mix(in srgb, var(--foreground) 15%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 30%, transparent);
 }
 
 .settings-header h1 {
@@ -71,11 +71,11 @@
   margin: 0 0 2rem 0;
   font-size: 1.5rem;
   font-weight: 600;
-  color: #e0e0e0;
+  color: var(--foreground);
 }
 
 .section-content {
-  background: #1a1f2a;
+  background: var(--card);
   border-radius: 12px;
   padding: 2rem;
 }
@@ -93,11 +93,11 @@
   margin: 0 0 1rem 0;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #e0e0e0;
+  color: var(--foreground);
 }
 
 .setting-description {
-  color: #a0a0a0;
+  color: var(--muted-foreground);
   margin: 0 0 1.5rem 0;
   line-height: 1.6;
 }
@@ -117,7 +117,7 @@
 
 .info-item label {
   font-size: 0.85rem;
-  color: #a0a0a0;
+  color: var(--muted-foreground);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -125,14 +125,14 @@
 .info-item p {
   margin: 0;
   font-size: 1rem;
-  color: #e0e0e0;
+  color: var(--foreground);
 }
 
 .role-badge {
   display: inline-block;
   padding: 0.25rem 0.75rem;
-  background: rgba(68, 131, 130, 0.2);
-  color: #79d5e9;
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  color: var(--primary);
   border-radius: 4px;
   font-size: 0.9rem;
   text-transform: capitalize;
@@ -143,7 +143,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 
 .preference-item:last-child {
@@ -154,21 +154,21 @@
 .preference-info h4 {
   margin: 0 0 0.25rem 0;
   font-size: 1rem;
-  color: #e0e0e0;
+  color: var(--foreground);
 }
 
 .preference-info p {
   margin: 0;
   font-size: 0.85rem;
-  color: #a0a0a0;
+  color: var(--muted-foreground);
 }
 
 .preference-select {
   padding: 0.5rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   border-radius: 6px;
-  color: #e0e0e0;
+  color: var(--foreground);
   font-size: 0.9rem;
   cursor: pointer;
 }
@@ -188,30 +188,30 @@
 
 .form-group label {
   font-size: 0.9rem;
-  color: #e0e0e0;
+  color: var(--foreground);
   font-weight: 500;
 }
 
 .form-input {
   padding: 0.75rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   border-radius: 6px;
-  color: #e0e0e0;
+  color: var(--foreground);
   font-size: 0.95rem;
   transition: all 0.2s;
 }
 
 .form-input:focus {
   outline: none;
-  border-color: #448382;
-  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
 }
 
 .save-button {
   align-self: flex-start;
   padding: 0.75rem 2rem;
-  background: #448382;
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 8px;
@@ -222,9 +222,9 @@
 }
 
 .save-button:hover {
-  background: #357371;
+  filter: brightness(0.9);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(68, 131, 130, 0.3);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 /* Notification Settings Styles */
@@ -239,25 +239,25 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
   border-radius: 8px;
   transition: all 0.2s;
 }
 
 .notification-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 
 .notification-info h4 {
   margin: 0 0 0.25rem 0;
   font-size: 0.95rem;
-  color: #e0e0e0;
+  color: var(--foreground);
 }
 
 .notification-info p {
   margin: 0;
   font-size: 0.85rem;
-  color: #a0a0a0;
+  color: var(--muted-foreground);
 }
 
 /* Toggle Switch Styles */
@@ -281,7 +281,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: color-mix(in srgb, var(--foreground) 10%, transparent);
   transition: 0.3s;
   border-radius: 24px;
 }
@@ -293,13 +293,13 @@
   width: 18px;
   left: 3px;
   bottom: 3px;
-  background-color: #a0a0a0;
+  background-color: var(--muted-foreground);
   transition: 0.3s;
   border-radius: 50%;
 }
 
 .toggle-switch input:checked + .toggle-slider {
-  background-color: #448382;
+  background-color: var(--primary);
 }
 
 .toggle-switch input:checked + .toggle-slider:before {
@@ -320,18 +320,18 @@
   align-items: center;
   gap: 0.5rem;
   padding: 2rem 1rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   border-radius: 8px;
-  color: #e0e0e0;
+  color: var(--foreground);
   cursor: pointer;
   transition: all 0.2s;
   text-align: center;
 }
 
 .tool-button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 20%, transparent);
   transform: translateY(-2px);
 }
 
@@ -342,7 +342,7 @@
 
 .tool-button svg {
   font-size: 2rem;
-  color: #448382;
+  color: var(--primary);
 }
 
 .tool-button span {
@@ -352,13 +352,13 @@
 
 .tool-button small {
   font-size: 0.75rem;
-  color: #a0a0a0;
+  color: var(--muted-foreground);
 }
 
 /* Security Settings Styles */
 .action-button {
   padding: 0.75rem 1.5rem;
-  background: #448382;
+  background: var(--primary);
   color: white;
   border: none;
   border-radius: 8px;
@@ -369,20 +369,20 @@
 }
 
 .action-button:hover:not(:disabled) {
-  background: #357371;
+  filter: brightness(0.9);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(68, 131, 130, 0.3);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 .action-button.secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: #e0e0e0;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  color: var(--foreground);
+  border: 1px solid color-mix(in srgb, var(--foreground) 20%, transparent);
 }
 
 .action-button.secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: color-mix(in srgb, var(--foreground) 15%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 30%, transparent);
 }
 
 .action-button:disabled {
@@ -401,20 +401,20 @@
   align-items: center;
   justify-content: space-between;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
   border-radius: 8px;
 }
 
 .session-info h4 {
   margin: 0 0 0.25rem 0;
   font-size: 0.95rem;
-  color: #e0e0e0;
+  color: var(--foreground);
 }
 
 .session-info p {
   margin: 0;
   font-size: 0.85rem;
-  color: #a0a0a0;
+  color: var(--muted-foreground);
 }
 
 /* Responsive Design */
@@ -450,8 +450,8 @@
 .spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #448382;
+  border: 3px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -465,7 +465,7 @@
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
-  background: rgba(255, 255, 255, 0.03);
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
   padding: 0.25rem;
   border-radius: 8px;
 }
@@ -476,7 +476,7 @@
   background: transparent;
   border: none;
   border-radius: 6px;
-  color: #a0a0a0;
+  color: var(--muted-foreground);
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -485,15 +485,15 @@
 }
 
 .migration-tab:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #e0e0e0;
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  color: var(--foreground);
 }
 
 .migration-tab.active {
-  background: #448382;
+  background: var(--primary);
   color: white;
 }
 
 .migration-tab.active:hover {
-  background: #357371;
+  filter: brightness(0.9);
 }

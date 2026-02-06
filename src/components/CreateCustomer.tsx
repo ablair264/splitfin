@@ -116,9 +116,9 @@ const CreateCustomer: React.FC<CreateCustomerProps> = ({ isOpen, onClose, onCrea
 
   if (!isOpen) return null;
 
-  const inputClasses = 'w-full px-3 py-2.5 bg-[#0f1419] border border-gray-700 rounded-lg text-white text-sm placeholder-gray-500 transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30';
-  const selectClasses = 'w-full px-3 py-2.5 bg-[#0f1419] border border-gray-700 rounded-lg text-white text-sm transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30 cursor-pointer';
-  const labelClasses = 'block text-sm font-medium text-gray-300 mb-1.5';
+  const inputClasses = 'w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground text-sm placeholder-muted-foreground transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30';
+  const selectClasses = 'w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground text-sm transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30 cursor-pointer';
+  const labelClasses = 'block text-sm font-medium text-foreground/80 mb-1.5';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -129,13 +129,13 @@ const CreateCustomer: React.FC<CreateCustomerProps> = ({ isOpen, onClose, onCrea
       />
 
       {/* Modal Panel */}
-      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[#1a1f2a] rounded-xl border border-gray-700 shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-card rounded-xl border border-border shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300">
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-[#1a1f2a] border-b border-gray-700 rounded-t-xl">
-          <h2 className="text-lg font-semibold text-white">New Customer</h2>
+        <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-card border-b border-border rounded-t-xl">
+          <h2 className="text-lg font-semibold text-foreground">New Customer</h2>
           <button
             onClick={resetAndClose}
-            className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
           >
             <X size={18} />
           </button>
@@ -152,7 +152,7 @@ const CreateCustomer: React.FC<CreateCustomerProps> = ({ isOpen, onClose, onCrea
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Company Information */}
           <div>
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
               <Building size={14} />
               Company Information
             </h3>
@@ -175,7 +175,7 @@ const CreateCustomer: React.FC<CreateCustomerProps> = ({ isOpen, onClose, onCrea
                   <span className="flex items-center gap-1.5">
                     <Users size={12} className="text-brand-300" />
                     Assigned Agent
-                    <span className="text-gray-500 font-normal">(optional)</span>
+                    <span className="text-muted-foreground font-normal">(optional)</span>
                   </span>
                 </label>
                 <select
@@ -198,7 +198,7 @@ const CreateCustomer: React.FC<CreateCustomerProps> = ({ isOpen, onClose, onCrea
 
           {/* Contact Information */}
           <div>
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
               <User size={14} />
               Contact Information
             </h3>
@@ -256,7 +256,7 @@ const CreateCustomer: React.FC<CreateCustomerProps> = ({ isOpen, onClose, onCrea
 
           {/* Billing Address */}
           <div>
-            <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">
+            <h3 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">
               <MapPin size={14} />
               Billing Address
             </h3>
@@ -329,11 +329,11 @@ const CreateCustomer: React.FC<CreateCustomerProps> = ({ isOpen, onClose, onCrea
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end gap-3 pt-2 border-t border-gray-700">
+          <div className="flex justify-end gap-3 pt-2 border-t border-border">
             <button
               type="button"
               onClick={resetAndClose}
-              className="px-4 py-2.5 text-sm font-medium text-gray-300 bg-gray-700/50 hover:bg-gray-700 rounded-lg transition-colors"
+              className="px-4 py-2.5 text-sm font-medium text-muted-foreground bg-muted hover:bg-muted/80 rounded-lg transition-colors"
             >
               Cancel
             </button>
@@ -341,9 +341,8 @@ const CreateCustomer: React.FC<CreateCustomerProps> = ({ isOpen, onClose, onCrea
               type="submit"
               disabled={loading}
               className={cn(
-                'flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-white rounded-lg transition-all',
-                'bg-gradient-to-r from-brand-300 to-[#4daeac]',
-                'hover:shadow-lg hover:shadow-brand-300/25',
+                'flex items-center gap-2 px-5 py-2.5 text-sm font-medium text-primary-foreground rounded-lg transition-all',
+                'bg-primary hover:bg-primary/90',
                 loading && 'opacity-60 cursor-not-allowed'
               )}
             >

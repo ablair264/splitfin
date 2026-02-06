@@ -300,7 +300,7 @@ const ImageManagement: React.FC = () => {
               key={brand.id}
               className={`${styles.brandPill} ${brandId === brand.id ? styles.active : ''}`}
               onClick={() => handleBrandClick(brand.id)}
-              style={{ '--brand-color': '#79d5e9' } as React.CSSProperties}
+              style={{ '--brand-color': 'var(--primary)' } as React.CSSProperties}
             >
               {brand.brand_name} ({brand.count})
             </button>
@@ -398,7 +398,7 @@ const ImageManagement: React.FC = () => {
                   isSelected={selectedImages.includes(image.id)}
                   onSelect={() => handleSelectImage(image.id)}
                   onDelete={() => handleDeleteImage(image.id)}
-                  brandColor="#79d5e9"
+                  brandColor="var(--primary)"
                 />
               ))}
             </div>

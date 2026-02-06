@@ -3,9 +3,9 @@ import { ClipboardList } from 'lucide-react';
 
 const OrderManagement: React.FC = () => (
   <div style={{ padding: '40px', textAlign: 'center' }}>
-    <ClipboardList size={48} style={{ color: '#79d5e9', marginBottom: '16px' }} />
+    <ClipboardList size={48} className="text-primary" style={{ marginBottom: '16px' }} />
     <h2>Order Management</h2>
-    <p style={{ color: '#666' }}>Manage orders - coming soon</p>
+    <p className="text-muted-foreground">Manage orders - coming soon</p>
   </div>
 );
 

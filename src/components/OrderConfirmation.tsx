@@ -7,14 +7,13 @@ const OrderConfirmation: React.FC = () => {
   
   return (
     <div style={{ padding: '40px', textAlign: 'center' }}>
-      <CheckCircle size={64} style={{ color: '#22c55e', marginBottom: '16px' }} />
+      <CheckCircle size={64} className="text-success" style={{ marginBottom: '16px' }} />
       <h2>Order Confirmed!</h2>
-      <p style={{ color: '#666', marginBottom: '24px' }}>Your order has been successfully placed.</p>
-      <button 
+      <p className="text-muted-foreground" style={{ marginBottom: '24px' }}>Your order has been successfully placed.</p>
+      <button
         onClick={() => navigate('/orders')}
+        className="bg-primary text-primary-foreground hover:bg-primary/90"
         style={{
-          background: 'linear-gradient(135deg, #79d5e9 0%, #4daeac 100%)',
-          color: 'white',
           border: 'none',
           padding: '12px 24px',
           borderRadius: '8px',

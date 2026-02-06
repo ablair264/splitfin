@@ -14,9 +14,9 @@ const NewOrder: React.FC = () => {
         <ArrowLeft size={20} /> Back to Orders
       </button>
       <div style={{ textAlign: 'center', padding: '40px' }}>
-        <ShoppingCart size={48} style={{ color: '#79d5e9', marginBottom: '16px' }} />
+        <ShoppingCart size={48} className="text-primary" style={{ marginBottom: '16px' }} />
         <h2>Create New Order</h2>
-        <p style={{ color: '#666' }}>Order creation form - coming soon</p>
+        <p className="text-muted-foreground">Order creation form - coming soon</p>
       </div>
     </div>
   );

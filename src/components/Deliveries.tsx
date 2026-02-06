@@ -138,19 +138,19 @@ const Deliveries: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'processing':
-        return '#fbbf24';
+        return 'var(--warning)';
       case 'shipped':
       case 'in_transit':
-        return '#3b82f6';
+        return 'var(--info)';
       case 'out_for_delivery':
-        return '#f59e0b';
+        return 'var(--warning)';
       case 'delivered':
-        return '#10b981';
+        return 'var(--success)';
       case 'failed':
       case 'returned':
-        return '#ef4444';
+        return 'var(--destructive)';
       default:
-        return '#6b7280';
+        return 'var(--muted-foreground)';
     }
   };
 
@@ -252,19 +252,19 @@ const Deliveries: React.FC = () => {
             <span className={styles.statLabel}>Total</span>
           </div>
           <div className={styles.stat}>
-            <span className={styles.statValue} style={{ color: '#10b981' }}>{stats.delivered}</span>
+            <span className={`${styles.statValue} text-success`}>{stats.delivered}</span>
             <span className={styles.statLabel}>Delivered</span>
           </div>
           <div className={styles.stat}>
-            <span className={styles.statValue} style={{ color: '#3b82f6' }}>{stats.in_transit}</span>
+            <span className={`${styles.statValue} text-info`}>{stats.in_transit}</span>
             <span className={styles.statLabel}>In Transit</span>
           </div>
           <div className={styles.stat}>
-            <span className={styles.statValue} style={{ color: '#fbbf24' }}>{stats.processing}</span>
+            <span className={`${styles.statValue} text-warning`}>{stats.processing}</span>
             <span className={styles.statLabel}>Processing</span>
           </div>
           <div className={styles.stat}>
-            <span className={styles.statValue} style={{ color: '#ef4444' }}>{stats.failed}</span>
+            <span className={`${styles.statValue} text-destructive`}>{stats.failed}</span>
             <span className={styles.statLabel}>Issues</span>
           </div>
         </div>

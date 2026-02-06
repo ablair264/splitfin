@@ -140,15 +140,15 @@ const DashboardContent: React.FC = () => {
 
   const getStatusColor = (status: string) => {
     const colors: Record<string, string> = {
-      confirmed: 'bg-green-100 text-green-800',
-      pending: 'bg-yellow-100 text-yellow-800',
-      draft: 'bg-gray-100 text-gray-800',
-      shipped: 'bg-blue-100 text-blue-800',
-      delivered: 'bg-emerald-100 text-emerald-800',
-      active: 'bg-green-100 text-green-800',
-      inactive: 'bg-red-100 text-red-800',
+      confirmed: 'bg-success/10 text-success',
+      pending: 'bg-warning/10 text-warning',
+      draft: 'bg-muted/30 text-muted-foreground',
+      shipped: 'bg-info/10 text-info',
+      delivered: 'bg-success/10 text-success',
+      active: 'bg-success/10 text-success',
+      inactive: 'bg-destructive/10 text-destructive',
     };
-    return colors[status] || 'bg-gray-100 text-gray-600';
+    return colors[status] || 'bg-muted/30 text-muted-foreground';
   };
 
   // Table columns
@@ -197,8 +197,8 @@ const DashboardContent: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-10">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#79d5e9]"></div>
-        <span className="ml-3 text-white/70">Loading dashboard...</span>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <span className="ml-3 text-muted-foreground">Loading dashboard...</span>
       </div>
     );
   }
@@ -211,13 +211,13 @@ const DashboardContent: React.FC = () => {
           {/* Left side: Title + AI Summary */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-xl font-semibold text-white">Dashboard</h1>
+              <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
               <div className="flex items-center gap-2">
-                <Calendar size={14} className="text-white/40" />
+                <Calendar size={14} className="text-muted-foreground" />
                 <select
                   value={dateRange}
                   onChange={(e) => setDateRange(e.target.value as DateRange)}
-                  className="bg-white/5 border border-white/10 rounded-md px-2 py-1 text-xs font-medium text-white/70 focus:outline-none focus:ring-1 focus:ring-[#79d5e9] focus:border-transparent cursor-pointer hover:bg-white/10 transition-colors"
+                  className="bg-muted border border-border rounded-md px-2 py-1 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-transparent cursor-pointer hover:bg-accent transition-colors"
                 >
                   {DATE_RANGE_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -244,7 +244,7 @@ const DashboardContent: React.FC = () => {
           displayMode="medium"
           design="variant1"
           icon={<ShoppingCart size={16} />}
-          color="#79d5e9"
+          color="var(--primary)"
           cardIndex={0}
           chartData={metrics.orderCountChartData}
           onClick={() => navigate('/orders')}
@@ -259,7 +259,7 @@ const DashboardContent: React.FC = () => {
           displayMode="medium"
           design="variant2"
           icon={<PoundSterling size={16} />}
-          color="#61bc8e"
+          color="var(--success)"
           cardIndex={1}
           chartData={metrics.orderRevenueChartData}
           onClick={() => navigate('/orders')}
@@ -274,7 +274,7 @@ const DashboardContent: React.FC = () => {
           displayMode="medium"
           design="variant3"
           icon={<Boxes size={16} />}
-          color="#f77d11"
+          color="var(--warning)"
           cardIndex={2}
           chartData={metrics.stockChartData}
           onClick={() => navigate('/inventory')}
@@ -289,7 +289,7 @@ const DashboardContent: React.FC = () => {
           displayMode="medium"
           design="variant1"
           icon={<Trophy size={16} />}
-          color="#8b5cf6"
+          color="var(--info)"
           cardIndex={3}
           chartData={metrics.topAgentChartData}
           onClick={() => navigate('/analytics')}
@@ -355,9 +355,9 @@ const Dashboard: React.FC = () => {
     <ColorProvider
       barChartColors="multicolored"
       graphColors={{
-        primary: '#79d5e9',
-        secondary: '#4daeac',
-        tertiary: '#f77d11'
+        primary: 'var(--primary)',
+        secondary: 'var(--success)',
+        tertiary: 'var(--warning)'
       }}
     >
       <DashboardContent />

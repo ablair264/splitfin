@@ -12,39 +12,39 @@ const GOOGLE_MAPS_API_KEY = 'AIzaSyCtvRdpXyzAg2YTTf398JHSxGA1dmD4Doc';
 const UK_REGIONS = {
   'Scotland': {
     center: { lat: 56.4907, lng: -4.2026 },
-    color: '#1f77b4'
+    color: 'var(--info)'
   },
   'North East': {
     center: { lat: 54.9783, lng: -1.6178 },
-    color: '#ff7f0e'
+    color: 'var(--warning)'
   },
   'North West': {
     center: { lat: 53.7632, lng: -2.7044 },
-    color: '#2ca02c'
+    color: 'var(--success)'
   },
   'Wales': {
     center: { lat: 52.1307, lng: -3.7837 },
-    color: '#d62728'
+    color: 'var(--destructive)'
   },
   'Midlands': {
     center: { lat: 52.4862, lng: -1.8904 },
-    color: '#9467bd'
+    color: 'var(--info)'
   },
   'London': {
     center: { lat: 51.5074, lng: -0.1278 },
-    color: '#8c564b'
+    color: 'var(--primary)'
   },
   'South East': {
     center: { lat: 51.2787, lng: 0.5217 },
-    color: '#e377c2'
+    color: 'var(--warning)'
   },
   'South West': {
     center: { lat: 50.7772, lng: -3.9997 },
-    color: '#7f7f7f'
+    color: 'var(--muted-foreground)'
   },
   'Ireland': {
     center: { lat: 53.4129, lng: -8.2439 },
-    color: '#ff6b6b'
+    color: 'var(--destructive)'
   }
 };
 
@@ -646,9 +646,9 @@ function CustomerMap() {
       ? Math.min(Math.max(customer.total_spent / 1000, 10), 20)
       : 10;
 
-    const color = customer.total_spent && customer.total_spent > 10000 ? '#ff4444' :
-                  customer.total_spent && customer.total_spent > 5000 ? '#ff8800' :
-                  '#4CAF50';
+    const color = customer.total_spent && customer.total_spent > 10000 ? 'var(--destructive)' :
+                  customer.total_spent && customer.total_spent > 5000 ? 'var(--warning)' :
+                  'var(--success)';
 
     return {
       path: window.google.maps.SymbolPath.CIRCLE,

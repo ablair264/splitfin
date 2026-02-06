@@ -20,6 +20,8 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "@diceui": "https://diceui.com/r/{name}.json"
+    "@diceui": "https://diceui.com/r/{name}.json",
+    "@intentui": "https://intentui.com/r/{name}",
+    "@animate-ui": "https://animate-ui.com/r/{name}.json"
   }
 }

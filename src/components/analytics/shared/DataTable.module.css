@@ -1,12 +1,12 @@
-/* DataTable.module.css - Container Queries Version */
+/* DataTable.module.css - Theme-aware with Container Queries */
 
 .dataTableContainer {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--card);
   backdrop-filter: blur(10px);
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border);
 
   /* Enable container queries */
   container-type: inline-size;
@@ -19,20 +19,20 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border);
 }
 
 .tableTitle {
   font-size: 16px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   margin: 0;
 }
 
 .viewAllLink {
   background: none;
   border: none;
-  color: #79d5e9;
+  color: var(--primary);
   font-size: 13px;
   cursor: pointer;
   padding: 0;
@@ -74,15 +74,15 @@
 .dataTable {
   width: 100%;
   overflow-x: auto;
-  
+
   /* Enable container queries for table */
   container-type: inline-size;
 }
 
 /* Table Header with container queries */
 .tableHeader {
-  background: rgba(121, 213, 233, 0.15);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--accent);
+  border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -96,7 +96,7 @@
 
 .headerCell {
   font-weight: 600;
-  color: #79d5e9;
+  color: var(--primary);
   text-transform: uppercase;
   font-size: 11px;
   letter-spacing: 0.5px;
@@ -150,7 +150,7 @@
 
 .tableRow {
   display: flex;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border);
   transition: all 0.2s ease;
   min-width: fit-content;
   background: transparent;
@@ -165,13 +165,13 @@
 }
 
 .tableRow.clickable:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--accent);
 }
 
 .tableCell {
   padding: 12px 16px;
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--foreground);
   display: flex;
   align-items: center;
   flex-shrink: 0;
@@ -211,7 +211,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  
+
   /* Enable container queries for customer info */
   container-type: inline-size;
 }
@@ -223,13 +223,13 @@
 }
 
 .customerInfo strong {
-  color: #1a1a1a;
+  color: var(--foreground);
   font-weight: 600;
 }
 
 .customerInfo .companyName {
   font-size: 13px;
-  color: #718096;
+  color: var(--muted-foreground);
 }
 
 /* Container queries for company name */
@@ -255,7 +255,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  
+
   /* Enable container queries for contact info */
   container-type: inline-size;
 }
@@ -267,12 +267,12 @@
 }
 
 .contactInfo .email {
-  color: #4a5568;
+  color: var(--foreground);
 }
 
 .contactInfo .phone {
   font-size: 13px;
-  color: #718096;
+  color: var(--muted-foreground);
 }
 
 /* Container queries for contact info */
@@ -303,7 +303,7 @@
   font-size: 12px;
   font-weight: 500;
   text-transform: capitalize;
-  
+
   /* Enable container queries for status badge */
   container-type: inline-size;
 }
@@ -343,7 +343,7 @@
 .actionButtons {
   display: flex;
   gap: 8px;
-  
+
   /* Enable container queries for action buttons */
   container-type: inline-size;
 }
@@ -372,22 +372,22 @@
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
 }
 
 .actionBtn:hover {
-  background: #e5e7eb;
+  background: var(--accent);
   transform: translateY(-1px);
 }
 
 .actionBtn.primary {
-  background: #3b82f6;
-  color: white;
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .actionBtn.primary:hover {
-  background: #2563eb;
+  opacity: 0.9;
 }
 
 /* Container queries for action buttons */
@@ -414,7 +414,7 @@
     font-size: 10px;
     border-radius: 4px;
   }
-  
+
   .actionBtn span {
     display: none; /* Hide text, show only icons on very small */
   }
@@ -443,7 +443,7 @@
 .emptyState {
   text-align: center;
   padding: 40px 20px;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--muted-foreground);
 
   /* Enable container queries for empty state */
   container-type: inline-size;
@@ -490,7 +490,7 @@
 .emptyState h3 {
   font-size: 16px;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--foreground);
   margin: 0 0 8px 0;
 }
 
@@ -510,7 +510,7 @@
 .emptyState p {
   font-size: 14px;
   margin: 0;
-  color: #718096;
+  color: var(--muted-foreground);
 }
 
 @container (max-width: 400px) {
@@ -528,7 +528,7 @@
 /* Loading State */
 .dataTable.loading .skeletonText {
   height: 16px;
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, var(--muted) 25%, var(--border) 50%, var(--muted) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 4px;
@@ -550,36 +550,30 @@
   }
 }
 
-/* Light Mode Support - for when app is in light mode */
-@media (prefers-color-scheme: light) {
-  /* Override dark defaults if system is in light mode and app supports it */
-  /* Currently app uses dark theme by default */
-}
-
 /* Ultra-small table adaptations */
 @container data-table (max-width: 150px) {
   .tableRow {
     flex-direction: column;
     padding: 8px;
   }
-  
+
   .tableCell {
     padding: 4px 0;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border);
   }
-  
+
   .tableCell:last-child {
     border-bottom: none;
   }
-  
+
   .headerCell {
     display: none; /* Hide headers in ultra-small mode */
   }
-  
+
   .tableCell::before {
     content: attr(data-label) ": ";
     font-weight: 600;
-    color: #718096;
+    color: var(--muted-foreground);
     font-size: 10px;
     margin-right: 4px;
   }
@@ -592,7 +586,7 @@
     max-height: 200px;
     overflow-y: auto;
   }
-  
+
   .headerCell,
   .tableCell {
     padding: 10px 16px;

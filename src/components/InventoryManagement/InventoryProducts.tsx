@@ -92,15 +92,15 @@ const formatCurrency = (value?: number) => {
 };
 
 const stockColor = (level: number) => {
-  if (level === 0) return 'text-red-400';
-  if (level <= 5) return 'text-amber-400';
-  return 'text-emerald-400';
+  if (level === 0) return 'text-destructive';
+  if (level <= 5) return 'text-warning';
+  return 'text-success';
 };
 
 const stockBadge = (level: number) => {
-  if (level === 0) return { label: 'Out', cls: 'bg-red-400/10 text-red-400 border-red-400/20' };
-  if (level <= 5) return { label: 'Low', cls: 'bg-amber-400/10 text-amber-400 border-amber-400/20' };
-  return { label: 'In Stock', cls: 'bg-emerald-400/10 text-emerald-400 border-emerald-400/20' };
+  if (level === 0) return { label: 'Out', cls: 'bg-destructive/10 text-destructive border-destructive/20' };
+  if (level <= 5) return { label: 'Low', cls: 'bg-warning/10 text-warning border-warning/20' };
+  return { label: 'In Stock', cls: 'bg-success/10 text-success border-success/20' };
 };
 
 const InventoryProducts: React.FC = () => {
@@ -151,18 +151,18 @@ const InventoryProducts: React.FC = () => {
           const item = row.original;
           return (
             <div className="flex items-center gap-3 min-w-0">
-              <div className="w-9 h-9 rounded-lg bg-[#0f1419] border border-gray-700/60 flex items-center justify-center overflow-hidden shrink-0">
+              <div className="w-9 h-9 rounded-lg bg-background border border-border flex items-center justify-center overflow-hidden shrink-0">
                 {item.image_url ? (
                   <img src={item.image_url} alt={item.name} className="w-full h-full object-cover" />
                 ) : (
-                  <Image size={14} className="text-gray-600" />
+                  <Image size={14} className="text-muted-foreground" />
                 )}
               </div>
               <div className="min-w-0">
-                <div className="text-sm font-medium text-white truncate max-w-[200px]">
+                <div className="text-sm font-medium text-foreground truncate max-w-[200px]">
                   {item.name}
                 </div>
-                <div className="text-[11px] text-gray-500 truncate">{item.sku}</div>
+                <div className="text-[11px] text-muted-foreground truncate">{item.sku}</div>
               </div>
             </div>
           );
@@ -176,7 +176,7 @@ const InventoryProducts: React.FC = () => {
           <DataTableColumnHeader column={column} label="Brand" />
         ),
         cell: ({ row }) => (
-          <span className="text-[13px] text-gray-300 truncate block max-w-[100px]">
+          <span className="text-[13px] text-foreground/80 truncate block max-w-[100px]">
             {row.original.brand}
           </span>
         ),
@@ -189,7 +189,7 @@ const InventoryProducts: React.FC = () => {
           <DataTableColumnHeader column={column} label="Category" />
         ),
         cell: ({ row }) => (
-          <span className="text-[12px] text-gray-500 truncate block max-w-[120px]">
+          <span className="text-[12px] text-muted-foreground truncate block max-w-[120px]">
             {row.original.category || '-'}
           </span>
         ),
@@ -224,7 +224,7 @@ const InventoryProducts: React.FC = () => {
           <DataTableColumnHeader column={column} label="Cost" className="justify-end" />
         ),
         cell: ({ row }) => (
-          <span className="text-[13px] text-gray-400 tabular-nums text-right block">
+          <span className="text-[13px] text-muted-foreground tabular-nums text-right block">
             {formatCurrency(row.original.cost_price)}
           </span>
         ),
@@ -237,7 +237,7 @@ const InventoryProducts: React.FC = () => {
           <DataTableColumnHeader column={column} label="Rate" className="justify-end" />
         ),
         cell: ({ row }) => (
-          <span className="text-[13px] font-medium text-white tabular-nums text-right block">
+          <span className="text-[13px] font-medium text-foreground tabular-nums text-right block">
             {formatCurrency(row.original.rate)}
           </span>
         ),
@@ -246,7 +246,7 @@ const InventoryProducts: React.FC = () => {
       },
       {
         id: 'actions',
-        header: () => <span className="text-[11px] font-semibold text-gray-400 uppercase">Actions</span>,
+        header: () => <span className="text-xs font-semibold text-muted-foreground uppercase">Actions</span>,
         cell: ({ row }) => {
           const item = row.original;
           return (
@@ -257,7 +257,7 @@ const InventoryProducts: React.FC = () => {
                   setSelectedProduct(item);
                   setShowDetailsModal(true);
                 }}
-                className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-brand-300/80 border border-brand-300/25 bg-brand-300/5 rounded-md hover:text-brand-300 hover:border-brand-300/40 hover:bg-brand-300/10 transition-all"
+                className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-primary/80 border border-primary/25 bg-primary/5 rounded-md hover:text-primary hover:border-primary/40 hover:bg-primary/10 transition-all"
                 title="View Details"
               >
                 <Eye size={11} /> View
@@ -268,7 +268,7 @@ const InventoryProducts: React.FC = () => {
                   setSelectedProduct(item);
                   setShowEditModal(true);
                 }}
-                className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-amber-400/80 border border-amber-400/25 bg-amber-400/5 rounded-md hover:text-amber-400 hover:border-amber-400/40 hover:bg-amber-400/10 transition-all"
+                className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-warning/80 border border-warning/25 bg-warning/5 rounded-md hover:text-warning hover:border-warning/40 hover:bg-warning/10 transition-all"
                 title="Edit"
               >
                 <Edit2 size={11} /> Edit
@@ -278,7 +278,7 @@ const InventoryProducts: React.FC = () => {
                   e.stopPropagation();
                   handleDeleteProduct(item.id);
                 }}
-                className="inline-flex items-center p-1.5 text-[11px] text-red-400/60 border border-red-400/15 bg-red-400/5 rounded-md hover:text-red-400 hover:border-red-400/30 hover:bg-red-400/10 transition-all"
+                className="inline-flex items-center p-1.5 text-[11px] text-destructive/60 border border-destructive/15 bg-destructive/5 rounded-md hover:text-destructive hover:border-destructive/30 hover:bg-destructive/10 transition-all"
                 title="Delete"
               >
                 <Trash2 size={11} />
@@ -428,8 +428,8 @@ const InventoryProducts: React.FC = () => {
   // Loading skeleton
   if (loading && items.length === 0 && !error) {
     return (
-      <div className="min-h-screen text-white p-4">
-        <div className="bg-[#1a1f2a] rounded-xl border border-gray-700 overflow-hidden p-4">
+      <div className="min-h-screen p-4">
+        <div className="bg-card rounded-xl border border-border overflow-hidden p-4">
           <DataTableSkeleton
             columnCount={7}
             rowCount={10}
@@ -444,38 +444,34 @@ const InventoryProducts: React.FC = () => {
   // Empty state
   if (!loading && items.length === 0 && !error) {
     return (
-      <div className="min-h-screen text-white p-4">
-        <div className="bg-[#1a1f2a] rounded-xl border border-gray-700 overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-700">
-            <span className="text-sm text-gray-400">0 products</span>
+      <div className="min-h-screen p-4">
+        <div className="bg-card rounded-xl border border-border overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+            <span className="text-sm text-muted-foreground">0 products</span>
             <div className="flex items-center gap-2">
               <Button
-                variant="outline"
+                intent="outline"
                 size="sm"
-                onClick={() => setShowAIEnrichModal(true)}
-                className="border-brand-300/25 text-brand-300 hover:bg-brand-300/10"
+                onPress={() => setShowAIEnrichModal(true)}
               >
                 <Sparkles size={14} className="mr-1.5" /> AI Enhance
               </Button>
               <Button
+                intent="primary"
                 size="sm"
-                onClick={() => setShowAddModal(true)}
-                className="bg-gradient-to-r from-brand-300 to-[#4daeac] text-white"
+                onPress={() => setShowAddModal(true)}
               >
                 <Plus size={16} className="mr-1.5" /> Add Product
               </Button>
             </div>
           </div>
-          <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <Package2 size={48} className="mb-4 opacity-40" />
-            <h3 className="text-lg font-semibold text-gray-300 mb-1">No products found</h3>
-            <p className="text-sm text-gray-500 mb-4">
+            <h3 className="text-lg font-semibold text-foreground mb-1">No products found</h3>
+            <p className="text-sm text-muted-foreground mb-4">
               Get started by adding your first product to the inventory
             </p>
-            <Button
-              onClick={() => setShowAddModal(true)}
-              className="bg-gradient-to-r from-brand-300 to-[#4daeac] text-white"
-            >
+            <Button intent="primary" onPress={() => setShowAddModal(true)}>
               <Plus size={16} className="mr-1.5" /> Add First Product
             </Button>
           </div>
@@ -506,19 +502,19 @@ const InventoryProducts: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen text-white p-4">
+    <div className="min-h-screen p-4">
       <DataTable table={table}>
         {/* Custom Toolbar */}
         <div className="flex items-center gap-3 flex-wrap mb-4">
           {/* Search */}
           <div className="relative flex-1 min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
               type="text"
               placeholder="Search by name or SKU..."
               value={filters.search}
               onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="pl-9 bg-[#0f1419] border-gray-700 text-white placeholder-gray-500 focus:border-brand-300 focus:ring-brand-300/30"
+              className="pl-9"
             />
           </div>
 
@@ -527,7 +523,7 @@ const InventoryProducts: React.FC = () => {
             value={filters.brand || 'all'}
             onValueChange={(val) => handleFilterChange('brand', val === 'all' ? '' : val)}
           >
-            <SelectTrigger className="w-[160px] bg-[#0f1419] border-gray-700 text-white">
+            <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="All Brands" />
             </SelectTrigger>
             <SelectContent>
@@ -545,7 +541,7 @@ const InventoryProducts: React.FC = () => {
             value={filters.stockFilter || 'all'}
             onValueChange={(val) => handleFilterChange('stockFilter', val === 'all' ? '' : val)}
           >
-            <SelectTrigger className="w-[140px] bg-[#0f1419] border-gray-700 text-white">
+            <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="All Stock" />
             </SelectTrigger>
             <SelectContent>
@@ -558,32 +554,30 @@ const InventoryProducts: React.FC = () => {
 
           {/* Actions */}
           <Button
-            variant="outline"
+            intent="outline"
             size="sm"
-            onClick={() => setShowPricelistUpload(true)}
-            className="border-amber-400/25 text-amber-400/80 hover:text-amber-400 hover:bg-amber-400/10"
+            onPress={() => setShowPricelistUpload(true)}
           >
             <Upload size={14} className="mr-1.5" /> Pricelists
           </Button>
           <Button
-            variant="outline"
+            intent="outline"
             size="sm"
-            onClick={() => setShowAIEnrichModal(true)}
-            className="border-brand-300/25 text-brand-300/80 hover:text-brand-300 hover:bg-brand-300/10"
+            onPress={() => setShowAIEnrichModal(true)}
           >
             <Sparkles size={14} className="mr-1.5" /> AI Enhance
           </Button>
           <Button
+            intent="primary"
             size="sm"
-            onClick={() => setShowAddModal(true)}
-            className="bg-gradient-to-r from-brand-300 to-[#4daeac] text-white hover:shadow-lg hover:shadow-brand-300/25"
+            onPress={() => setShowAddModal(true)}
           >
             <Plus size={16} className="mr-1.5" /> Add Product
           </Button>
         </div>
 
         {/* Results count */}
-        <div className="text-xs text-gray-500 mb-2">
+        <div className="text-xs text-muted-foreground mb-2">
           {totalItems} product{totalItems !== 1 ? 's' : ''}
           {filters.search && ` matching "${filters.search}"`}
           {filters.brand && ` in ${filters.brand}`}
@@ -591,7 +585,7 @@ const InventoryProducts: React.FC = () => {
 
         {/* Error */}
         {error && (
-          <div className="flex items-center gap-2 px-4 py-2.5 rounded-md bg-red-400/10 border border-red-400/20 text-[13px] text-red-400 mb-4">
+          <div className="flex items-center gap-2 px-4 py-2.5 rounded-md bg-destructive/10 border border-destructive/20 text-[13px] text-destructive mb-4">
             {error}
           </div>
         )}
@@ -600,26 +594,24 @@ const InventoryProducts: React.FC = () => {
       {/* Custom pagination with page numbers */}
       {Math.ceil(totalItems / pagination.pageSize) > 1 && (
         <div className="flex items-center justify-between px-1 py-3 mt-2">
-          <span className="text-sm text-gray-500">
+          <span className="text-sm text-muted-foreground">
             {pagination.pageIndex * pagination.pageSize + 1}–
             {Math.min((pagination.pageIndex + 1) * pagination.pageSize, totalItems)} of {totalItems}
           </span>
           <div className="flex items-center gap-1">
             <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => handlePageChange(1)}
-              disabled={pagination.pageIndex === 0}
+              intent="outline"
+              size="sq-xs"
+              onPress={() => handlePageChange(1)}
+              isDisabled={pagination.pageIndex === 0}
             >
               «
             </Button>
             <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => handlePageChange(pagination.pageIndex)}
-              disabled={pagination.pageIndex === 0}
+              intent="outline"
+              size="sq-xs"
+              onPress={() => handlePageChange(pagination.pageIndex)}
+              isDisabled={pagination.pageIndex === 0}
             >
               ‹
             </Button>
@@ -647,19 +639,15 @@ const InventoryProducts: React.FC = () => {
 
               return pages.map((p, idx) =>
                 typeof p === 'string' ? (
-                  <span key={`ellipsis-${idx}`} className="px-2 text-gray-500">
+                  <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground">
                     {p}
                   </span>
                 ) : (
                   <Button
                     key={p}
-                    variant={p === currentPage ? 'default' : 'outline'}
-                    size="sm"
-                    className={cn(
-                      'h-8 w-8 p-0',
-                      p === currentPage && 'bg-brand-300 text-white hover:bg-brand-300/90'
-                    )}
-                    onClick={() => handlePageChange(p)}
+                    intent={p === currentPage ? 'primary' : 'outline'}
+                    size="sq-xs"
+                    onPress={() => handlePageChange(p)}
                   >
                     {p}
                   </Button>
@@ -667,20 +655,18 @@ const InventoryProducts: React.FC = () => {
               );
             })()}
             <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => handlePageChange(pagination.pageIndex + 2)}
-              disabled={pagination.pageIndex >= Math.ceil(totalItems / pagination.pageSize) - 1}
+              intent="outline"
+              size="sq-xs"
+              onPress={() => handlePageChange(pagination.pageIndex + 2)}
+              isDisabled={pagination.pageIndex >= Math.ceil(totalItems / pagination.pageSize) - 1}
             >
               ›
             </Button>
             <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => handlePageChange(Math.ceil(totalItems / pagination.pageSize))}
-              disabled={pagination.pageIndex >= Math.ceil(totalItems / pagination.pageSize) - 1}
+              intent="outline"
+              size="sq-xs"
+              onPress={() => handlePageChange(Math.ceil(totalItems / pagination.pageSize))}
+              isDisabled={pagination.pageIndex >= Math.ceil(totalItems / pagination.pageSize) - 1}
             >
               »
             </Button>

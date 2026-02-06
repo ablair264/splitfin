@@ -8,7 +8,7 @@ interface BrandSelectorProps {
 const BrandSelector: React.FC<BrandSelectorProps> = ({ selectedBrand, onBrandSelect }) => (
   <div style={{ padding: '20px' }}>
     <h3>Select Brand</h3>
-    <p style={{ color: '#666' }}>Brand selection - coming soon</p>
+    <p className="text-muted-foreground">Brand selection - coming soon</p>
   </div>
 );
 

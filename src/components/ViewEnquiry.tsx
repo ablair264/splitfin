@@ -87,20 +87,20 @@ interface EnquiryActivity {
 }
 
 const statusConfig = {
-  new: { color: '#3b82f6', icon: Plus, label: 'New' },
-  contacted: { color: '#8b5cf6', icon: Phone, label: 'Contacted' },
-  quoted: { color: '#f59e0b', icon: DollarSign, label: 'Quoted' },
-  negotiating: { color: '#10b981', icon: Target, label: 'Negotiating' },
-  won: { color: '#22c55e', icon: CheckCircle, label: 'Won' },
-  lost: { color: '#ef4444', icon: AlertCircle, label: 'Lost' },
-  cancelled: { color: '#6b7280', icon: AlertCircle, label: 'Cancelled' }
+  new: { color: 'var(--info)', icon: Plus, label: 'New' },
+  contacted: { color: 'var(--chart-5)', icon: Phone, label: 'Contacted' },
+  quoted: { color: 'var(--warning)', icon: DollarSign, label: 'Quoted' },
+  negotiating: { color: 'var(--success)', icon: Target, label: 'Negotiating' },
+  won: { color: 'var(--success)', icon: CheckCircle, label: 'Won' },
+  lost: { color: 'var(--destructive)', icon: AlertCircle, label: 'Lost' },
+  cancelled: { color: 'var(--muted-foreground)', icon: AlertCircle, label: 'Cancelled' }
 };
 
 const priorityConfig = {
-  urgent: { color: '#ef4444', label: 'Urgent' },
-  high: { color: '#f59e0b', label: 'High' },
-  medium: { color: '#3b82f6', label: 'Medium' },
-  low: { color: '#6b7280', label: 'Low' }
+  urgent: { color: 'var(--destructive)', label: 'Urgent' },
+  high: { color: 'var(--warning)', label: 'High' },
+  medium: { color: 'var(--info)', label: 'Medium' },
+  low: { color: 'var(--muted-foreground)', label: 'Low' }
 };
 
 const enquiryStages = [
@@ -401,7 +401,7 @@ function ViewEnquiry() {
     return (
       <div className={styles.errorContainer}>
         <div className={styles.errorContent}>
-          <AlertCircle size={48} color="#ef4444" />
+          <AlertCircle size={48} className="text-destructive" />
           <h2>Error Loading Enquiry</h2>
           <p>{error}</p>
           <div className={styles.errorActions}>
@@ -421,7 +421,7 @@ function ViewEnquiry() {
     return (
       <div className={styles.errorContainer}>
         <div className={styles.errorContent}>
-          <MessageSquare size={48} color="#9ca3af" />
+          <MessageSquare size={48} className="text-muted-foreground" />
           <h2>Enquiry Not Found</h2>
           <p>The requested enquiry could not be found or the enquiries feature is being migrated.</p>
           <button onClick={() => navigate('/enquiries')} className={styles.backButton}>

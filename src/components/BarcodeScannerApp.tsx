@@ -3,9 +3,9 @@ import { Scan } from 'lucide-react';
 
 const BarcodeScannerApp: React.FC = () => (
   <div style={{ padding: '40px', textAlign: 'center' }}>
-    <Scan size={48} style={{ color: '#79d5e9', marginBottom: '16px' }} />
+    <Scan size={48} className="text-primary" style={{ marginBottom: '16px' }} />
     <h2>Barcode Scanner</h2>
-    <p style={{ color: '#666' }}>Barcode scanning feature - coming soon</p>
+    <p className="text-muted-foreground">Barcode scanning feature - coming soon</p>
   </div>
 );
 

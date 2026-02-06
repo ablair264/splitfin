@@ -187,7 +187,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
           {icon || '💰'}
         </div>
         <div className={styles.compactContent}>
-          <div className={styles.compactValue} style={{ color: 'var(--text-primary)' }}>
+          <div className={styles.compactValue}>
             {typeof value === 'number' ? (
               <CountUp
                 end={value}
@@ -230,7 +230,6 @@ const MetricCard: React.FC<MetricCardProps> = ({
           borderLeftColor: color,
           borderRightColor: color
         }),
-        background: design === 'variant1' ? `rgba(var(--bg-secondary-rgb), 0.8)` : undefined,
         backdropFilter: design === 'variant1' ? 'blur(10px)' : undefined
       }}
     >

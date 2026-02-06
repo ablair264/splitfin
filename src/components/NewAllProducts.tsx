@@ -3,9 +3,9 @@ import { Package } from 'lucide-react';
 
 const NewAllProducts: React.FC = () => (
   <div style={{ padding: '40px', textAlign: 'center' }}>
-    <Package size={48} style={{ color: '#79d5e9', marginBottom: '16px' }} />
+    <Package size={48} className="text-primary" style={{ marginBottom: '16px' }} />
     <h2>All Products</h2>
-    <p style={{ color: '#666' }}>Product catalog view - coming soon</p>
+    <p className="text-muted-foreground">Product catalog view - coming soon</p>
   </div>
 );
 

@@ -4,16 +4,16 @@
   padding: 24px;
   max-width: 100%;
   min-height: 100vh;
-  background: #0f1419;
+  background: var(--background);
 }
 
 .warehouseHeader {
-  background: #1a1f2a;
+  background: var(--card);
   border-radius: 12px;
   padding: 24px;
   margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 3px color-mix(in srgb, black 30%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
 }
 
 .headerContent {
@@ -30,7 +30,7 @@
 }
 
 .titleIcon {
-  color: #79d5e9;
+  color: var(--primary);
   flex-shrink: 0;
 }
 
@@ -38,12 +38,12 @@
   margin: 0 0 4px 0;
   font-size: 28px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--foreground);
 }
 
 .titleSection p {
   margin: 0;
-  color: rgba(255, 255, 255, 0.7);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
   font-size: 16px;
 }
 
@@ -60,13 +60,13 @@
 .statValue {
   font-size: 24px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--foreground);
   margin-bottom: 4px;
 }
 
 .statLabel {
   font-size: 14px;
-  color: rgba(255, 255, 255, 0.7);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
   font-weight: 500;
 }
 
@@ -81,7 +81,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
   font-size: 14px;
 }
 
@@ -90,10 +90,10 @@
   align-items: center;
   gap: 8px;
   padding: 8px 16px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: #252b35;
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  background: var(--muted);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.7);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -101,9 +101,9 @@
 }
 
 .refreshButton:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: #79d5e9;
-  color: #ffffff;
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border-color: var(--primary);
+  color: var(--foreground);
 }
 
 .refreshButton:disabled {
@@ -125,10 +125,10 @@
   align-items: center;
   gap: 8px;
   padding: 12px 16px;
-  background: rgba(221, 68, 68, 0.1);
-  border: 1px solid rgba(221, 68, 68, 0.3);
+  background: color-mix(in srgb, var(--destructive) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--destructive) 30%, transparent);
   border-radius: 8px;
-  color: #dd4444;
+  color: var(--destructive);
   margin-bottom: 24px;
   font-size: 14px;
   font-weight: 500;
@@ -143,10 +143,10 @@
 }
 
 .kanbanColumn {
-  background: #1a1f2a;
+  background: var(--card);
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 1px 3px color-mix(in srgb, black 30%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -154,11 +154,11 @@
 
 .columnHeader {
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #252b35;
+  background: var(--muted);
 }
 
 .columnTitle {
@@ -166,13 +166,13 @@
   align-items: center;
   gap: 8px;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   font-size: 16px;
 }
 
 .columnCount {
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
@@ -192,18 +192,18 @@
 
 /* Order Cards */
 .orderCard {
-  background: #252b35;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--muted);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   border-radius: 8px;
   padding: 16px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 2px color-mix(in srgb, black 20%, transparent);
   transition: all 0.2s;
   cursor: default;
 }
 
 .orderCard:hover {
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-  border-color: rgba(121, 213, 233, 0.3);
+  box-shadow: 0 4px 6px color-mix(in srgb, black 30%, transparent);
+  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 .orderHeader {
@@ -215,7 +215,7 @@
 
 .orderNumber {
   font-weight: 700;
-  color: #ffffff;
+  color: var(--foreground);
   font-size: 16px;
 }
 
@@ -225,15 +225,15 @@
   padding: 4px;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .viewButton:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: #79d5e9;
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  color: var(--primary);
 }
 
 .customerInfo {
@@ -241,7 +241,7 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
-  color: rgba(255, 255, 255, 0.7);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
   font-size: 14px;
 }
 
@@ -256,7 +256,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
   font-size: 13px;
 }
 
@@ -270,9 +270,9 @@
   gap: 6px;
   padding: 8px 12px;
   width: 100%;
-  border: 1px solid #79d5e9;
-  background: #79d5e9;
-  color: #0f1419;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--background);
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
@@ -282,8 +282,8 @@
 }
 
 .actionButton:hover:not(:disabled) {
-  background: #4daeac;
-  border-color: #4daeac;
+  background: var(--primary);
+  border-color: var(--primary);
 }
 
 .actionButton:disabled {
@@ -296,9 +296,9 @@
   align-items: center;
   gap: 6px;
   padding: 8px 12px;
-  background: rgba(77, 152, 105, 0.1);
-  color: #4d9869;
-  border: 1px solid rgba(77, 152, 105, 0.3);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+  color: var(--success);
+  border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
@@ -313,7 +313,7 @@
   align-items: center;
   justify-content: center;
   padding: 32px 16px;
-  color: rgba(255, 255, 255, 0.4);
+  color: color-mix(in srgb, var(--foreground) 40%, transparent);
   text-align: center;
   min-height: 200px;
 }
@@ -325,39 +325,39 @@
 
 /* Column-specific styling */
 .kanbanColumn:nth-child(1) .columnTitle {
-  color: #fbbf24;
+  color: var(--warning);
 }
 
 .kanbanColumn:nth-child(1) .columnCount {
-  background: rgba(251, 191, 36, 0.2);
-  color: #fbbf24;
+  background: color-mix(in srgb, var(--warning) 20%, transparent);
+  color: var(--warning);
 }
 
 .kanbanColumn:nth-child(2) .columnTitle {
-  color: #79d5e9;
+  color: var(--primary);
 }
 
 .kanbanColumn:nth-child(2) .columnCount {
-  background: rgba(121, 213, 233, 0.2);
-  color: #79d5e9;
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  color: var(--primary);
 }
 
 .kanbanColumn:nth-child(3) .columnTitle {
-  color: #4daeac;
+  color: var(--primary);
 }
 
 .kanbanColumn:nth-child(3) .columnCount {
-  background: rgba(77, 174, 172, 0.2);
-  color: #4daeac;
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  color: var(--primary);
 }
 
 .kanbanColumn:nth-child(4) .columnTitle {
-  color: #4d9869;
+  color: var(--success);
 }
 
 .kanbanColumn:nth-child(4) .columnCount {
-  background: rgba(77, 152, 105, 0.2);
-  color: #4d9869;
+  background: color-mix(in srgb, var(--success) 20%, transparent);
+  color: var(--success);
 }
 
 /* Responsive Design */
@@ -366,13 +366,13 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 16px;
   }
-  
+
   .headerContent {
     flex-direction: column;
     gap: 16px;
     align-items: flex-start;
   }
-  
+
   .headerStats {
     align-self: stretch;
     justify-content: flex-start;
@@ -383,37 +383,37 @@
   .warehouseContainer {
     padding: 16px;
   }
-  
+
   .kanbanBoard {
     grid-template-columns: 1fr;
     gap: 12px;
   }
-  
+
   .warehouseHeader {
     padding: 16px;
   }
-  
+
   .titleSection {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .titleSection h1 {
     font-size: 24px;
   }
-  
+
   .headerActions {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
-  
+
   .headerStats {
     flex-wrap: wrap;
     gap: 12px;
   }
-  
+
   .statCard {
     min-width: 100px;
   }

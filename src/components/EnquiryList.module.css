@@ -1,10 +1,10 @@
 /* Container and Layout */
 .container {
   padding: 2rem;
-  background: linear-gradient(135deg, #0f1419, #1a1f2a 50%, #2c3e50);
+  background: linear-gradient(135deg, var(--background), var(--card) 50%, var(--surface));
   margin: 0 auto;
   min-height: 100vh;
-  color: #f9fafb;
+  color: var(--foreground);
 }
 
 /* Header Section */
@@ -14,7 +14,7 @@
   align-items: flex-start;
   margin-bottom: 2rem;
   padding-bottom: 2rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
 }
 
 .headerLeft {
@@ -33,19 +33,19 @@
   gap: 0.75rem;
   font-size: 2rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   margin: 0;
 }
 
 .titleIcon {
   width: 32px;
   height: 32px;
-  color: #79d5e9;
+  color: var(--primary);
 }
 
 .pageSubtitle {
   font-size: 1rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
   margin: 0 0 0 3.25rem;
 }
 
@@ -61,8 +61,8 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  background: #79d5e9;
-  color: #0a0a0a;
+  background: var(--primary);
+  color: var(--background);
   border: none;
   border-radius: 8px;
   font-size: 0.875rem;
@@ -72,9 +72,9 @@
 }
 
 .createButton:hover {
-  background: #8de0f0;
+  background: color-mix(in srgb, var(--primary) 80%, white 20%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(121, 213, 233, 0.3);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 30%, transparent);
 }
 
 .exportButton {
@@ -82,9 +82,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
@@ -93,8 +93,8 @@
 }
 
 .exportButton:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 20%, transparent);
   transform: translateY(-1px);
 }
 
@@ -142,7 +142,7 @@
   left: 1rem;
   top: 50%;
   transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.4);
+  color: color-mix(in srgb, var(--foreground) 40%, transparent);
   width: 20px;
   height: 20px;
   pointer-events: none;
@@ -151,23 +151,23 @@
 .searchInput {
   width: 100%;
   padding: 0.875rem 1rem 0.875rem 3rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   border-radius: 10px;
-  color: #ffffff;
+  color: var(--foreground);
   font-size: 0.875rem;
   transition: all 0.2s ease;
 }
 
 .searchInput::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: color-mix(in srgb, var(--foreground) 40%, transparent);
 }
 
 .searchInput:focus {
   outline: none;
-  background: rgba(255, 255, 255, 0.08);
-  border-color: #79d5e9;
-  box-shadow: 0 0 0 3px rgba(121, 213, 233, 0.1);
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 .filterSection {
@@ -185,16 +185,16 @@
 }
 
 .filterIcon {
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
 }
 
 .filterSelect {
   padding: 0.75rem 1rem;
   padding-right: 2.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   border-radius: 8px;
-  color: #ffffff;
+  color: var(--foreground);
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -206,21 +206,21 @@
 }
 
 .filterSelect:hover {
-  background-color: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
+  background-color: color-mix(in srgb, var(--foreground) 8%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 20%, transparent);
 }
 
 .filterSelect:focus {
   outline: none;
-  border-color: #79d5e9;
-  box-shadow: 0 0 0 3px rgba(121, 213, 233, 0.1);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
 }
 
 /* View Toggle */
 .viewToggle {
   display: flex;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   border-radius: 8px;
   padding: 0.25rem;
   gap: 0.25rem;
@@ -234,19 +234,19 @@
   background: transparent;
   border: none;
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .viewButton:hover {
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.05);
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
 }
 
 .viewButton.active {
-  background: rgba(121, 213, 233, 0.2);
-  color: #79d5e9;
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  color: var(--primary);
 }
 
 /* Grid View */
@@ -258,8 +258,8 @@
 }
 
 .enquiryCard {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   border-radius: 12px;
   padding: 1.5rem;
   cursor: pointer;
@@ -270,8 +270,8 @@
 }
 
 .enquiryCard:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: #79d5e9;
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border-color: var(--primary);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
@@ -293,7 +293,7 @@
 
 .enquiryNumber {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
   font-weight: 500;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -327,15 +327,15 @@
   background: transparent;
   border: 1px solid transparent;
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .moreButton:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.8);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 10%, transparent);
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
 }
 
 /* Card Body */
@@ -349,7 +349,7 @@
 .enquirySubject {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--foreground);
   margin: 0;
   line-height: 1.4;
 }
@@ -366,16 +366,16 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
 }
 
 .companyName {
-  color: rgba(255, 255, 255, 0.6);
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
 }
 
 .description {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
   line-height: 1.5;
   margin: 0;
   overflow: hidden;
@@ -389,13 +389,13 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.875rem;
-  color: #79d5e9;
+  color: var(--primary);
   font-weight: 500;
   margin-top: auto;
 }
 
 .quantity {
-  color: rgba(255, 255, 255, 0.6);
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
   font-weight: 400;
 }
 
@@ -405,7 +405,7 @@
   justify-content: space-between;
   align-items: center;
   padding-top: 1rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid color-mix(in srgb, var(--foreground) 8%, transparent);
 }
 
 .footerInfo {
@@ -420,35 +420,35 @@
   align-items: center;
   gap: 0.375rem;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
 }
 
 .followUpInfo {
-  color: rgba(255, 255, 255, 0.7);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
 }
 
 .followUpInfo.urgent {
-  color: #f59e0b;
+  color: var(--warning);
 }
 
 .followUpInfo.overdue {
-  color: #ef4444;
+  color: var(--destructive);
 }
 
 .arrowIcon {
-  color: rgba(255, 255, 255, 0.3);
+  color: color-mix(in srgb, var(--foreground) 30%, transparent);
   transition: all 0.2s ease;
 }
 
 .enquiryCard:hover .arrowIcon {
-  color: #79d5e9;
+  color: var(--primary);
   transform: translateX(2px);
 }
 
 /* List View */
 .listContainer {
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 2rem;
@@ -459,11 +459,11 @@
   grid-template-columns: 2fr 2fr 120px 100px 120px 100px 100px 100px;
   gap: 1rem;
   padding: 1rem 1.5rem;
-  background: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   font-size: 0.875rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.7);
+  color: color-mix(in srgb, var(--foreground) 70%, transparent);
 }
 
 .listBody {
@@ -476,14 +476,14 @@
   grid-template-columns: 2fr 2fr 120px 100px 120px 100px 100px 100px;
   gap: 1rem;
   padding: 1rem 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid color-mix(in srgb, var(--foreground) 5%, transparent);
   cursor: pointer;
   transition: all 0.2s ease;
   align-items: center;
 }
 
 .listRow:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--foreground) 2%, transparent);
 }
 
 .listRow:last-child {
@@ -513,7 +513,7 @@
   align-items: center;
   gap: 0.5rem;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
 }
 
 .contactDetails svg {
@@ -529,22 +529,22 @@
 
 .subjectText {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.9);
+  color: color-mix(in srgb, var(--foreground) 90%, transparent);
   font-weight: 500;
 }
 
 .valueText {
   font-weight: 500;
-  color: #79d5e9;
+  color: var(--primary);
 }
 
 .emptyValue {
-  color: rgba(255, 255, 255, 0.3);
+  color: color-mix(in srgb, var(--foreground) 30%, transparent);
 }
 
 .dateText {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
 }
 
 /* List Actions */
@@ -561,17 +561,17 @@
   width: 32px;
   height: 32px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   border-radius: 6px;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .actionButton:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.8);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 20%, transparent);
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
 }
 
 /* Loading State */
@@ -587,15 +587,15 @@
 .loadingSpinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(255, 255, 255, 0.1);
-  border-top-color: #79d5e9;
+  border: 3px solid color-mix(in srgb, var(--foreground) 10%, transparent);
+  border-top-color: var(--primary);
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 .loadingContainer p {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
 }
 
 @keyframes spin {
@@ -617,20 +617,20 @@
 .emptyIcon {
   width: 48px;
   height: 48px;
-  color: rgba(255, 255, 255, 0.3);
+  color: color-mix(in srgb, var(--foreground) 30%, transparent);
   margin-bottom: 1rem;
 }
 
 .emptyTitle {
   font-size: 1.25rem;
   font-weight: 600;
-  color: rgba(255, 255, 255, 0.8);
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
   margin: 0 0 0.5rem 0;
 }
 
 .emptyDescription {
   font-size: 0.875rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
   margin: 0 0 2rem 0;
 }
 
@@ -645,10 +645,10 @@
 
 .paginationButton {
   padding: 0.625rem 1.25rem;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--foreground) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
   border-radius: 8px;
-  color: rgba(255, 255, 255, 0.8);
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -656,8 +656,8 @@
 }
 
 .paginationButton:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  border-color: color-mix(in srgb, var(--foreground) 20%, transparent);
 }
 
 .paginationButton:disabled {
@@ -669,17 +669,17 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: color-mix(in srgb, var(--foreground) 60%, transparent);
   font-size: 0.875rem;
 }
 
 .paginationCurrent {
-  color: rgba(255, 255, 255, 0.8);
+  color: color-mix(in srgb, var(--foreground) 80%, transparent);
   font-weight: 500;
 }
 
 .paginationTotal {
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--foreground) 50%, transparent);
 }
 
 /* Responsive Design */
@@ -801,15 +801,15 @@
     flex-direction: column;
     gap: 0.75rem;
     padding: 1rem;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: color-mix(in srgb, var(--foreground) 3%, transparent);
+    border: 1px solid color-mix(in srgb, var(--foreground) 10%, transparent);
     border-radius: 10px;
     margin-bottom: 0.75rem;
   }
 
   .listRow:hover {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: #79d5e9;
+    background: color-mix(in srgb, var(--foreground) 5%, transparent);
+    border-color: var(--primary);
   }
 
   .listCol {
@@ -854,8 +854,8 @@
 }
 
 .modal {
-  background: #1a1f2a;
-  border: 1px solid rgba(75, 85, 99, 0.3);
+  background: var(--card);
+  border: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
   border-radius: 12px;
   width: 100%;
   max-width: 400px;
@@ -869,14 +869,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
 }
 
 .modalHeader h3 {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #f9fafb;
+  color: var(--foreground);
 }
 
 .modalCloseButton {
@@ -886,9 +886,9 @@
   width: 32px;
   height: 32px;
   background: transparent;
-  border: 1px solid rgba(75, 85, 99, 0.3);
+  border: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
   border-radius: 6px;
-  color: #9ca3af;
+  color: var(--muted-foreground);
   cursor: pointer;
   font-size: 1.5rem;
   line-height: 1;
@@ -896,9 +896,9 @@
 }
 
 .modalCloseButton:hover {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
-  color: #ef4444;
+  background: color-mix(in srgb, var(--destructive) 10%, transparent);
+  border-color: var(--destructive);
+  color: var(--destructive);
 }
 
 .modalBody {
@@ -907,7 +907,7 @@
 
 .modalBody p {
   margin: 0 0 1rem 0;
-  color: #e5e7eb;
+  color: var(--foreground);
   font-size: 0.875rem;
 }
 
@@ -922,10 +922,10 @@
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem 1rem;
-  background: rgba(31, 41, 55, 0.5);
-  border: 1px solid rgba(75, 85, 99, 0.3);
+  background: color-mix(in srgb, var(--card) 50%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
   border-radius: 8px;
-  color: #e5e7eb;
+  color: var(--foreground);
   cursor: pointer;
   transition: all 0.2s ease;
   width: 100%;
@@ -934,9 +934,9 @@
 }
 
 .assigneeButton:hover:not(:disabled) {
-  background: rgba(80, 185, 183, 0.1);
-  border-color: #50B9B7;
-  color: #50B9B7;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .assigneeButton:disabled {
@@ -945,20 +945,20 @@
 }
 
 .assigneeButton.currentAssignee {
-  background: rgba(80, 185, 183, 0.2);
-  border-color: #50B9B7;
-  color: #50B9B7;
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .currentBadge {
   margin-left: auto;
   padding: 0.25rem 0.5rem;
-  background: rgba(80, 185, 183, 0.2);
-  border: 1px solid rgba(80, 185, 183, 0.3);
+  background: color-mix(in srgb, var(--primary) 20%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
   border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 500;
-  color: #50B9B7;
+  color: var(--primary);
 }
 
 .modalFooter {
@@ -966,7 +966,7 @@
   justify-content: flex-end;
   gap: 1rem;
   padding: 1.5rem;
-  border-top: 1px solid rgba(75, 85, 99, 0.3);
+  border-top: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
 }
 
 /* Assign Button Styles */
@@ -977,16 +977,16 @@
   width: 32px;
   height: 32px;
   background: transparent;
-  border: 1px solid rgba(75, 85, 99, 0.3);
+  border: 1px solid color-mix(in srgb, var(--border) 30%, transparent);
   border-radius: 6px;
-  color: #9ca3af;
+  color: var(--muted-foreground);
   cursor: pointer;
   transition: all 0.2s ease;
   margin-right: 0.5rem;
 }
 
 .assignButton:hover {
-  background: rgba(80, 185, 183, 0.1);
-  border-color: #50B9B7;
-  color: #50B9B7;
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  border-color: var(--primary);
+  color: var(--primary);
 }

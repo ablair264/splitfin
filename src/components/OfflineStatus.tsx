@@ -20,20 +20,7 @@ const OfflineStatus: React.FC = () => {
   if (isOnline) return null;
 
   return (
-    <div style={{
-      position: 'fixed',
-      bottom: 20,
-      left: 20,
-      background: '#ef4444',
-      color: 'white',
-      padding: '12px 20px',
-      borderRadius: '8px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      zIndex: 9999,
-      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-    }}>
+    <div className="fixed bottom-5 left-5 bg-destructive text-destructive-foreground px-5 py-3 rounded-lg flex items-center gap-2 z-[9999] shadow-md">
       <WifiOff size={18} />
       You are offline
     </div>

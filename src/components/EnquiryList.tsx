@@ -83,20 +83,20 @@ type FilterStatus = 'all' | 'new' | 'contacted' | 'quoted' | 'negotiating' | 'wo
 type FilterPriority = 'all' | 'urgent' | 'high' | 'medium' | 'low';
 
 const statusConfig = {
-  new: { color: '#3b82f6', icon: Plus, label: 'New' },
-  contacted: { color: '#8b5cf6', icon: Phone, label: 'Contacted' },
-  quoted: { color: '#f59e0b', icon: DollarSign, label: 'Quoted' },
-  negotiating: { color: '#10b981', icon: Target, label: 'Negotiating' },
-  won: { color: '#22c55e', icon: CheckCircle, label: 'Won' },
-  lost: { color: '#ef4444', icon: AlertCircle, label: 'Lost' },
-  cancelled: { color: '#6b7280', icon: AlertCircle, label: 'Cancelled' }
+  new: { color: 'var(--info)', icon: Plus, label: 'New' },
+  contacted: { color: 'var(--chart-5)', icon: Phone, label: 'Contacted' },
+  quoted: { color: 'var(--warning)', icon: DollarSign, label: 'Quoted' },
+  negotiating: { color: 'var(--success)', icon: Target, label: 'Negotiating' },
+  won: { color: 'var(--success)', icon: CheckCircle, label: 'Won' },
+  lost: { color: 'var(--destructive)', icon: AlertCircle, label: 'Lost' },
+  cancelled: { color: 'var(--muted-foreground)', icon: AlertCircle, label: 'Cancelled' }
 };
 
 const priorityConfig = {
-  urgent: { color: '#ef4444', icon: AlertCircle },
-  high: { color: '#f59e0b', icon: AlertCircle },
-  medium: { color: '#3b82f6', icon: Clock },
-  low: { color: '#6b7280', icon: Clock }
+  urgent: { color: 'var(--destructive)', icon: AlertCircle },
+  high: { color: 'var(--warning)', icon: AlertCircle },
+  medium: { color: 'var(--info)', icon: Clock },
+  low: { color: 'var(--muted-foreground)', icon: Clock }
 };
 
 function EnquiryList() {
@@ -418,7 +418,7 @@ function EnquiryList() {
   };
 
   return (
-    <ColorProvider barChartColors="multicolored" graphColors={{ primary: '#79d5e9', secondary: '#4daeac', tertiary: '#f77d11' }}>
+    <ColorProvider barChartColors="multicolored" graphColors={{ primary: 'var(--primary)', secondary: 'var(--primary)', tertiary: 'var(--warning)' }}>
       <div className={styles.container}>
           {/* Header */}
           <div className={styles.header}>

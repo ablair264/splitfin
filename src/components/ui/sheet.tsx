@@ -1,143 +1,101 @@
-"use client"
+import type { DialogProps, ModalOverlayProps } from "react-aria-components"
+import { DialogTrigger as DialogTriggerPrimitive, Modal, ModalOverlay } from "react-aria-components"
+import { cx } from "@/lib/primitive"
+import {
+  Dialog,
+  DialogBody,
+  DialogClose,
+  DialogCloseIcon,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./dialog"
 
-import * as React from "react"
-import { XIcon } from "lucide-react"
-import { Dialog as SheetPrimitive } from "radix-ui"
+const Sheet = DialogTriggerPrimitive
 
-import { cn } from "@/lib/utils"
-
-function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />
+interface SheetContentProps
+  extends Omit<ModalOverlayProps, "children">,
+    Pick<DialogProps, "aria-label" | "role" | "aria-labelledby" | "children"> {
+  closeButton?: boolean
+  isFloat?: boolean
+  side?: "top" | "bottom" | "left" | "right"
+  overlay?: Omit<ModalOverlayProps, "children">
 }
 
-function SheetTrigger({
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Trigger>) {
-  return <SheetPrimitive.Trigger data-slot="sheet-trigger" {...props} />
+const sideVariants: Record<string, string> = {
+  top: "entering:slide-in-from-top exiting:slide-out-to-top inset-x-0 top-0 rounded-b-2xl border-b data-[float=true]:inset-x-2 data-[float=true]:top-2 data-[float=true]:border-b-0",
+  bottom:
+    "entering:slide-in-from-bottom exiting:slide-out-to-bottom inset-x-0 bottom-0 rounded-t-2xl border-t data-[float=true]:inset-x-2 data-[float=true]:bottom-2 data-[float=true]:border-t-0",
+  left: "entering:slide-in-from-left exiting:slide-out-to-left-80 inset-y-0 left-0 h-auto w-3/4 overflow-y-auto border-r sm:max-w-80 data-[float=true]:inset-y-2 data-[float=true]:left-2 data-[float=true]:border-r-0",
+  right:
+    "entering:slide-in-from-right exiting:slide-out-to-right-80 inset-y-0 right-0 h-auto w-3/4 overflow-y-auto border-l sm:max-w-80 data-[float=true]:inset-y-2 data-[float=true]:right-2 data-[float=true]:border-l-0",
 }
 
-function SheetClose({
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Close>) {
-  return <SheetPrimitive.Close data-slot="sheet-close" {...props} />
-}
-
-function SheetPortal({
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Portal>) {
-  return <SheetPrimitive.Portal data-slot="sheet-portal" {...props} />
-}
-
-function SheetOverlay({
+const SheetContent = ({
   className,
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Overlay>) {
-  return (
-    <SheetPrimitive.Overlay
-      data-slot="sheet-overlay"
-      className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
-        className
-      )}
-      {...props}
-    />
-  )
-}
-
-function SheetContent({
-  className,
-  children,
+  isDismissable: isDismissableInternal,
   side = "right",
-  showCloseButton = true,
+  role = "dialog",
+  closeButton = true,
+  isFloat = true,
+  overlay,
+  children,
   ...props
-}: React.ComponentProps<typeof SheetPrimitive.Content> & {
-  side?: "top" | "right" | "bottom" | "left"
-  showCloseButton?: boolean
-}) {
+}: SheetContentProps) => {
+  const isDismissable = isDismissableInternal ?? role !== "alertdialog"
   return (
-    <SheetPortal>
-      <SheetOverlay />
-      <SheetPrimitive.Content
-        data-slot="sheet-content"
-        className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500",
-          side === "right" &&
-            "data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right inset-y-0 right-0 h-full w-3/4 border-l sm:max-w-sm",
-          side === "left" &&
-            "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left inset-y-0 left-0 h-full w-3/4 border-r sm:max-w-sm",
-          side === "top" &&
-            "data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top inset-x-0 top-0 h-auto border-b",
-          side === "bottom" &&
-            "data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom inset-x-0 bottom-0 h-auto border-t",
-          className
+    <ModalOverlay
+      isDismissable={isDismissable}
+      className="entering:fade-in exiting:fade-out fixed start-0 top-0 z-50 size-full entering:animate-in exiting:animate-out overflow-hidden bg-black/15 entering:duration-500 exiting:duration-300"
+      {...props}
+    >
+      <Modal
+        data-float={isFloat}
+        className={cx(
+          "fixed z-50 grid gap-4 border-muted-fg/20 bg-overlay text-overlay-fg shadow-lg dark:border-border",
+          "transform-gpu transition ease-in-out will-change-transform [--visual-viewport-vertical-padding:16px]",
+          "data-[float=true]:rounded-lg data-[float=true]:ring data-[float=true]:ring-fg/5 dark:data-[float=true]:ring-border",
+          "border-fg/20 dark:border-border",
+          "entering:fade-in entering:animate-in entering:duration-500",
+          "exiting:fade-in exiting:animate-out exiting:duration-300",
+          sideVariants[side],
+          className,
         )}
-        {...props}
       >
-        {children}
-        {showCloseButton && (
-          <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
-            <XIcon className="size-4" />
-            <span className="sr-only">Close</span>
-          </SheetPrimitive.Close>
-        )}
-      </SheetPrimitive.Content>
-    </SheetPortal>
+        <Dialog className="sm:[--gutter:--spacing(6)]" aria-label={props["aria-label"]} role={role}>
+          {(values) => (
+            <>
+              {typeof children === "function" ? children(values) : children}
+              {closeButton && (
+                <DialogCloseIcon className="end-2.5 top-2.5" isDismissable={isDismissable} />
+              )}
+            </>
+          )}
+        </Dialog>
+      </Modal>
+    </ModalOverlay>
   )
 }
 
-function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="sheet-header"
-      className={cn("flex flex-col gap-1.5 p-4", className)}
-      {...props}
-    />
-  )
-}
+const SheetTrigger = DialogTrigger
+const SheetFooter = DialogFooter
+const SheetHeader = DialogHeader
+const SheetTitle = DialogTitle
+const SheetDescription = DialogDescription
+const SheetBody = DialogBody
+const SheetClose = DialogClose
 
-function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
-  return (
-    <div
-      data-slot="sheet-footer"
-      className={cn("mt-auto flex flex-col gap-2 p-4", className)}
-      {...props}
-    />
-  )
-}
-
-function SheetTitle({
-  className,
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Title>) {
-  return (
-    <SheetPrimitive.Title
-      data-slot="sheet-title"
-      className={cn("text-foreground font-semibold", className)}
-      {...props}
-    />
-  )
-}
-
-function SheetDescription({
-  className,
-  ...props
-}: React.ComponentProps<typeof SheetPrimitive.Description>) {
-  return (
-    <SheetPrimitive.Description
-      data-slot="sheet-description"
-      className={cn("text-muted-foreground text-sm", className)}
-      {...props}
-    />
-  )
-}
-
+export type { SheetContentProps }
 export {
   Sheet,
   SheetTrigger,
-  SheetClose,
-  SheetContent,
-  SheetHeader,
   SheetFooter,
+  SheetHeader,
   SheetTitle,
   SheetDescription,
+  SheetBody,
+  SheetClose,
+  SheetContent,
 }

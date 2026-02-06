@@ -15,7 +15,7 @@ const OrderDetail: React.FC = () => {
         <ArrowLeft size={20} /> Back to Orders
       </button>
       <h2>Order Details</h2>
-      <p style={{ color: '#666' }}>Order #{orderId}</p>
+      <p className="text-muted-foreground">Order #{orderId}</p>
     </div>
   );
 };

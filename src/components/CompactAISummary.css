@@ -21,7 +21,7 @@
 }
 
 .ai-text {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--muted-foreground);
   font-size: 13px;
   line-height: 1.4;
   white-space: nowrap;
@@ -31,11 +31,11 @@
 }
 
 .ai-loading-text {
-  color: #9ca3af;
+  color: var(--muted-foreground);
 }
 
 .ai-error-text {
-  color: #9ca3af;
+  color: var(--muted-foreground);
 }
 
 /* Responsive design */
