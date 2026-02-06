@@ -523,12 +523,15 @@ const InventoryProducts: React.FC = () => {
           </div>
 
           {/* Brand filter */}
-          <Select value={filters.brand} onValueChange={(val) => handleFilterChange('brand', val)}>
+          <Select
+            value={filters.brand || 'all'}
+            onValueChange={(val) => handleFilterChange('brand', val === 'all' ? '' : val)}
+          >
             <SelectTrigger className="w-[160px] bg-[#0f1419] border-gray-700 text-white">
               <SelectValue placeholder="All Brands" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Brands</SelectItem>
+              <SelectItem value="all">All Brands</SelectItem>
               {brands.map((b) => (
                 <SelectItem key={b.brand} value={b.brand}>
                   {b.brand} ({b.count})
@@ -539,14 +542,14 @@ const InventoryProducts: React.FC = () => {
 
           {/* Stock filter */}
           <Select
-            value={filters.stockFilter}
-            onValueChange={(val) => handleFilterChange('stockFilter', val)}
+            value={filters.stockFilter || 'all'}
+            onValueChange={(val) => handleFilterChange('stockFilter', val === 'all' ? '' : val)}
           >
             <SelectTrigger className="w-[140px] bg-[#0f1419] border-gray-700 text-white">
               <SelectValue placeholder="All Stock" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Stock</SelectItem>
+              <SelectItem value="all">All Stock</SelectItem>
               <SelectItem value="in-stock">In Stock</SelectItem>
               <SelectItem value="low-stock">Low Stock</SelectItem>
               <SelectItem value="out-of-stock">Out of Stock</SelectItem>
