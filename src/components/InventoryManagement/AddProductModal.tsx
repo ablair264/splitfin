@@ -34,8 +34,8 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ brands, onClose, onAd
     description: '',
     stock_on_hand: 0,
     reorder_level: 0,
-    rate: 0, // cost/purchase price
-    rrp: 0, // retail price
+    rate: 0, // selling price
+    cost_price: 0, // what we pay suppliers
     status: 'active',
     image_url: ''
   });
@@ -48,7 +48,7 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ brands, onClose, onAd
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'rate' || name === 'rrp' || name === 'stock_on_hand' || name === 'reorder_level'
+      [name]: name === 'rate' || name === 'cost_price' || name === 'stock_on_hand' || name === 'reorder_level'
         ? parseFloat(value) || 0
         : value
     }));
@@ -67,8 +67,8 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ brands, onClose, onAd
       setError('Brand is required');
       return false;
     }
-    if (formData.rrp <= 0) {
-      setError('Retail price must be greater than 0');
+    if (formData.rate <= 0) {
+      setError('Rate (selling price) must be greater than 0');
       return false;
     }
     return true;
@@ -145,8 +145,8 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ brands, onClose, onAd
     setCurrentStep(prev => Math.max(prev - 1, 1));
   };
 
-  const margin = formData.rate && formData.rrp
-    ? ((formData.rrp - formData.rate) / formData.rate * 100).toFixed(1)
+  const margin = formData.rate && formData.cost_price && formData.cost_price > 0
+    ? ((formData.rate - formData.cost_price) / formData.cost_price * 100).toFixed(1)
     : '0';
 
   return (
@@ -267,11 +267,11 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ brands, onClose, onAd
                 <h3><DollarSign size={18} /> Pricing & Stock Information</h3>
                 <div className={styles.formGrid}>
                   <div className={styles.formGroup}>
-                    <label>Cost/Purchase Price</label>
+                    <label>Cost Price (Supplier)</label>
                     <input
                       type="number"
-                      name="rate"
-                      value={formData.rate}
+                      name="cost_price"
+                      value={formData.cost_price}
                       onChange={handleInputChange}
                       placeholder="0.00"
                       min="0"
@@ -279,11 +279,11 @@ const AddProductModal: React.FC<AddProductModalProps> = ({ brands, onClose, onAd
                     />
                   </div>
                   <div className={styles.formGroup}>
-                    <label>Retail Price (RRP) *</label>
+                    <label>Rate (Selling Price) *</label>
                     <input
                       type="number"
-                      name="rrp"
-                      value={formData.rrp}
+                      name="rate"
+                      value={formData.rate}
                       onChange={handleInputChange}
                       placeholder="0.00"
                       min="0"

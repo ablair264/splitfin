@@ -42,8 +42,8 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ product, onCl
   };
 
   const calculateMargin = () => {
-    if (!product.rate || !product.rrp || product.rate === 0) return null;
-    return ((product.rrp - product.rate) / product.rate * 100).toFixed(0);
+    if (!product.rate || !product.cost_price || product.cost_price === 0) return null;
+    return ((product.rate - product.cost_price) / product.cost_price * 100).toFixed(0);
   };
 
   const margin = calculateMargin();
@@ -178,19 +178,19 @@ const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({ product, onCl
                 )}
               </div>
 
-              {/* Cost */}
+              {/* Cost Price (what we pay suppliers) */}
               <div className="bg-[#0f1419] rounded-lg border border-gray-700/60 p-3">
-                <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Cost</div>
+                <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Cost Price</div>
                 <div className="text-xl font-semibold text-white tabular-nums">
-                  {formatCurrency(product.rate)}
+                  {formatCurrency(product.cost_price)}
                 </div>
               </div>
 
-              {/* RRP */}
+              {/* Rate (selling price) */}
               <div className="bg-[#0f1419] rounded-lg border border-gray-700/60 p-3">
-                <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">RRP</div>
+                <div className="text-[10px] uppercase tracking-wider text-gray-500 mb-1">Rate</div>
                 <div className="text-xl font-semibold text-emerald-400 tabular-nums">
-                  {formatCurrency(product.rrp)}
+                  {formatCurrency(product.rate)}
                 </div>
               </div>
 

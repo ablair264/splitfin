@@ -26,9 +26,8 @@ interface InventoryItem {
   brand: string; // brand name (string), not brand_id
   gross_stock_level: number; // maps to stock_on_hand
   reorder_level: number;
-  retail_price?: number; // maps to rrp or rate
-  cost_price?: number; // maps to rate
-  purchase_price?: number; // maps to rate
+  cost_price?: number; // what we pay suppliers
+  rate?: number; // selling price
   status: string;
   image_url?: string;
 }
@@ -55,8 +54,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     description: product.description || '',
     stock_on_hand: product.gross_stock_level || 0,
     reorder_level: product.reorder_level || 0,
-    rate: product.purchase_price || product.cost_price || 0,
-    rrp: product.retail_price || 0,
+    cost_price: product.cost_price || 0,
+    rate: product.rate || 0,
     status: product.status || 'active',
     image_url: product.image_url || ''
   });
@@ -68,7 +67,7 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'rate' || name === 'rrp' || name === 'stock_on_hand' || name === 'reorder_level'
+      [name]: name === 'rate' || name === 'cost_price' || name === 'stock_on_hand' || name === 'reorder_level'
         ? parseFloat(value) || 0
         : value
     }));
@@ -87,8 +86,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
       setError('Brand is required');
       return false;
     }
-    if (formData.rrp <= 0) {
-      setError('Retail price must be greater than 0');
+    if (formData.rate <= 0) {
+      setError('Rate (selling price) must be greater than 0');
       return false;
     }
     return true;
@@ -114,8 +113,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
         category_name: formData.category,
         description: formData.description,
         stock_on_hand: formData.stock_on_hand,
+        cost_price: formData.cost_price,
         rate: formData.rate,
-        rrp: formData.rrp,
         status: formData.status as 'active' | 'inactive',
         image_url: formData.image_url || null
       });
@@ -129,8 +128,8 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
     }
   };
 
-  const margin = formData.rate && formData.rrp
-    ? ((formData.rrp - formData.rate) / formData.rate * 100).toFixed(1)
+  const margin = formData.rate && formData.cost_price && formData.cost_price > 0
+    ? ((formData.rate - formData.cost_price) / formData.cost_price * 100).toFixed(1)
     : '0';
 
   return (
@@ -228,22 +227,22 @@ const EditProductModal: React.FC<EditProductModalProps> = ({
               <h3><DollarSign size={18} /> Pricing & Stock Information</h3>
               <div className={styles.formGrid}>
                 <div className={styles.formGroup}>
-                  <label>Cost/Purchase Price</label>
+                  <label>Cost Price (Supplier)</label>
                   <input
                     type="number"
-                    name="rate"
-                    value={formData.rate}
+                    name="cost_price"
+                    value={formData.cost_price}
                     onChange={handleInputChange}
                     min="0"
                     step="0.01"
                   />
                 </div>
                 <div className={styles.formGroup}>
-                  <label>Retail Price (RRP) *</label>
+                  <label>Rate (Selling Price) *</label>
                   <input
                     type="number"
-                    name="rrp"
-                    value={formData.rrp}
+                    name="rate"
+                    value={formData.rate}
                     onChange={handleInputChange}
                     min="0"
                     step="0.01"

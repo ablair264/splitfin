@@ -38,8 +38,8 @@ interface InventoryItem {
   brand: string;
   gross_stock_level: number; // mapped from stock_on_hand
   reorder_level: number;
-  retail_price?: number; // mapped from rrp or rate
-  cost_price?: number; // mapped from rate
+  cost_price?: number; // what we pay suppliers
+  rate?: number; // selling price
   status: string;
   image_url?: string;
   created_date: string;
@@ -56,8 +56,8 @@ const mapProductToInventoryItem = (product: Product): InventoryItem => ({
   brand: product.brand,
   gross_stock_level: product.stock_on_hand,
   reorder_level: 0,
-  retail_price: product.rrp || product.rate,
-  cost_price: product.rate,
+  cost_price: product.cost_price,
+  rate: product.rate,
   status: product.status,
   image_url: product.image_url || undefined,
   created_date: product.created_at
@@ -393,7 +393,7 @@ const InventoryProducts: React.FC = () => {
           <div>Category</div>
           <div className="text-right">Stock</div>
           <div className="text-right">Cost</div>
-          <div className="text-right">RRP</div>
+          <div className="text-right">Rate</div>
           <div>Actions</div>
         </div>
 
@@ -449,9 +449,9 @@ const InventoryProducts: React.FC = () => {
                   {formatCurrency(item.cost_price)}
                 </div>
 
-                {/* RRP */}
+                {/* Rate (selling price) */}
                 <div className="hidden lg:block text-[13px] font-medium text-white text-right tabular-nums">
-                  {formatCurrency(item.retail_price)}
+                  {formatCurrency(item.rate)}
                 </div>
 
                 {/* Actions */}

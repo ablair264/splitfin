@@ -11713,3 +11713,26 @@
 2026-02-05 23:02:16 [32minfo[39m: [Server] Zoho Sync Service started
 2026-02-05 23:02:16 [33mwarn[39m: [Security] ALLOWED_ORIGINS not configured - CORS is disabled
 2026-02-05 23:02:16 [33mwarn[39m: [Security] ADMIN_API_KEY not configured - admin endpoints disabled
+2026-02-06 00:16:34 [32minfo[39m: Rate limiter initialized:
+2026-02-06 00:16:34 [32minfo[39m: [Server] Zoho Sync Service started
+2026-02-06 00:16:34 [33mwarn[39m: [Security] ALLOWED_ORIGINS not configured - CORS is disabled
+2026-02-06 00:16:34 [33mwarn[39m: [Security] ADMIN_API_KEY not configured - admin endpoints disabled
+2026-02-06 00:30:35 [32minfo[39m: [Server] SIGINT signal received - closing HTTP server
+2026-02-06 00:30:38 [32minfo[39m: Rate limiter initialized:
+2026-02-06 00:30:38 [32minfo[39m: [Server] Zoho Sync Service started
+2026-02-06 00:30:38 [33mwarn[39m: [Security] ALLOWED_ORIGINS not configured - CORS is disabled
+2026-02-06 00:30:38 [33mwarn[39m: [Security] ADMIN_API_KEY not configured - admin endpoints disabled
+2026-02-06 00:30:45 [32minfo[39m: [Server] SIGINT signal received - closing HTTP server
+2026-02-06 00:31:46 [32minfo[39m: Rate limiter initialized:
+2026-02-06 00:31:47 [32minfo[39m: [Server] Zoho Sync Service started
+2026-02-06 00:31:47 [33mwarn[39m: [Security] ADMIN_API_KEY not configured - admin endpoints disabled
+2026-02-06 00:31:55 [32minfo[39m: Rate limiter initialized:
+2026-02-06 00:31:55 [32minfo[39m: [Server] Zoho Sync Service started
+2026-02-06 00:31:55 [33mwarn[39m: [Security] ADMIN_API_KEY not configured - admin endpoints disabled
+2026-02-06 00:32:19 [32minfo[39m: [Server] SIGINT signal received - closing HTTP server
+2026-02-06 00:32:21 [32minfo[39m: Rate limiter initialized:
+2026-02-06 00:32:22 [32minfo[39m: [Server] Zoho Sync Service started
+2026-02-06 00:32:22 [33mwarn[39m: [Security] ADMIN_API_KEY not configured - admin endpoints disabled
+2026-02-06 00:32:57 [32minfo[39m: Rate limiter initialized:
+2026-02-06 00:32:57 [32minfo[39m: [Server] Zoho Sync Service started
+2026-02-06 00:32:57 [33mwarn[39m: [Security] ADMIN_API_KEY not configured - admin endpoints disabled

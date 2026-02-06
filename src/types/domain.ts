@@ -135,7 +135,7 @@ export interface Product {
   image_url: string | null;
   image_urls: string[];
   pack_qty: number | null;
-  rrp: number | null;
+  cost_price: number | null;
   color_family: string | null;
   category_l1: string | null;
   category_l2: string | null;
