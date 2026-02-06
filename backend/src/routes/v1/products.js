@@ -1,8 +1,33 @@
 import express from 'express';
+import multer from 'multer';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { query, getById, insert, update } from '../../config/database.js';
 import { logger } from '../../utils/logger.js';
 
 const router = express.Router();
+
+// Multer: in-memory storage, 5MB limit, images only
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only image files are allowed'));
+  },
+});
+
+// R2 client (S3-compatible)
+const r2 = new S3Client({
+  region: 'auto',
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || '',
+  },
+});
+
+const R2_BUCKET = process.env.R2_BUCKET_NAME || 'dmbrands-cdn';
+const R2_PUBLIC_URL = process.env.R2_PUBLIC_URL || 'https://pub-b1c365d59f294b0fbc4c7362679bbaef.r2.dev';
 
 // Helper: build common WHERE clause for product queries
 function buildProductWhere(filters) {

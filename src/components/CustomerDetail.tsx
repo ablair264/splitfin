@@ -1,13 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Mail, Phone, MapPin, ExternalLink, Pencil, Save, X, Loader2, ShoppingCart
+  ArrowLeft, Mail, Phone, MapPin, ExternalLink, Save, X, Loader2, ShoppingCart,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { customerService } from '../services/customerService';
 import { orderService } from '../services/orderService';
 import { useLoader } from '../contexts/LoaderContext';
 import type { Customer, Address, Order } from '../types/domain';
 import { cn } from '@/lib/utils';
+import { Avatar } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import {
+  Table, TableHeader, TableBody, TableRow, TableHead, TableCell,
+} from '@/components/ui/table';
+import {
+  Editable, EditableArea, EditablePreview, EditableInput,
+} from '@/components/ui/editable';
+
+// ---------------------------------------------------------------------------
+// File-scope helpers
+// ---------------------------------------------------------------------------
 
 const ADDRESS_FIELDS: { key: keyof Address; label: string }[] = [
   { key: 'address', label: 'Address' },
@@ -18,6 +33,52 @@ const ADDRESS_FIELDS: { key: keyof Address; label: string }[] = [
   { key: 'country', label: 'Country' },
 ];
 
+const formatCurrency = (value: number | undefined | null): string => {
+  if (value === undefined || value === null || isNaN(value)) return '\u00A30';
+  return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(value);
+};
+
+const formatDate = (dateString: string | undefined | null) => {
+  if (!dateString) return '-';
+  try {
+    return new Date(dateString).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  } catch { return '-'; }
+};
+
+const orderStatusColor = (status: string) => {
+  switch (status?.toLowerCase()) {
+    case 'confirmed': case 'invoiced':
+      return 'text-primary bg-primary/8 border-primary/15';
+    case 'draft':
+      return 'text-muted-foreground bg-muted/30 border-border/30';
+    case 'void': case 'cancelled':
+      return 'text-destructive bg-destructive/10 border-destructive/20';
+    case 'closed':
+      return 'text-muted-foreground bg-muted/30 border-border/30';
+    default:
+      return 'text-muted-foreground bg-muted/30 border-border/30';
+  }
+};
+
+function DetailRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between py-2.5 border-b border-border/30 last:border-0">
+      <span className="text-[13px] text-muted-foreground shrink-0">{label}</span>
+      <div className="text-right">{children}</div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
 export default function CustomerDetail() {
   const { customerId } = useParams();
   const navigate = useNavigate();
@@ -27,17 +88,18 @@ export default function CustomerDetail() {
   const [loading, setLoading] = useState(true);
   const [ordersLoading, setOrdersLoading] = useState(false);
 
-  // Edit mode state
-  const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState<Partial<Customer>>({});
+  // Inline edit state
+  const [dirtyFields, setDirtyFields] = useState<Record<string, unknown>>({});
+  const [discardCount, setDiscardCount] = useState(0);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+
+  const hasDirtyFields = Object.keys(dirtyFields).length > 0;
 
   useEffect(() => {
     if (customerId) fetchCustomerData();
   }, [customerId]);
 
-  // Fetch orders AFTER customer loads, using zoho_contact_id
   useEffect(() => {
     if (customerData?.zoho_contact_id) {
       fetchOrders(customerData.zoho_contact_id);
@@ -70,41 +132,68 @@ export default function CustomerDetail() {
     }
   };
 
-  // -- Edit helpers --
-  const initEditData = () => {
+  // -- Dirty field tracking --
+  const handleFieldSubmit = useCallback((field: string, value: string) => {
     if (!customerData) return;
-    setEditData({
-      company_name: customerData.company_name,
-      contact_name: customerData.contact_name,
-      email: customerData.email,
-      phone: customerData.phone,
-      mobile: customerData.mobile,
-      website: customerData.website,
-      payment_terms: customerData.payment_terms,
-      billing_address: customerData.billing_address ? { ...customerData.billing_address } : null,
-      shipping_address: customerData.shipping_address ? { ...customerData.shipping_address } : null,
-    });
-  };
+    const currentVal = String((customerData as unknown as Record<string, unknown>)[field] ?? '');
+    if (value === currentVal) {
+      setDirtyFields(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+      return;
+    }
+    setDirtyFields(prev => ({ ...prev, [field]: value || null }));
+  }, [customerData]);
 
-  const handleFieldChange = (field: keyof Customer, value: string) => {
-    setEditData(prev => ({ ...prev, [field]: value || null }));
-  };
+  const handleAddressFieldSubmit = useCallback((type: 'billing_address' | 'shipping_address', field: keyof Address, value: string) => {
+    if (!customerData) return;
+    const currentAddr = customerData[type] as Address | null;
+    const currentVal = currentAddr?.[field] ?? '';
+    const dirtyKey = `${type}.${field}`;
 
-  const handleAddressChange = (type: 'billing_address' | 'shipping_address', field: keyof Address, value: string) => {
-    setEditData(prev => ({
-      ...prev,
-      [type]: { ...(prev[type] as Address || {}), [field]: value || undefined },
-    }));
-  };
+    if (value === currentVal) {
+      setDirtyFields(prev => {
+        const next = { ...prev };
+        delete next[dirtyKey];
+        return next;
+      });
+      return;
+    }
+    setDirtyFields(prev => ({ ...prev, [dirtyKey]: value || undefined }));
+  }, [customerData]);
 
   const handleSave = async () => {
-    if (!customerData) return;
+    if (!customerData || !hasDirtyFields) return;
     setSaving(true);
     setSaveError(null);
     try {
-      const updated = await customerService.update(customerData.id, editData);
+      // Reconstruct update payload from dirtyFields
+      const payload: Partial<Customer> = {};
+      const billingUpdates: Record<string, unknown> = {};
+      const shippingUpdates: Record<string, unknown> = {};
+
+      for (const [key, value] of Object.entries(dirtyFields)) {
+        if (key.startsWith('billing_address.')) {
+          billingUpdates[key.replace('billing_address.', '')] = value;
+        } else if (key.startsWith('shipping_address.')) {
+          shippingUpdates[key.replace('shipping_address.', '')] = value;
+        } else {
+          (payload as Record<string, unknown>)[key] = value;
+        }
+      }
+
+      if (Object.keys(billingUpdates).length > 0) {
+        payload.billing_address = { ...(customerData.billing_address as Address || {}), ...billingUpdates } as Address;
+      }
+      if (Object.keys(shippingUpdates).length > 0) {
+        payload.shipping_address = { ...(customerData.shipping_address as Address || {}), ...shippingUpdates } as Address;
+      }
+
+      const updated = await customerService.update(customerData.id, payload);
       setCustomerData(updated);
-      setIsEditing(false);
+      setDirtyFields({});
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to save changes';
       setSaveError(message);
@@ -113,52 +202,21 @@ export default function CustomerDetail() {
     }
   };
 
-  const handleCancel = () => {
-    setIsEditing(false);
-    setEditData({});
+  const handleDiscard = () => {
+    setDirtyFields({});
     setSaveError(null);
+    setDiscardCount(c => c + 1);
   };
 
-  const startEditing = () => {
-    initEditData();
-    setSaveError(null);
-    setIsEditing(true);
-  };
-
-  const formatCurrency = (value: number | undefined | null): string => {
-    if (value === undefined || value === null || isNaN(value)) return '\u00A30';
-    return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(value);
-  };
-
-  const formatDate = (dateString: string | undefined | null) => {
-    if (!dateString) return '-';
-    try {
-      return new Date(dateString).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    } catch { return '-'; }
-  };
-
-  const orderStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'confirmed': case 'invoiced': return 'text-brand-300 bg-brand-300/10';
-      case 'draft': return 'text-muted-foreground bg-muted/30';
-      case 'void': case 'cancelled': return 'text-destructive bg-destructive/10';
-      case 'closed': return 'text-muted-foreground bg-muted/30';
-      default: return 'text-muted-foreground bg-muted/30';
-    }
-  };
-
-  // Loading is handled by ProgressLoader via useLoader
-  if (loading) {
-    return null;
-  }
+  if (loading) return null;
 
   if (!customerData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <p className="text-muted-foreground">Customer not found</p>
-        <button onClick={() => navigate('/customers')} className="text-sm text-brand-300 hover:underline">
+        <Button intent="plain" size="sm" onPress={() => navigate('/customers')}>
           Back to Customers
-        </button>
+        </Button>
       </div>
     );
   }
@@ -168,105 +226,36 @@ export default function CustomerDetail() {
   const outstandingAmount = customerData.outstanding_receivable || 0;
   const lastOrderDate = orders.length > 0 ? orders[0]?.date : undefined;
 
-  // -- Shared input classes --
-  const inputCls = 'w-full bg-white/[0.04] border border-white/[0.08] rounded px-2 py-1.5 text-[13px] text-foreground placeholder-muted-foreground focus:outline-none focus:border-brand-300/40 transition-colors';
-
-  // Inline helper for key-value rows (view & edit modes)
-  const InfoRow = ({
-    label,
-    value,
-    accent,
-    editKey,
-  }: {
-    label: string;
-    value: string | number;
-    accent?: boolean;
-    editKey?: keyof Customer;
-  }) => {
-    if (isEditing && editKey) {
-      return (
-        <div className="flex items-center justify-between gap-3 py-2 border-b border-white/[0.04] last:border-0">
-          <span className="text-[13px] text-muted-foreground shrink-0">{label}</span>
-          <input
-            type="text"
-            value={(editData[editKey] as string) ?? ''}
-            onChange={e => handleFieldChange(editKey, e.target.value)}
-            className={cn(inputCls, 'text-right max-w-[200px]')}
-            placeholder={label}
-          />
-        </div>
-      );
-    }
-    return (
-      <div className="flex items-baseline justify-between py-2.5 border-b border-white/[0.04] last:border-0">
-        <span className="text-[13px] text-muted-foreground">{label}</span>
-        <span className={cn('text-[13px] font-medium tabular-nums', accent ? 'text-brand-300' : 'text-foreground')}>
-          {value}
-        </span>
-      </div>
-    );
-  };
-
-  // Address editor sub-component
-  const AddressEditor = ({
-    type,
-    label,
-  }: {
-    type: 'billing_address' | 'shipping_address';
-    label: string;
-  }) => {
-    const addr = (editData[type] as Address) || {};
-    return (
-      <div>
-        <div className="flex items-center gap-1.5 mb-2">
-          <MapPin size={11} className="text-muted-foreground" />
-          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
-        </div>
-        <div className="space-y-2 pl-[17px]">
-          {ADDRESS_FIELDS.map(({ key, label: fieldLabel }) => (
-            <input
-              key={key}
-              type="text"
-              value={addr[key] ?? ''}
-              onChange={e => handleAddressChange(type, key, e.target.value)}
-              className={inputCls}
-              placeholder={fieldLabel}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  const formatAddress = (addr: Customer['billing_address']) => {
-    if (!addr) return null;
-    const parts = [addr.address, addr.street2, addr.city, addr.state, addr.zip, addr.country].filter(Boolean);
-    return parts.length > 0 ? parts : null;
-  };
-
-  const billingParts = formatAddress(customerData.billing_address);
-  const shippingParts = formatAddress(customerData.shipping_address);
+  // Stable Editable key prefix
+  const ek = `${customerData.id}-${discardCount}`;
 
   return (
     <div className="w-full px-6 py-2">
       {/* Back link */}
-      <button
-        onClick={() => navigate('/customers')}
-        className="flex items-center gap-1.5 text-[13px] text-muted-foreground hover:text-foreground transition-colors mb-5"
+      <Button
+        intent="plain"
+        size="xs"
+        onPress={() => navigate('/customers')}
+        className="mb-5 text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft size={14} />
         Customers
-      </button>
+      </Button>
 
-      {/* Identity + metrics strip */}
-      <div className="flex items-center gap-6 pb-7 mb-8 border-b border-white/[0.06]">
-        {/* Customer identity */}
+      {/* ── Identity + Metrics strip ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex items-center gap-6 pb-7 mb-8 border-b border-border/60"
+      >
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand-300 to-primary flex items-center justify-center text-white font-semibold text-[14px] shrink-0">
-            {customerData.company_name.charAt(0).toUpperCase()}
-          </div>
+          <Avatar
+            size="lg"
+            initials={customerData.company_name.charAt(0).toUpperCase()}
+            className="bg-primary text-primary-fg"
+          />
           <div>
-            <h1 className="text-[17px] font-semibold text-white leading-tight">{customerData.company_name}</h1>
+            <h1 className="text-[17px] font-semibold text-foreground leading-tight">{customerData.company_name}</h1>
             <div className="flex items-center gap-2 mt-0.5 flex-wrap">
               <span className={cn(
                 'inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider',
@@ -281,13 +270,13 @@ export default function CustomerDetail() {
               )}
               {customerData.brand_preferences && customerData.brand_preferences.length > 0 && (
                 <>
-                  <span className="text-border">·</span>
+                  <span className="text-border">&middot;</span>
                   {customerData.brand_preferences.map((brand, i) => {
-                    const label = typeof brand === 'string' ? brand : (brand as any)?.brand || String(brand);
+                    const label = typeof brand === 'string' ? brand : (brand as Record<string, string>)?.brand || String(brand);
                     return (
                       <span
                         key={i}
-                        className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-brand-300/10 text-brand-300 border border-brand-300/20"
+                        className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-primary/8 text-primary border border-primary/15"
                       >
                         {label}
                       </span>
@@ -299,13 +288,13 @@ export default function CustomerDetail() {
           </div>
         </div>
 
-        <div className="w-px h-10 bg-white/[0.06]" />
+        <Separator orientation="vertical" className="h-10" />
 
         {/* Metrics */}
         <div className="flex items-center gap-6 flex-1 min-w-0">
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Spent</div>
-            <div className="text-lg font-semibold text-white tabular-nums">{formatCurrency(customerData.total_spent)}</div>
+            <div className="text-lg font-semibold text-foreground tabular-nums">{formatCurrency(customerData.total_spent)}</div>
           </div>
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Outstanding</div>
@@ -315,15 +304,15 @@ export default function CustomerDetail() {
           </div>
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Terms</div>
-            <div className="text-lg font-semibold text-white">{customerData.payment_terms_label || customerData.payment_terms || '-'}</div>
+            <div className="text-lg font-semibold text-foreground">{customerData.payment_terms_label || customerData.payment_terms || '-'}</div>
           </div>
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Orders</div>
-            <div className="text-lg font-semibold text-white tabular-nums">{orders.length}</div>
+            <div className="text-lg font-semibold text-foreground tabular-nums">{orders.length}</div>
           </div>
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Avg Order</div>
-            <div className="text-lg font-semibold text-white tabular-nums">{formatCurrency(customerData.average_order_value)}</div>
+            <div className="text-lg font-semibold text-foreground tabular-nums">{formatCurrency(customerData.average_order_value)}</div>
           </div>
           <div>
             <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Since</div>
@@ -332,148 +321,266 @@ export default function CustomerDetail() {
           {customerData.segment && (
             <div>
               <div className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Segment</div>
-              <div className="text-sm font-medium text-brand-300">{customerData.segment}</div>
+              <div className="text-sm font-medium text-primary">{customerData.segment}</div>
             </div>
           )}
         </div>
 
-        {/* Edit / Save / Cancel */}
+        {/* Header actions */}
         <div className="shrink-0 flex items-center gap-2">
-          {isEditing ? (
-            <>
-              <button
-                onClick={handleCancel}
-                disabled={saving}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium text-muted-foreground hover:text-foreground bg-white/[0.04] hover:bg-white/[0.06] border border-white/[0.06] transition-colors"
+          <AnimatePresence>
+            {hasDirtyFields && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="flex items-center gap-2"
               >
-                <X size={13} /> Cancel
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium text-white bg-brand-300 hover:bg-brand-300/90 transition-colors disabled:opacity-50"
-              >
-                {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-                {saving ? 'Saving...' : 'Save'}
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => navigate('/orders/new', { state: { fromCustomerDetail: true, customer: { id: customerData.id, display_name: customerData.company_name } } })}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[12px] font-medium text-brand-300/80 hover:text-brand-300 bg-brand-300/5 hover:bg-brand-300/10 border border-brand-300/20 transition-colors"
-              >
-                <ShoppingCart size={12} /> New Order
-              </button>
-              <button
-                onClick={startEditing}
-                className="flex items-center gap-1.5 px-4 py-1.5 rounded-md text-[12px] font-medium text-white bg-brand-300 hover:bg-brand-300/90 transition-colors"
-              >
-                <Pencil size={12} /> Edit Customer
-              </button>
-            </>
+                <Button intent="outline" size="sm" onPress={handleDiscard} isDisabled={saving}>
+                  <X size={13} /> Discard
+                </Button>
+                <Button intent="primary" size="sm" onPress={handleSave} isDisabled={saving}>
+                  {saving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                  {saving ? 'Saving...' : 'Save'}
+                </Button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {!hasDirtyFields && (
+            <Button
+              intent="outline"
+              size="sm"
+              onPress={() => navigate('/orders/new', { state: { fromCustomerDetail: true, customer: { id: customerData.id, display_name: customerData.company_name } } })}
+            >
+              <ShoppingCart size={12} /> New Order
+            </Button>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Save error banner */}
-      {saveError && (
-        <div className="mb-6 px-4 py-2.5 rounded-md bg-destructive/10 border border-destructive/20 text-[13px] text-destructive">
-          {saveError}
-        </div>
-      )}
+      <AnimatePresence>
+        {saveError && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mb-6 px-4 py-2.5 rounded-md bg-destructive/10 border border-destructive/20 text-[13px] text-destructive"
+          >
+            {saveError}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Main two-column layout */}
+      {/* ── Main two-column layout ── */}
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-10">
-        {/* Left column — Contact info + Orders */}
+        {/* Left column */}
         <div>
-          {/* Contact & Company */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Company details */}
-            <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">Company</h3>
-              <InfoRow label="Company Name" value={customerData.company_name} editKey="company_name" />
-              <InfoRow label="Contact Name" value={customerData.contact_name || '-'} editKey="contact_name" />
-              {isEditing ? (
-                <InfoRow label="Email" value={customerData.email || primaryContact?.email || '-'} editKey="email" />
-              ) : (
-                <div className="flex items-baseline justify-between py-2.5 border-b border-white/[0.04]">
-                  <span className="text-[13px] text-muted-foreground">Email</span>
-                  {(customerData.email || primaryContact?.email) ? (
-                    <a href={`mailto:${customerData.email || primaryContact?.email}`} className="text-[13px] font-medium text-foreground hover:text-brand-300 transition-colors">
-                      {customerData.email || primaryContact?.email}
-                    </a>
-                  ) : (
-                    <span className="text-[13px] font-medium text-foreground">-</span>
-                  )}
-                </div>
-              )}
-              {isEditing ? (
-                <InfoRow label="Phone" value={customerData.phone || '-'} editKey="phone" />
-              ) : (
-                <div className="flex items-baseline justify-between py-2.5 border-b border-white/[0.04]">
-                  <span className="text-[13px] text-muted-foreground">Phone</span>
-                  {customerData.phone ? (
-                    <a href={`tel:${customerData.phone}`} className="text-[13px] font-medium text-foreground hover:text-brand-300 transition-colors tabular-nums">
-                      {customerData.phone}
-                    </a>
-                  ) : (
-                    <span className="text-[13px] font-medium text-foreground">-</span>
-                  )}
-                </div>
-              )}
-              {isEditing ? (
-                <InfoRow label="Mobile" value={customerData.mobile || '-'} editKey="mobile" />
-              ) : (
-                <div className="flex items-baseline justify-between py-2.5 border-b border-white/[0.04]">
-                  <span className="text-[13px] text-muted-foreground">Mobile</span>
-                  {customerData.mobile ? (
-                    <a href={`tel:${customerData.mobile}`} className="text-[13px] font-medium text-foreground hover:text-brand-300 transition-colors tabular-nums">
-                      {customerData.mobile}
-                    </a>
-                  ) : (
-                    <span className="text-[13px] font-medium text-foreground">-</span>
-                  )}
-                </div>
-              )}
-              <InfoRow label="Website" value={customerData.website || '-'} editKey="website" />
-            </div>
+            {/* Company card */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="bg-card rounded-xl border border-border/60 p-5"
+            >
+              <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-4">Company</h3>
 
-            {/* Financial — always read-only */}
-            <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">Financial</h3>
-              <InfoRow label="Total Spent" value={formatCurrency(customerData.total_spent)} accent />
-              <InfoRow label="Outstanding" value={formatCurrency(outstandingAmount)} />
-              <InfoRow label="Unused Credits" value={formatCurrency(customerData.unused_credits)} />
-              <InfoRow label="Currency" value={customerData.currency_code} />
-              <InfoRow label="Last Order" value={formatDate(lastOrderDate)} />
-            </div>
+              <DetailRow label="Company Name">
+                <Editable
+                  key={`company_name-${ek}`}
+                  defaultValue={customerData.company_name}
+                  onSubmit={val => handleFieldSubmit('company_name', val)}
+                >
+                  <EditableArea>
+                    <EditablePreview className="text-[13px] font-medium text-foreground py-0" />
+                    <EditableInput className="text-[13px] font-medium px-1 text-right" />
+                  </EditableArea>
+                </Editable>
+              </DetailRow>
+
+              <DetailRow label="Contact Name">
+                <Editable
+                  key={`contact_name-${ek}`}
+                  defaultValue={customerData.contact_name || ''}
+                  placeholder="-"
+                  onSubmit={val => handleFieldSubmit('contact_name', val)}
+                >
+                  <EditableArea>
+                    <EditablePreview className="text-[13px] font-medium text-foreground py-0" />
+                    <EditableInput className="text-[13px] font-medium px-1 text-right" />
+                  </EditableArea>
+                </Editable>
+              </DetailRow>
+
+              <DetailRow label="Email">
+                <div className="flex items-center gap-1.5 justify-end">
+                  <Editable
+                    key={`email-${ek}`}
+                    defaultValue={customerData.email || primaryContact?.email || ''}
+                    placeholder="-"
+                    onSubmit={val => handleFieldSubmit('email', val)}
+                  >
+                    <EditableArea>
+                      <EditablePreview className="text-[13px] font-medium text-foreground py-0" />
+                      <EditableInput className="text-[13px] font-medium px-1 text-right" type="email" />
+                    </EditableArea>
+                  </Editable>
+                  {(customerData.email || primaryContact?.email) && (
+                    <Tooltip>
+                      <TooltipTrigger
+                        aria-label="Send email"
+                        className="p-0.5 rounded text-muted-foreground hover:text-primary transition-colors"
+                        onPress={() => window.open(`mailto:${customerData.email || primaryContact?.email}`)}
+                      >
+                        <Mail size={11} />
+                      </TooltipTrigger>
+                      <TooltipContent>Send email</TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+              </DetailRow>
+
+              <DetailRow label="Phone">
+                <div className="flex items-center gap-1.5 justify-end">
+                  <Editable
+                    key={`phone-${ek}`}
+                    defaultValue={customerData.phone || ''}
+                    placeholder="-"
+                    onSubmit={val => handleFieldSubmit('phone', val)}
+                  >
+                    <EditableArea>
+                      <EditablePreview className="text-[13px] font-medium text-foreground py-0 tabular-nums" />
+                      <EditableInput className="text-[13px] font-medium px-1 text-right" type="tel" />
+                    </EditableArea>
+                  </Editable>
+                  {customerData.phone && (
+                    <Tooltip>
+                      <TooltipTrigger
+                        aria-label="Call"
+                        className="p-0.5 rounded text-muted-foreground hover:text-primary transition-colors"
+                        onPress={() => window.open(`tel:${customerData.phone}`)}
+                      >
+                        <Phone size={11} />
+                      </TooltipTrigger>
+                      <TooltipContent>Call</TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+              </DetailRow>
+
+              <DetailRow label="Mobile">
+                <div className="flex items-center gap-1.5 justify-end">
+                  <Editable
+                    key={`mobile-${ek}`}
+                    defaultValue={customerData.mobile || ''}
+                    placeholder="-"
+                    onSubmit={val => handleFieldSubmit('mobile', val)}
+                  >
+                    <EditableArea>
+                      <EditablePreview className="text-[13px] font-medium text-foreground py-0 tabular-nums" />
+                      <EditableInput className="text-[13px] font-medium px-1 text-right" type="tel" />
+                    </EditableArea>
+                  </Editable>
+                  {customerData.mobile && (
+                    <Tooltip>
+                      <TooltipTrigger
+                        aria-label="Call mobile"
+                        className="p-0.5 rounded text-muted-foreground hover:text-primary transition-colors"
+                        onPress={() => window.open(`tel:${customerData.mobile}`)}
+                      >
+                        <Phone size={11} />
+                      </TooltipTrigger>
+                      <TooltipContent>Call mobile</TooltipContent>
+                    </Tooltip>
+                  )}
+                </div>
+              </DetailRow>
+
+              <DetailRow label="Website">
+                <Editable
+                  key={`website-${ek}`}
+                  defaultValue={customerData.website || ''}
+                  placeholder="-"
+                  onSubmit={val => handleFieldSubmit('website', val)}
+                >
+                  <EditableArea>
+                    <EditablePreview className="text-[13px] font-medium text-foreground py-0" />
+                    <EditableInput className="text-[13px] font-medium px-1 text-right" />
+                  </EditableArea>
+                </Editable>
+              </DetailRow>
+
+              <DetailRow label="Payment Terms">
+                <Editable
+                  key={`payment_terms-${ek}`}
+                  defaultValue={customerData.payment_terms || ''}
+                  placeholder="-"
+                  onSubmit={val => handleFieldSubmit('payment_terms', val)}
+                >
+                  <EditableArea>
+                    <EditablePreview className="text-[13px] font-medium text-foreground py-0" />
+                    <EditableInput className="text-[13px] font-medium px-1 text-right" />
+                  </EditableArea>
+                </Editable>
+              </DetailRow>
+            </motion.div>
+
+            {/* Financial card — read-only */}
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="bg-card rounded-xl border border-border/60 p-5"
+            >
+              <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-4">Financial</h3>
+              <DetailRow label="Total Spent">
+                <span className="text-[13px] font-semibold text-primary tabular-nums">{formatCurrency(customerData.total_spent)}</span>
+              </DetailRow>
+              <DetailRow label="Outstanding">
+                <span className="text-[13px] font-medium text-foreground tabular-nums">{formatCurrency(outstandingAmount)}</span>
+              </DetailRow>
+              <DetailRow label="Unused Credits">
+                <span className="text-[13px] font-medium text-foreground tabular-nums">{formatCurrency(customerData.unused_credits)}</span>
+              </DetailRow>
+              <DetailRow label="Currency">
+                <span className="text-[13px] font-medium text-foreground">{customerData.currency_code}</span>
+              </DetailRow>
+              <DetailRow label="Last Order">
+                <span className="text-[13px] font-medium text-foreground">{formatDate(lastOrderDate)}</span>
+              </DetailRow>
+            </motion.div>
           </div>
 
-          {/* Payment terms (editable) */}
-          {isEditing && (
-            <div className="mt-6">
-              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">Payment Terms</h3>
-              <InfoRow label="Payment Terms" value={customerData.payment_terms || '-'} editKey="payment_terms" />
-            </div>
-          )}
-
-          {/* Divider */}
-          <div className="border-t border-white/[0.05] my-8" />
+          {/* Separator */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+          >
+            <Separator className="my-8" />
+          </motion.div>
 
           {/* Orders */}
-          <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="bg-card rounded-xl border border-border/60 p-5"
+          >
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
                 Orders ({orders.length})
               </h3>
               {orders.length > 0 && (
-                <button
-                  onClick={() => navigate('/orders', { state: { customerId: customerData.id, customerName: customerData.company_name } })}
-                  className="flex items-center gap-1 text-[11px] text-brand-300/70 hover:text-brand-300 transition-colors"
+                <Button
+                  intent="plain"
+                  size="xs"
+                  onPress={() => navigate('/orders', { state: { customerId: customerData.id, customerName: customerData.company_name } })}
+                  className="text-primary/70 hover:text-primary"
                 >
                   View all <ExternalLink size={10} />
-                </button>
+                </Button>
               )}
             </div>
 
@@ -482,87 +589,110 @@ export default function CustomerDetail() {
             ) : orders.length === 0 ? (
               <div className="py-8 text-center">
                 <p className="text-sm text-muted-foreground mb-3">No orders found</p>
-                <button
-                  onClick={() => navigate('/orders/new', { state: { fromCustomerDetail: true, customer: { id: customerData.id, display_name: customerData.company_name } } })}
-                  className="text-[13px] text-brand-300 hover:underline"
+                <Button
+                  intent="plain"
+                  size="sm"
+                  onPress={() => navigate('/orders/new', { state: { fromCustomerDetail: true, customer: { id: customerData.id, display_name: customerData.company_name } } })}
+                  className="text-primary hover:underline"
                 >
                   Create first order
-                </button>
+                </Button>
               </div>
             ) : (
-              <div className="rounded-lg border border-white/[0.06] overflow-hidden">
-                {/* Orders header */}
-                <div className="grid grid-cols-[1fr_90px_80px_80px_60px] gap-3 px-4 py-2.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-white/[0.02]">
-                  <div>Order</div>
-                  <div>Date</div>
-                  <div>Status</div>
-                  <div className="text-right">Total</div>
-                  <div />
-                </div>
-                {orders.slice(0, 15).map(order => (
-                  <div
-                    key={order.id}
-                    className="grid grid-cols-[1fr_90px_80px_80px_60px] gap-3 px-4 py-2.5 border-t border-white/[0.04] hover:bg-white/[0.015] transition-colors cursor-pointer items-center"
-                    onClick={() => navigate(`/order/${order.id}`)}
-                  >
-                    <div className="text-[13px] text-foreground font-medium truncate">
-                      #{order.salesorder_number || order.id}
-                      {order.reference_number && (
-                        <span className="ml-2 text-[11px] text-muted-foreground">{order.reference_number}</span>
-                      )}
-                    </div>
-                    <div className="text-[12px] text-muted-foreground tabular-nums">{formatDate(order.date)}</div>
-                    <div>
-                      <span className={cn('inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium capitalize', orderStatusColor(order.status))}>
-                        {order.status}
-                      </span>
-                    </div>
-                    <div className="text-[13px] font-medium text-foreground text-right tabular-nums">
-                      {formatCurrency(order.total)}
-                    </div>
-                    <div className="text-right">
-                      <ExternalLink size={12} className="text-muted-foreground inline-block" />
-                    </div>
-                  </div>
-                ))}
-                {orders.length > 15 && (
-                  <div className="px-4 py-2 border-t border-white/[0.04] text-center">
-                    <button
-                      onClick={() => navigate('/orders', { state: { customerId: customerData.id, customerName: customerData.company_name } })}
-                      className="text-[12px] text-brand-300/70 hover:text-brand-300 transition-colors"
-                    >
-                      View all {orders.length} orders
-                    </button>
-                  </div>
-                )}
+              <div className="rounded-lg border border-border/60 overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-secondary/50">
+                    <TableRow className="border-b border-border/60 hover:bg-secondary/50">
+                      <TableHead>Order</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                      <TableHead className="w-[40px]" />
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {orders.slice(0, 15).map(order => (
+                      <TableRow
+                        key={order.id}
+                        className="cursor-pointer border-b border-border/30 hover:bg-primary/[0.03] transition-colors"
+                        onClick={() => navigate(`/order/${order.id}`)}
+                      >
+                        <TableCell className="font-medium text-foreground">
+                          <span className="text-[13px]">#{order.salesorder_number || order.id}</span>
+                          {order.reference_number && (
+                            <span className="ml-2 text-[11px] text-muted-foreground">{order.reference_number}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-[12px] text-muted-foreground tabular-nums">
+                          {formatDate(order.date)}
+                        </TableCell>
+                        <TableCell>
+                          <span className={cn(
+                            'inline-flex px-2 py-0.5 rounded-md text-[10px] font-medium capitalize border',
+                            orderStatusColor(order.status)
+                          )}>
+                            {order.status}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <span className="text-[13px] font-semibold text-foreground tabular-nums">
+                            {formatCurrency(order.total)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <ExternalLink size={12} className="text-muted-foreground inline-block" />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {orders.length > 15 && (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-2">
+                          <Button
+                            intent="plain"
+                            size="xs"
+                            onPress={() => navigate('/orders', { state: { customerId: customerData.id, customerName: customerData.company_name } })}
+                            className="text-primary/70 hover:text-primary"
+                          >
+                            View all {orders.length} orders
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
 
-        {/* Right column — Contacts + Addresses */}
+        {/* ── Right column ── */}
         <div className="flex flex-col gap-6">
-          {/* Contact Persons — always read-only */}
-          <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5">
-            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+          {/* Contact Persons — read-only */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-card rounded-xl border border-border/60 p-5"
+          >
+            <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-4">
               Contacts ({contactPersons.length})
             </h3>
             {contactPersons.length > 0 ? (
               <div className="space-y-3">
                 {contactPersons.map((contact, i) => (
-                  <div key={contact.contact_person_id || i} className="py-3 border-b border-white/[0.04] last:border-0">
+                  <div key={contact.contact_person_id || i} className="py-3 border-b border-border/30 last:border-0">
                     <div className="flex items-center gap-2 mb-1.5">
                       <span className="text-[13px] font-medium text-foreground">
                         {`${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'Unnamed'}
                       </span>
                       {contact.is_primary_contact && (
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-brand-300/10 text-brand-300">
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider bg-primary/8 text-primary border border-primary/15">
                           Primary
                         </span>
                       )}
                     </div>
                     {contact.email && (
-                      <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-brand-300 transition-colors mb-0.5">
+                      <a href={`mailto:${contact.email}`} className="flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-primary transition-colors mb-0.5">
                         <Mail size={11} /> {contact.email}
                       </a>
                     )}
@@ -582,57 +712,99 @@ export default function CustomerDetail() {
             ) : (
               <p className="text-[13px] text-muted-foreground">No contacts</p>
             )}
-          </div>
+          </motion.div>
 
-          {/* Addresses */}
-          <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5">
-            <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">Addresses</h3>
+          {/* Addresses — inline editable */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+            className="bg-card rounded-xl border border-border/60 p-5"
+          >
+            <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-4">Addresses</h3>
 
-            {isEditing ? (
-              <div className="space-y-6">
-                <AddressEditor type="billing_address" label="Billing" />
-                <AddressEditor type="shipping_address" label="Shipping" />
+            <div className="space-y-5">
+              {/* Billing */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <MapPin size={11} className="text-muted-foreground" />
+                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Billing</span>
+                </div>
+                <div className="space-y-1 pl-[17px]">
+                  {ADDRESS_FIELDS.map(({ key, label }) => (
+                    <div key={key} className="flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground/60">{label}</span>
+                      <Editable
+                        key={`billing_${key}-${ek}`}
+                        defaultValue={(customerData.billing_address as Address)?.[key] ?? ''}
+                        placeholder="-"
+                        onSubmit={val => handleAddressFieldSubmit('billing_address', key, val)}
+                      >
+                        <EditableArea>
+                          <EditablePreview className="text-[13px] text-foreground py-0" />
+                          <EditableInput className="text-[13px] px-1 text-right" />
+                        </EditableArea>
+                      </Editable>
+                    </div>
+                  ))}
+                </div>
               </div>
-            ) : (
-              <div className="space-y-5">
-                {/* Billing */}
-                {billingParts && (
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <MapPin size={11} className="text-muted-foreground" />
-                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Billing</span>
-                    </div>
-                    <div className="text-[13px] text-foreground leading-relaxed pl-[17px]">
-                      {billingParts.map((part, i) => <div key={i}>{part}</div>)}
-                    </div>
-                  </div>
-                )}
-                {/* Shipping */}
-                {shippingParts && (
-                  <div>
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <MapPin size={11} className="text-muted-foreground" />
-                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Shipping</span>
-                    </div>
-                    <div className="text-[13px] text-foreground leading-relaxed pl-[17px]">
-                      {shippingParts.map((part, i) => <div key={i}>{part}</div>)}
-                    </div>
-                  </div>
-                )}
-                {!billingParts && !shippingParts && (
-                  <p className="text-[13px] text-muted-foreground">No addresses on file</p>
-                )}
-              </div>
-            )}
-          </div>
 
-          {/* Sync info — always read-only */}
-          {customerData.zoho_contact_id && (
-            <div className="bg-white/[0.02] rounded-xl border border-white/[0.06] p-5">
-              <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">Integration</h3>
-              <InfoRow label="Zoho ID" value={customerData.zoho_contact_id} />
-              <InfoRow label="Sync Status" value={customerData.sync_status} />
+              <Separator />
+
+              {/* Shipping */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <MapPin size={11} className="text-muted-foreground" />
+                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Shipping</span>
+                </div>
+                <div className="space-y-1 pl-[17px]">
+                  {ADDRESS_FIELDS.map(({ key, label }) => (
+                    <div key={key} className="flex items-center justify-between">
+                      <span className="text-[11px] text-muted-foreground/60">{label}</span>
+                      <Editable
+                        key={`shipping_${key}-${ek}`}
+                        defaultValue={(customerData.shipping_address as Address)?.[key] ?? ''}
+                        placeholder="-"
+                        onSubmit={val => handleAddressFieldSubmit('shipping_address', key, val)}
+                      >
+                        <EditableArea>
+                          <EditablePreview className="text-[13px] text-foreground py-0" />
+                          <EditableInput className="text-[13px] px-1 text-right" />
+                        </EditableArea>
+                      </Editable>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+          </motion.div>
+
+          {/* Integration — read-only */}
+          {customerData.zoho_contact_id && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="bg-card rounded-xl border border-border/60 p-5"
+            >
+              <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-4">Integration</h3>
+              <DetailRow label="Zoho ID">
+                <span className="text-[13px] font-medium text-foreground font-mono">{customerData.zoho_contact_id}</span>
+              </DetailRow>
+              <DetailRow label="Sync Status">
+                <span className={cn(
+                  'text-[10px] px-2 py-0.5 rounded-md border font-medium',
+                  customerData.sync_status === 'synced'
+                    ? 'bg-emerald-500/8 text-emerald-400 border-emerald-500/15'
+                    : customerData.sync_status === 'pending_push'
+                      ? 'bg-amber-500/8 text-amber-400 border-amber-500/15'
+                      : 'bg-red-500/8 text-red-400 border-red-500/15'
+                )}>
+                  {customerData.sync_status === 'synced' ? 'Synced' : customerData.sync_status === 'pending_push' ? 'Pending' : customerData.sync_status}
+                </span>
+              </DetailRow>
+            </motion.div>
           )}
         </div>
       </div>
