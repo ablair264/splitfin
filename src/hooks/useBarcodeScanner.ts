@@ -14,7 +14,7 @@ export const useBarcodeScanner = ({
   timeout = 100
 }: BarcodeScannerOptions) => {
   const [buffer, setBuffer] = useState('');
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const lastKeystrokeTime = useRef<number>(0);
   const bufferRef = useRef<string>('');
 

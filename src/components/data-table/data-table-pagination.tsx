@@ -67,41 +67,39 @@ export function DataTablePagination<TData>({
         <div className="flex items-center space-x-2">
           <Button
             aria-label="Go to first page"
-            variant="outline"
-            size="icon"
-            className="hidden size-8 lg:flex"
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
+            intent="outline"
+            size="sq-xs"
+            className="hidden lg:flex"
+            onPress={() => table.setPageIndex(0)}
+            isDisabled={!table.getCanPreviousPage()}
           >
             <ChevronsLeft />
           </Button>
           <Button
             aria-label="Go to previous page"
-            variant="outline"
-            size="icon"
-            className="size-8"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
+            intent="outline"
+            size="sq-xs"
+            onPress={() => table.previousPage()}
+            isDisabled={!table.getCanPreviousPage()}
           >
             <ChevronLeft />
           </Button>
           <Button
             aria-label="Go to next page"
-            variant="outline"
-            size="icon"
-            className="size-8"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
+            intent="outline"
+            size="sq-xs"
+            onPress={() => table.nextPage()}
+            isDisabled={!table.getCanNextPage()}
           >
             <ChevronRight />
           </Button>
           <Button
             aria-label="Go to last page"
-            variant="outline"
-            size="icon"
-            className="hidden size-8 lg:flex"
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
+            intent="outline"
+            size="sq-xs"
+            className="hidden lg:flex"
+            onPress={() => table.setPageIndex(table.getPageCount() - 1)}
+            isDisabled={!table.getCanNextPage()}
           >
             <ChevronsRight />
           </Button>

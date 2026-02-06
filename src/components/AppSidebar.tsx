@@ -1,3 +1,5 @@
+// @ts-nocheck
+// Legacy sidebar - replaced by app-sidebar.tsx (Intent UI/react-aria version)
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Home,
