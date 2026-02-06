@@ -152,6 +152,74 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// POST /api/v1/products/:id/image
+router.post('/:id/image', upload.single('image'), async (req, res) => {
+  try {
+    const product = await getById('products', req.params.id);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ error: 'No image file provided' });
+    }
+
+    // Build R2 key: products/{id}/{sanitised-filename}
+    const ext = req.file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
+    const safeName = product.sku.replace(/[^a-zA-Z0-9-_]/g, '_').toLowerCase();
+    const key = `products/${product.id}/${safeName}.${ext}`;
+
+    // Upload to R2
+    await r2.send(new PutObjectCommand({
+      Bucket: R2_BUCKET,
+      Key: key,
+      Body: req.file.buffer,
+      ContentType: req.file.mimetype,
+    }));
+
+    const imageUrl = `${R2_PUBLIC_URL}/${key}`;
+
+    // Update DB
+    await update('products', product.id, { image_url: imageUrl });
+
+    logger.info(`[Products] Image uploaded for ${product.sku}: ${imageUrl}`);
+    res.json({ data: { image_url: imageUrl } });
+  } catch (err) {
+    logger.error('[Products] Image upload error:', err);
+    if (err.message === 'Only image files are allowed') {
+      return res.status(400).json({ error: err.message });
+    }
+    res.status(500).json({ error: 'Failed to upload image' });
+  }
+});
+
+// DELETE /api/v1/products/:id/image
+router.delete('/:id/image', async (req, res) => {
+  try {
+    const product = await getById('products', req.params.id);
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    // Try to delete from R2 if it's our URL
+    if (product.image_url && product.image_url.includes(R2_PUBLIC_URL)) {
+      const key = product.image_url.replace(`${R2_PUBLIC_URL}/`, '');
+      try {
+        await r2.send(new DeleteObjectCommand({ Bucket: R2_BUCKET, Key: key }));
+      } catch (r2Err) {
+        logger.warn('[Products] R2 delete failed (non-fatal):', r2Err.message);
+      }
+    }
+
+    await update('products', product.id, { image_url: null });
+    logger.info(`[Products] Image removed for ${product.sku}`);
+    res.json({ data: { image_url: null } });
+  } catch (err) {
+    logger.error('[Products] Image delete error:', err);
+    res.status(500).json({ error: 'Failed to remove image' });
+  }
+});
+
 // PUT /api/v1/products/:id
 router.put('/:id', async (req, res) => {
   try {

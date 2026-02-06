@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import {
   Package,
   Copy,
@@ -16,6 +16,7 @@ import {
   TrendingUp,
   ArrowUpRight,
   RotateCcw,
+  Upload,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -196,6 +197,11 @@ export function ProductDetailSheet({
   const [isEditing, setIsEditing] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [detailsExpanded, setDetailsExpanded] = useState(false);
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
+  const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (product) setStaleProduct(product);
@@ -282,7 +288,64 @@ export function ProductDetailSheet({
     setIsEditing(false);
     setShowDeleteConfirm(false);
     setDetailsExpanded(false);
+    setImageError(null);
+    setCurrentImageUrl(product?.image_url || null);
   }, [product?.id]);
+
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!p) return;
+    if (!file.type.startsWith('image/')) {
+      setImageError('Please select an image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError('Image must be under 5MB');
+      return;
+    }
+
+    setImageUploading(true);
+    setImageError(null);
+    try {
+      const imageUrl = await productService.uploadImage(p.id, file);
+      setCurrentImageUrl(imageUrl);
+      onUpdated();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Upload failed';
+      setImageError(msg);
+    } finally {
+      setImageUploading(false);
+    }
+  }, [p, onUpdated]);
+
+  const handleImageDelete = useCallback(async () => {
+    if (!p) return;
+    setImageUploading(true);
+    setImageError(null);
+    try {
+      await productService.deleteImage(p.id);
+      setCurrentImageUrl(null);
+      onUpdated();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to remove image';
+      setImageError(msg);
+    } finally {
+      setImageUploading(false);
+    }
+  }, [p, onUpdated]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleImageUpload(file);
+  }, [handleImageUpload]);
+
+  const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleImageUpload(file);
+    // Reset so same file can be selected again
+    e.target.value = '';
+  }, [handleImageUpload]);
 
   const effectiveRate = useMemo(() => {
     if (!p) return null;
@@ -339,21 +402,77 @@ export function ProductDetailSheet({
             {/* Header - Hero zone */}
             <SheetHeader className="border-b border-border/60 px-5 py-4">
               <div className="flex gap-4 pr-8">
-                {/* Product Image */}
-                <div className="shrink-0">
-                  {p.image_url ? (
-                    <motion.img
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      src={p.image_url}
-                      alt={p.name}
-                      className="w-20 h-20 object-contain rounded-xl border border-border bg-background"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 rounded-xl border border-dashed border-border/60 bg-muted/30 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-primary/30 hover:bg-primary/5 transition-all group">
-                      <ImagePlus size={18} className="text-muted-foreground/30 group-hover:text-primary/50" />
-                      <span className="text-[9px] text-muted-foreground/40 group-hover:text-primary/50">Add image</span>
+                {/* Product Image / Upload Dropzone */}
+                <div className="shrink-0 relative">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  {currentImageUrl ? (
+                    <div className="relative group">
+                      <motion.img
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        src={currentImageUrl}
+                        alt={p.name}
+                        className="w-20 h-20 object-contain rounded-xl border border-border bg-background"
+                      />
+                      {/* Loading overlay */}
+                      {imageUploading && (
+                        <div className="absolute inset-0 rounded-xl bg-black/60 flex items-center justify-center">
+                          <Loader2 size={18} className="text-white animate-spin" />
+                        </div>
+                      )}
+                      {/* Hover overlay with replace/delete */}
+                      {!imageUploading && (
+                        <div className="absolute inset-0 rounded-xl bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
+                            title="Replace image"
+                          >
+                            <Upload size={12} className="text-white" />
+                          </button>
+                          <button
+                            onClick={handleImageDelete}
+                            className="p-1.5 rounded-lg bg-white/10 hover:bg-red-500/40 transition-colors"
+                            title="Remove image"
+                          >
+                            <Trash2 size={12} className="text-white" />
+                          </button>
+                        </div>
+                      )}
                     </div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                      onDragLeave={() => setDragOver(false)}
+                      onDrop={handleDrop}
+                      className={cn(
+                        'w-20 h-20 rounded-xl border border-dashed bg-muted/30 flex flex-col items-center justify-center gap-1 cursor-pointer transition-all group',
+                        dragOver
+                          ? 'border-primary bg-primary/10 scale-105'
+                          : 'border-border/60 hover:border-primary/30 hover:bg-primary/5'
+                      )}
+                    >
+                      {imageUploading ? (
+                        <Loader2 size={18} className="text-primary animate-spin" />
+                      ) : (
+                        <>
+                          <ImagePlus size={18} className="text-muted-foreground/30 group-hover:text-primary/50" />
+                          <span className="text-[9px] text-muted-foreground/40 group-hover:text-primary/50">
+                            {dragOver ? 'Drop here' : 'Add image'}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  {imageError && (
+                    <p className="absolute -bottom-5 left-0 text-[9px] text-destructive whitespace-nowrap">{imageError}</p>
                   )}
                 </div>
 
@@ -706,12 +825,12 @@ export function ProductDetailSheet({
                           )}
                         </DetailRow>
 
-                        {p.image_url && (
+                        {currentImageUrl && (
                           <DetailRow label="Image URL" editing={isEditing}>
                             {isEditing ? (
                               <Editable
                                 key={`image_url-${pk}`}
-                                defaultValue={p.image_url || ''}
+                                defaultValue={currentImageUrl || ''}
                                 placeholder="—"
                                 onSubmit={(val) => handleFieldSubmit('image_url', val)}
                               >
@@ -722,12 +841,12 @@ export function ProductDetailSheet({
                               </Editable>
                             ) : (
                               <a
-                                href={p.image_url}
+                                href={currentImageUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-sm text-primary hover:underline truncate max-w-[300px] block"
                               >
-                                {p.image_url}
+                                {currentImageUrl}
                               </a>
                             )}
                           </DetailRow>
