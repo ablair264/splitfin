@@ -15,18 +15,14 @@ import {
   Package2,
   Search,
   Plus,
-  Eye,
-  Edit2,
-  Trash2,
   Image,
   Sparkles,
   Upload,
 } from 'lucide-react';
 import { productService } from '../../services/productService';
 import { useLoader } from '../../contexts/LoaderContext';
-import ProductDetailsModal from './ProductDetailsModal';
-import EditProductModal from './EditProductModal';
 import AddProductModal from './AddProductModal';
+import { ProductDetailSheet } from './ProductDetailSheet';
 import { AIProductEnricher } from '../AIProductEnricher';
 import PricelistUpload from './PricelistUpload';
 import type { Product } from '../../types/domain';
@@ -130,13 +126,12 @@ const InventoryProducts: React.FC = () => {
     stockFilter: searchParams.get('filter') || '',
   });
 
-  // Modal states
-  const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
+  // Modal/sheet states
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showAIEnrichModal, setShowAIEnrichModal] = useState(false);
   const [showPricelistUpload, setShowPricelistUpload] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState<InventoryItem | null>(null);
 
   // Column definitions
   const columns = useMemo<ColumnDef<InventoryItem>[]>(
@@ -243,52 +238,6 @@ const InventoryProducts: React.FC = () => {
         ),
         enableSorting: true,
         size: 90,
-      },
-      {
-        id: 'actions',
-        header: () => <span className="text-xs font-semibold text-muted-foreground uppercase">Actions</span>,
-        cell: ({ row }) => {
-          const item = row.original;
-          return (
-            <div className="flex gap-1">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedProduct(item);
-                  setShowDetailsModal(true);
-                }}
-                className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-primary/80 border border-primary/25 bg-primary/5 rounded-md hover:text-primary hover:border-primary/40 hover:bg-primary/10 transition-all"
-                title="View Details"
-              >
-                <Eye size={11} /> View
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedProduct(item);
-                  setShowEditModal(true);
-                }}
-                className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-warning/80 border border-warning/25 bg-warning/5 rounded-md hover:text-warning hover:border-warning/40 hover:bg-warning/10 transition-all"
-                title="Edit"
-              >
-                <Edit2 size={11} /> Edit
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteProduct(item.id);
-                }}
-                className="inline-flex items-center p-1.5 text-[11px] text-destructive/60 border border-destructive/15 bg-destructive/5 rounded-md hover:text-destructive hover:border-destructive/30 hover:bg-destructive/10 transition-all"
-                title="Delete"
-              >
-                <Trash2 size={11} />
-              </button>
-            </div>
-          );
-        },
-        size: 150,
-        enableSorting: false,
-        enableHiding: false,
       },
     ],
     []
@@ -407,22 +356,13 @@ const InventoryProducts: React.FC = () => {
     loadItems(newPage, false);
   };
 
-  const handleDeleteProduct = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      try {
-        await productService.update(parseInt(id), { status: 'inactive' });
-        loadItems(pagination.pageIndex + 1, false);
-      } catch (err) {
-        console.error('Error deleting product:', err);
-        setError('Failed to delete product');
-      }
-    }
-  };
-
-  // Handle row click
+  // Handle row click - find the raw Product for the sheet
   const handleRowClick = (item: InventoryItem) => {
-    setSelectedProduct(item);
-    setShowDetailsModal(true);
+    const rawProduct = rawProducts.find((p) => String(p.id) === item.id);
+    if (rawProduct) {
+      setSelectedProduct(rawProduct);
+      setSheetOpen(true);
+    }
   };
 
   // Loading skeleton
@@ -503,7 +443,7 @@ const InventoryProducts: React.FC = () => {
 
   return (
     <div className="min-h-screen p-4">
-      <DataTable table={table}>
+      <DataTable table={table} onRowClick={handleRowClick}>
         {/* Custom Toolbar */}
         <div className="flex items-center gap-3 flex-wrap mb-4">
           {/* Search */}
@@ -674,37 +614,19 @@ const InventoryProducts: React.FC = () => {
         </div>
       )}
 
-      {/* Modals */}
-      {showDetailsModal &&
-        selectedProduct &&
-        (() => {
-          const originalProduct = rawProducts.find((p) => String(p.id) === selectedProduct.id);
-          return originalProduct ? (
-            <ProductDetailsModal
-              product={originalProduct}
-              onClose={() => {
-                setShowDetailsModal(false);
-                setSelectedProduct(null);
-              }}
-            />
-          ) : null;
-        })()}
-
-      {showEditModal && selectedProduct && (
-        <EditProductModal
-          product={selectedProduct}
-          brands={brands}
-          onClose={() => {
-            setShowEditModal(false);
-            setSelectedProduct(null);
-          }}
-          onUpdate={() => {
-            loadItems(pagination.pageIndex + 1, false);
-            setShowEditModal(false);
-            setSelectedProduct(null);
-          }}
-        />
-      )}
+      {/* Product Detail Sheet */}
+      <ProductDetailSheet
+        product={selectedProduct}
+        brands={brands}
+        open={sheetOpen}
+        onOpenChange={(open) => {
+          setSheetOpen(open);
+          if (!open) setSelectedProduct(null);
+        }}
+        onUpdated={() => {
+          loadItems(pagination.pageIndex + 1, false);
+        }}
+      />
 
       {showAddModal && (
         <AddProductModal

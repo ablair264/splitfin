@@ -16,11 +16,13 @@ import { cn } from "@/lib/utils";
 interface DataTableProps<TData> extends React.ComponentProps<"div"> {
   table: TanstackTable<TData>;
   actionBar?: React.ReactNode;
+  onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData>({
   table,
   actionBar,
+  onRowClick,
   children,
   className,
   ...props
@@ -64,7 +66,11 @@ export function DataTable<TData>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-border bg-card hover:bg-muted/30 data-[state=selected]:bg-primary/10"
+                  className={cn(
+                    "border-b border-border bg-card hover:bg-muted/30 data-[state=selected]:bg-primary/10",
+                    onRowClick && "cursor-pointer"
+                  )}
+                  onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
