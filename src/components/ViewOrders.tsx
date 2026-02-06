@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { orderService } from '../services/orderService';
 import { useLoader } from '../contexts/LoaderContext';
-import type { Order as DomainOrder, OrderLineItem } from '../types/domain';
-import { Search, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Eye, Pencil, X, CheckCircle, Clock, Ban } from 'lucide-react';
+import type { Order as DomainOrder } from '../types/domain';
+import { Search, ChevronLeft, ChevronRight, X } from 'lucide-react';
 
 interface LocationState {
   customerId?: string;
@@ -16,16 +16,18 @@ const SEARCH_DEBOUNCE_MS = 500;
 
 function SkeletonRow() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-[120px_1fr_100px_100px_90px_48px] gap-2 px-4 py-3 border-b border-border/40 items-center animate-pulse">
+    <div className="grid grid-cols-1 lg:grid-cols-[120px_1fr_100px_130px_90px] gap-2 px-4 py-3 border-b border-border/40 items-center animate-pulse">
       <div className="h-4 w-20 bg-muted rounded" />
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-full bg-muted" />
         <div className="h-4 w-40 bg-muted rounded" />
       </div>
       <div className="h-4 w-16 bg-muted rounded" />
-      <div className="h-5 w-16 bg-muted rounded" />
+      <div className="flex flex-col gap-1">
+        <div className="h-5 w-16 bg-muted rounded" />
+        <div className="h-3 w-24 bg-muted rounded" />
+      </div>
       <div className="h-4 w-16 bg-muted rounded" />
-      <div className="h-4 w-4 bg-muted rounded mx-auto" />
     </div>
   );
 }
@@ -38,7 +40,6 @@ function ViewOrders() {
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [statusFilter, setStatusFilter] = useState('all');
-  const [expandedOrderIds, setExpandedOrderIds] = useState<Set<number>>(new Set());
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -53,8 +54,6 @@ function ViewOrders() {
     search: string;
     statusFilter: string;
   } | null>(null);
-
-  const lineItemsLoadedRef = useRef<Set<number>>(new Set());
 
   const navigate = useNavigate();
   const { showLoader, hideLoader } = useLoader();
@@ -155,7 +154,6 @@ function ViewOrders() {
     setCurrentPage(1);
     setOrders([]);
     cacheRef.current = null;
-    lineItemsLoadedRef.current.clear();
   };
 
   const handlePageChange = (newPage: number) => {
@@ -165,46 +163,8 @@ function ViewOrders() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const loadLineItemsForOrder = useCallback(async (orderId: number) => {
-    if (lineItemsLoadedRef.current.has(orderId)) return;
-    try {
-      const order = await orderService.getById(orderId);
-      const lineItems: OrderLineItem[] = order.line_items || [];
-      setOrders(prev =>
-        prev.map(o => o.id === orderId ? { ...o, line_items: lineItems } : o)
-      );
-      lineItemsLoadedRef.current.add(orderId);
-    } catch (err) {
-      console.error(`Error loading line items for order ${orderId}:`, err);
-    }
-  }, []);
-
-  const toggleOrderExpansion = async (orderId: number) => {
-    const order = orders.find(o => o.id === orderId);
-    if (order && (!order.line_items || order.line_items.length === 0)) {
-      await loadLineItemsForOrder(orderId);
-    }
-    setExpandedOrderIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(orderId)) {
-        newSet.delete(orderId);
-      } else {
-        newSet.add(orderId);
-      }
-      return newSet;
-    });
-  };
-
   const handleViewOrder = (order: DomainOrder) => {
     navigate(`/order/${order.id}`);
-  };
-
-  const handleEditOrder = (order: DomainOrder) => {
-    navigate(`/order/${order.id}?edit=true`);
-  };
-
-  const handleCancelOrder = (order: DomainOrder) => {
-    navigate(`/order/${order.id}?cancel=true`);
   };
 
   const formatCurrency = (amount: number) =>
@@ -245,33 +205,22 @@ function ViewOrders() {
     }
   };
 
-  const getShippedBadge = (status: string | null) => {
+  const getShippedLabel = (status: string | null) => {
     switch (status?.toLowerCase()) {
-      case 'shipped':
-        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-success/10 text-success border border-success/20">Shipped</span>;
+      case 'shipped': return { text: 'Shipped', color: 'text-success' };
       case 'partially_shipped':
-      case 'partial':
-        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-warning/10 text-warning border border-warning/20">Partial Ship</span>;
-      default:
-        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-muted-foreground/10 text-muted-foreground border border-muted-foreground/20">Not Shipped</span>;
+      case 'partial': return { text: 'Partial', color: 'text-warning' };
+      default: return { text: 'Not Shipped', color: 'text-muted-foreground' };
     }
   };
 
-  const getInvoicedBadge = (status: string | null) => {
+  const getInvoicedLabel = (status: string | null) => {
     switch (status?.toLowerCase()) {
-      case 'invoiced':
-        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-success/10 text-success border border-success/20">Invoiced</span>;
+      case 'invoiced': return { text: 'Invoiced', color: 'text-success' };
       case 'partially_invoiced':
-      case 'partial':
-        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-warning/10 text-warning border border-warning/20">Partial</span>;
-      default:
-        return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium bg-muted-foreground/10 text-muted-foreground border border-muted-foreground/20">Not Invoiced</span>;
+      case 'partial': return { text: 'Partial', color: 'text-warning' };
+      default: return { text: 'Not Invoiced', color: 'text-muted-foreground' };
     }
-  };
-
-  const isOrderClosedOrShipped = (status: string) => {
-    const s = status?.toLowerCase();
-    return s === 'closed' || s === 'shipped' || s === 'delivered' || s === 'fulfilled';
   };
 
   // Reset page on search/filter change
@@ -381,13 +330,12 @@ function ViewOrders() {
         </div>
 
         {/* Table Header */}
-        <div className="hidden lg:grid grid-cols-[120px_1fr_100px_100px_90px_48px] gap-2 px-4 py-3 bg-gradient-to-r from-muted to-card border-b border-border text-[11px] font-semibold text-muted-foreground uppercase tracking-wider items-center">
+        <div className="hidden lg:grid grid-cols-[120px_1fr_100px_130px_90px] gap-2 px-4 py-3 bg-gradient-to-r from-muted to-card border-b border-border text-[11px] font-semibold text-muted-foreground uppercase tracking-wider items-center">
           <div>Order #</div>
           <div>Customer</div>
           <div>Date</div>
           <div>Status</div>
           <div>Total</div>
-          <div></div>
         </div>
 
         {/* Table Body */}
@@ -404,137 +352,55 @@ function ViewOrders() {
             </div>
           ) : (
             orders.map((order) => {
-              const isExpanded = expandedOrderIds.has(order.id);
+              const shipped = getShippedLabel(order.shipped_status || order.shipment_status);
+              const invoiced = getInvoicedLabel(order.invoiced_status);
 
               return (
-                <React.Fragment key={order.id}>
-                  <div
-                    className={`grid grid-cols-1 lg:grid-cols-[120px_1fr_100px_100px_90px_48px] gap-2 px-4 py-3 border-b border-border/40 hover:bg-white/[0.02] transition-colors items-center cursor-pointer ${
-                      isExpanded ? 'bg-brand-300/[0.03]' : ''
-                    }`}
-                    onClick={() => toggleOrderExpansion(order.id)}
-                  >
-                    {/* Order # */}
-                    <div className="font-mono text-sm font-medium text-brand-300">
-                      <span className="lg:hidden text-xs text-muted-foreground mr-2 font-sans">Order:</span>
-                      {order.salesorder_number || 'N/A'}
-                    </div>
+                <div
+                  key={order.id}
+                  className="grid grid-cols-1 lg:grid-cols-[120px_1fr_100px_130px_90px] gap-2 px-4 py-3 border-b border-border/40 hover:bg-white/[0.04] transition-colors items-center cursor-pointer"
+                  onClick={() => handleViewOrder(order)}
+                >
+                  {/* Order # */}
+                  <div className="font-mono text-sm font-medium text-brand-300">
+                    <span className="lg:hidden text-xs text-muted-foreground mr-2 font-sans">Order:</span>
+                    {order.salesorder_number || 'N/A'}
+                  </div>
 
-                    {/* Customer */}
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-300 to-primary flex items-center justify-center text-white font-semibold text-xs shrink-0">
-                        {getCustomerInitials(order.customer_name || 'Unknown')}
-                      </div>
-                      <span className="text-sm font-medium text-white truncate">
-                        {order.customer_name || 'Unknown'}
-                      </span>
+                  {/* Customer */}
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-300 to-primary flex items-center justify-center text-white font-semibold text-xs shrink-0">
+                      {getCustomerInitials(order.customer_name || 'Unknown')}
                     </div>
+                    <span className="text-sm font-medium text-white truncate">
+                      {order.customer_name || 'Unknown'}
+                    </span>
+                  </div>
 
-                    {/* Date */}
-                    <div className="text-[13px] text-muted-foreground tabular-nums">
-                      <span className="lg:hidden text-xs text-muted-foreground mr-2">Date:</span>
-                      {formatDate(order.date || order.created_at)}
-                    </div>
+                  {/* Date */}
+                  <div className="text-[13px] text-muted-foreground tabular-nums">
+                    <span className="lg:hidden text-xs text-muted-foreground mr-2">Date:</span>
+                    {formatDate(order.date || order.created_at)}
+                  </div>
 
-                    {/* Status */}
-                    <div>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border capitalize ${getStatusColor(order.status)}`}>
-                        {order.status || 'unknown'}
-                      </span>
-                    </div>
-
-                    {/* Total */}
-                    <div className="text-sm font-semibold text-success tabular-nums">
-                      <span className="lg:hidden text-xs text-muted-foreground mr-2 font-normal">Total:</span>
-                      {formatCurrency(order.total || 0)}
-                    </div>
-
-                    {/* Expand chevron */}
-                    <div className="hidden lg:flex justify-center">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleOrderExpansion(order.id);
-                        }}
-                        className="p-1 text-muted-foreground hover:text-brand-300 transition-colors"
-                      >
-                        {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                      </button>
+                  {/* Status + fulfillment */}
+                  <div className="flex flex-col gap-1">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border capitalize w-fit ${getStatusColor(order.status)}`}>
+                      {order.status || 'unknown'}
+                    </span>
+                    <div className="flex items-center gap-2 text-[10px]">
+                      <span className={shipped.color}>{shipped.text}</span>
+                      <span className="text-border">|</span>
+                      <span className={invoiced.color}>{invoiced.text}</span>
                     </div>
                   </div>
 
-                  {/* Enhanced expanded row */}
-                  {isExpanded && (
-                    <div className="px-4 py-4 bg-background/50 border-b border-border/40">
-                      <div className="flex items-start gap-4">
-                        {/* Status icon */}
-                        <div className="shrink-0 pt-0.5">
-                          {isOrderClosedOrShipped(order.status) ? (
-                            <CheckCircle size={24} className="text-success" />
-                          ) : (
-                            <Clock size={24} className="text-destructive" />
-                          )}
-                        </div>
-
-                        <div className="flex-1 flex items-center gap-5 flex-wrap">
-                          {order.delivery_date && (
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Shipped</span>
-                              <span className="text-sm text-foreground">{formatDate(order.delivery_date)}</span>
-                            </div>
-                          )}
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Total</span>
-                            <span className="text-sm font-medium text-success">{formatCurrency(order.total || 0)}</span>
-                          </div>
-                          {order.line_items && order.line_items.length > 0 && (
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Items</span>
-                              <span className="text-sm text-foreground">{order.line_items.length}</span>
-                            </div>
-                          )}
-                          <div className="w-px h-4 bg-border" />
-                          {getShippedBadge(order.shipped_status || order.shipment_status)}
-                          {getInvoicedBadge(order.invoiced_status)}
-                        </div>
-
-                        {/* Action buttons */}
-                        <div className="flex gap-2 shrink-0">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditOrder(order);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-warning/80 border border-warning/25 bg-warning/5 rounded-md hover:text-warning hover:border-warning/40 hover:bg-warning/10 transition-all"
-                          >
-                            <Pencil size={12} />
-                            Edit
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewOrder(order);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-brand-300/80 border border-brand-300/25 bg-brand-300/5 rounded-md hover:text-brand-300 hover:border-brand-300/40 hover:bg-brand-300/10 transition-all"
-                          >
-                            <Eye size={12} />
-                            View
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleCancelOrder(order);
-                            }}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-destructive/80 border border-destructive/25 bg-destructive/5 rounded-md hover:text-destructive hover:border-destructive/40 hover:bg-destructive/10 transition-all"
-                          >
-                            <Ban size={12} />
-                            Cancel
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </React.Fragment>
+                  {/* Total */}
+                  <div className="text-sm font-semibold text-success tabular-nums">
+                    <span className="lg:hidden text-xs text-muted-foreground mr-2 font-normal">Total:</span>
+                    {formatCurrency(order.total || 0)}
+                  </div>
+                </div>
               );
             })
           )}

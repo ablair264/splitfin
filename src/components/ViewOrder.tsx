@@ -11,9 +11,7 @@ import {
   FileText,
   File,
   Settings,
-  User,
   Mail,
-  ShoppingCart,
   CheckCircle,
   Package,
   Warehouse,
@@ -25,9 +23,6 @@ import {
   ArrowLeft,
   MapPin,
   Truck,
-  Route,
-  Eye,
-  Send,
   X,
   Save,
   AlertTriangle,
@@ -658,13 +653,10 @@ function ViewOrder() {
             <button onClick={handleCreateInvoice} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-brand-300/30 text-brand-300 rounded-lg hover:bg-brand-300/10 hover:border-brand-300 transition-all text-sm backdrop-blur-sm">
               <FileText size={16} /> Invoice
             </button>
-            <button onClick={handleSendToZoho} disabled={sendingToZoho} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-brand-300/30 text-brand-300 rounded-lg hover:bg-brand-300/10 hover:border-brand-300 transition-all text-sm backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed">
-              <Send size={16} /> {sendingToZoho ? 'Sending...' : 'Send to Zoho'}
-            </button>
             <button onClick={handleSendToPacking} disabled={sendingToPacking} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-brand-300/30 text-brand-300 rounded-lg hover:bg-brand-300/10 hover:border-brand-300 transition-all text-sm backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed">
               <Package size={16} /> {sendingToPacking ? 'Sending...' : 'Send to Packing'}
             </button>
-            <button onClick={handleEditOrder} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-brand-300 to-primary text-background rounded-lg font-semibold hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-300/30 transition-all text-sm">
+            <button onClick={handleEditOrder} className="flex items-center gap-2 px-6 py-3 bg-brand-300 text-background rounded-lg font-semibold hover:bg-brand-300/90 transition-all text-sm">
               <Settings size={16} /> Edit Order
             </button>
           </div>
@@ -746,13 +738,13 @@ function ViewOrder() {
         )}
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 mb-6">
+        <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-6 mb-6">
           {/* Left Column */}
           <div className="flex flex-col gap-5">
-            {/* Order Information */}
+            {/* Order Details & Progress (consolidated) */}
             <div className="bg-card rounded-xl border border-white/10 p-5 backdrop-blur-sm">
-              <h3 className="text-sm font-semibold text-white mb-3">Order Information</h3>
-              <div className="flex flex-col gap-4">
+              <h3 className="text-sm font-semibold text-white mb-3">Order Details</h3>
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3">
                   <FileText className="text-brand-300 w-5 shrink-0" size={20} />
                   <div className="flex-1">
@@ -767,13 +759,6 @@ function ViewOrder() {
                     <span className="text-white font-medium">{formatDate(order.date || order.created_at)}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <User className="text-brand-300 w-5 shrink-0" size={20} />
-                  <div className="flex-1">
-                    <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Customer</label>
-                    <span className="text-white font-medium">{order.customer_name || 'Unknown Customer'}</span>
-                  </div>
-                </div>
                 {order.reference_number && (
                   <div className="flex items-center gap-3">
                     <Hash className="text-brand-300 w-5 shrink-0" size={20} />
@@ -783,13 +768,6 @@ function ViewOrder() {
                     </div>
                   </div>
                 )}
-                <div className="flex items-center gap-3">
-                  <ShoppingCart className="text-brand-300 w-5 shrink-0" size={20} />
-                  <div className="flex-1">
-                    <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Shipping Status</label>
-                    <span className="text-white font-medium">{order.shipment_status || order.status || 'Pending'}</span>
-                  </div>
-                </div>
                 {order.salesperson_name && (
                   <div className="flex items-center gap-3">
                     <UserCheck className="text-brand-300 w-5 shrink-0" size={20} />
@@ -809,50 +787,45 @@ function ViewOrder() {
                   </div>
                 )}
               </div>
-            </div>
 
-            {/* Status Stepper Card */}
-            <div className="bg-card rounded-xl border border-white/10 p-5 backdrop-blur-sm">
-              <h3 className="text-sm font-semibold text-white mb-4">Order Progress</h3>
-              <div className="flex flex-col gap-0">
-                {orderStatusSteps.map((step, index) => {
-                  const isCompleted = index < progress;
-                  const isCurrent = index === progress;
-                  const isFuture = index > progress;
-                  const StepIcon = step.icon;
+              {/* Progress stepper (merged into same card) */}
+              <div className="mt-5 pt-4 border-t border-white/10">
+                <h4 className="text-xs font-semibold text-white/60 uppercase tracking-wide mb-3">Progress</h4>
+                <div className="flex flex-col gap-0">
+                  {orderStatusSteps.map((step, index) => {
+                    const isCompleted = index < progress;
+                    const isCurrent = index === progress;
+                    const isFuture = index > progress;
+                    const StepIcon = step.icon;
 
-                  return (
-                    <div key={step.key} className="flex items-start gap-3 relative">
-                      {/* Vertical line */}
-                      {index < orderStatusSteps.length - 1 && (
-                        <div className={`absolute left-[15px] top-[32px] w-0.5 h-[calc(100%-8px)] ${
-                          isCompleted ? 'bg-brand-300' : 'bg-white/10'
-                        }`} />
-                      )}
-
-                      {/* Icon circle */}
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 transition-all ${
-                        isCompleted ? 'bg-brand-300 text-background' :
-                        isCurrent ? 'bg-success text-white shadow-[0_0_12px_color-mix(in_srgb,var(--success)_50%,transparent)]' :
-                        'bg-white/10 text-white/40'
-                      }`}>
-                        <StepIcon size={14} />
-                      </div>
-
-                      {/* Label */}
-                      <div className={`pb-5 pt-1 ${isFuture ? 'opacity-40' : ''}`}>
-                        <span className={`text-sm font-medium ${
-                          isCurrent ? 'text-success' : isCompleted ? 'text-white' : 'text-white/50'
-                        }`}>
-                          {step.label}
-                        </span>
-                        {isCurrent && (
-                          <span className="block text-[10px] text-success/70 uppercase tracking-wider mt-0.5">Current</span>
+                    return (
+                      <div key={step.key} className="flex items-start gap-3 relative">
+                        {index < orderStatusSteps.length - 1 && (
+                          <div className={`absolute left-[15px] top-[32px] w-0.5 h-[calc(100%-8px)] ${
+                            isCompleted ? 'bg-brand-300' : 'bg-white/10'
+                          }`} />
                         )}
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 transition-all ${
+                          isCompleted ? 'bg-brand-300 text-background' :
+                          isCurrent ? 'bg-success text-white shadow-[0_0_12px_color-mix(in_srgb,var(--success)_50%,transparent)]' :
+                          'bg-white/10 text-white/40'
+                        }`}>
+                          <StepIcon size={14} />
+                        </div>
+                        <div className={`pb-4 pt-1 ${isFuture ? 'opacity-40' : ''}`}>
+                          <span className={`text-sm font-medium ${
+                            isCurrent ? 'text-success' : isCompleted ? 'text-white' : 'text-white/50'
+                          }`}>
+                            {step.label}
+                          </span>
+                          {isCurrent && (
+                            <span className="block text-[10px] text-success/70 uppercase tracking-wider mt-0.5">Current</span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
