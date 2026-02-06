@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { X, Sparkles, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Sparkles, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
 import { productService } from '../../services/productService';
 import { aiService } from '../../services/aiService';
 import type { Product } from '../../types/domain';
 import { cn } from '@/lib/utils';
+import {
+  SheetContent,
+  SheetHeader,
+  SheetBody,
+  SheetFooter,
+} from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 
 interface AIProductEnricherProps {
   companyId: string;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   onComplete?: () => void;
 }
 
@@ -21,7 +29,7 @@ interface EnrichmentResult {
   error?: string;
 }
 
-const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComplete }) => {
+const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ open, onOpenChange, onComplete }) => {
   const [step, setStep] = useState<'configure' | 'processing' | 'results'>('configure');
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<{ brand: string; count: number }[]>([]);
@@ -34,8 +42,8 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComple
   const [cancelled, setCancelled] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (open) loadData();
+  }, [open]);
 
   const loadData = async () => {
     try {
@@ -78,14 +86,12 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComple
     for (let i = 0; i < enrichResults.length; i++) {
       if (cancelled) break;
 
-      // Mark current as processing
       enrichResults[i].status = 'processing';
       setResults([...enrichResults]);
 
       const product = toProcess[i];
 
       try {
-        // Call both AI endpoints in parallel
         const [description, category] = await Promise.all([
           aiService.enrichDescription({
             name: product.name,
@@ -96,7 +102,6 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComple
           aiService.classifyCategory(product.name),
         ]);
 
-        // Save to backend
         const updatePayload: Partial<Product> = {};
         if (description) updatePayload.ai_description = description;
         if (category) updatePayload.category_name = category;
@@ -123,208 +128,211 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ onClose, onComple
   const errorCount = results.filter(r => r.status === 'error').length;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-card rounded-xl border border-border w-full max-w-lg max-h-[80vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-          <div className="flex items-center gap-2.5">
-            <Sparkles size={18} className="text-brand-300" />
-            <h2 className="text-base font-semibold text-foreground">AI Product Enrichment</h2>
-          </div>
-          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground transition-colors">
-            <X size={18} />
-          </button>
+    <SheetContent
+      isOpen={open}
+      onOpenChange={onOpenChange}
+      side="right"
+      isFloat={false}
+      className="sm:max-w-lg w-full"
+      aria-label="AI Product Enrichment"
+    >
+      {/* Header */}
+      <SheetHeader className="border-b border-border px-5 py-4">
+        <div className="flex items-center gap-2.5 pr-6">
+          <Sparkles size={18} className="text-brand-300" />
+          <h2 className="text-base font-semibold text-foreground">AI Product Enrichment</h2>
         </div>
+      </SheetHeader>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          {step === 'configure' && (
-            <div className="space-y-5">
-              {/* Stats */}
-              <div className="grid grid-cols-3 gap-3">
-                <div className="bg-background rounded-lg border border-border p-3 text-center">
-                  <div className="text-lg font-semibold text-foreground tabular-nums">{products.length}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Total</div>
-                </div>
-                <div className="bg-background rounded-lg border border-border p-3 text-center">
-                  <div className="text-lg font-semibold text-emerald-400 tabular-nums">{enrichedCount}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Enriched</div>
-                </div>
-                <div className="bg-background rounded-lg border border-border p-3 text-center">
-                  <div className="text-lg font-semibold text-brand-300 tabular-nums">{toProcess.length}</div>
-                  <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Will Process</div>
-                </div>
+      {/* Body */}
+      <SheetBody className="px-5 py-4 overflow-y-auto">
+        {step === 'configure' && (
+          <div className="space-y-5">
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-3">
+              <div className="bg-background rounded-lg border border-border p-3 text-center">
+                <div className="text-lg font-semibold text-foreground tabular-nums">{products.length}</div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Total</div>
               </div>
-
-              {/* Options */}
-              <div className="space-y-3">
-                <div>
-                  <label className="text-[12px] font-medium text-muted-foreground block mb-1">Brand Filter</label>
-                  <select
-                    value={brandFilter}
-                    onChange={(e) => setBrandFilter(e.target.value)}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-brand-300"
-                  >
-                    <option value="">All Brands</option>
-                    {brands.map(b => (
-                      <option key={b.brand} value={b.brand}>{b.brand} ({b.count})</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-[12px] font-medium text-muted-foreground block mb-1">Max Products</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={maxProducts}
-                    onChange={(e) => setMaxProducts(Math.max(1, Math.min(100, parseInt(e.target.value) || 25)))}
-                    className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-brand-300"
-                  />
-                </div>
-
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={onlyUnenriched}
-                    onChange={(e) => setOnlyUnenriched(e.target.checked)}
-                    className="rounded border-border bg-background text-brand-300 focus:ring-brand-300/30"
-                  />
-                  <span className="text-sm text-foreground/80">Only products without AI descriptions</span>
-                </label>
+              <div className="bg-background rounded-lg border border-border p-3 text-center">
+                <div className="text-lg font-semibold text-success tabular-nums">{enrichedCount}</div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Enriched</div>
               </div>
-
-              <p className="text-[12px] text-muted-foreground">
-                Each product will get an AI-generated description and category classification. Results are saved automatically.
-              </p>
+              <div className="bg-background rounded-lg border border-border p-3 text-center">
+                <div className="text-lg font-semibold text-brand-300 tabular-nums">{toProcess.length}</div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Will Process</div>
+              </div>
             </div>
-          )}
 
-          {step === 'processing' && (
-            <div className="space-y-4">
-              {/* Progress bar */}
+            {/* Options */}
+            <div className="space-y-3">
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-foreground/80">
-                    Processing {processed} / {results.length}
-                  </span>
-                  <span className="text-sm text-muted-foreground tabular-nums">
-                    {Math.round((processed / (results.length || 1)) * 100)}%
-                  </span>
-                </div>
-                <div className="h-2 bg-background rounded-full border border-border overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all duration-300"
-                    style={{ width: `${(processed / (results.length || 1)) * 100}%` }}
-                  />
-                </div>
+                <label className="text-[12px] font-medium text-muted-foreground block mb-1">Brand Filter</label>
+                <select
+                  value={brandFilter}
+                  onChange={(e) => setBrandFilter(e.target.value)}
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-primary"
+                >
+                  <option value="">All Brands</option>
+                  {brands.map(b => (
+                    <option key={b.brand} value={b.brand}>{b.brand} ({b.count})</option>
+                  ))}
+                </select>
               </div>
 
-              {/* Current item */}
-              {results[processed] && processed < results.length && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Loader2 size={14} className="animate-spin text-brand-300" />
-                  <span className="truncate">{results[processed]?.name}</span>
+              <div>
+                <label className="text-[12px] font-medium text-muted-foreground block mb-1">Max Products</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={maxProducts}
+                  onChange={(e) => setMaxProducts(Math.max(1, Math.min(100, parseInt(e.target.value) || 25)))}
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={onlyUnenriched}
+                  onChange={(e) => setOnlyUnenriched(e.target.checked)}
+                  className="rounded border-border bg-background text-primary focus:ring-primary/30"
+                />
+                <span className="text-sm text-foreground/80">Only products without AI descriptions</span>
+              </label>
+            </div>
+
+            <p className="text-[12px] text-muted-foreground">
+              Each product will get an AI-generated description and category classification. Results are saved automatically.
+            </p>
+          </div>
+        )}
+
+        {step === 'processing' && (
+          <div className="space-y-4">
+            {/* Progress bar */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-foreground/80">
+                  Processing {processed} / {results.length}
+                </span>
+                <span className="text-sm text-muted-foreground tabular-nums">
+                  {Math.round((processed / (results.length || 1)) * 100)}%
+                </span>
+              </div>
+              <div className="h-2 bg-background rounded-full border border-border overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-300"
+                  style={{ width: `${(processed / (results.length || 1)) * 100}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Current item */}
+            {results[processed] && processed < results.length && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 size={14} className="animate-spin text-brand-300" />
+                <span className="truncate">{results[processed]?.name}</span>
+              </div>
+            )}
+
+            {/* Scrolling results list */}
+            <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
+              {results.map((r) => (
+                <div key={r.id} className="flex items-center gap-2 py-1 text-[12px]">
+                  {r.status === 'done' && <CheckCircle size={12} className="text-success shrink-0" />}
+                  {r.status === 'error' && <AlertTriangle size={12} className="text-destructive shrink-0" />}
+                  {r.status === 'processing' && <Loader2 size={12} className="text-brand-300 animate-spin shrink-0" />}
+                  {r.status === 'pending' && <div className="w-3 h-3 rounded-full border border-border shrink-0" />}
+                  <span className={cn('truncate', r.status === 'done' ? 'text-foreground/80' : r.status === 'error' ? 'text-destructive' : 'text-muted-foreground')}>
+                    {r.sku} &mdash; {r.name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {step === 'results' && (
+          <div className="space-y-4">
+            {/* Summary */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-success/10 border border-success/20 rounded-lg p-3 text-center">
+                <div className="text-xl font-semibold text-success tabular-nums">{successCount}</div>
+                <div className="text-[11px] text-success/70">Enriched</div>
+              </div>
+              {errorCount > 0 && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-center">
+                  <div className="text-xl font-semibold text-destructive tabular-nums">{errorCount}</div>
+                  <div className="text-[11px] text-destructive/70">Failed</div>
                 </div>
               )}
-
-              {/* Scrolling results list */}
-              <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
-                {results.map((r, i) => (
-                  <div key={r.id} className="flex items-center gap-2 py-1 text-[12px]">
-                    {r.status === 'done' && <CheckCircle size={12} className="text-emerald-400 shrink-0" />}
-                    {r.status === 'error' && <AlertTriangle size={12} className="text-red-400 shrink-0" />}
-                    {r.status === 'processing' && <Loader2 size={12} className="text-brand-300 animate-spin shrink-0" />}
-                    {r.status === 'pending' && <div className="w-3 h-3 rounded-full border border-border shrink-0" />}
-                    <span className={cn('truncate', r.status === 'done' ? 'text-foreground/80' : r.status === 'error' ? 'text-red-400' : 'text-muted-foreground')}>
-                      {r.sku} — {r.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
             </div>
-          )}
 
-          {step === 'results' && (
-            <div className="space-y-4">
-              {/* Summary */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-emerald-400/10 border border-emerald-400/20 rounded-lg p-3 text-center">
-                  <div className="text-xl font-semibold text-emerald-400 tabular-nums">{successCount}</div>
-                  <div className="text-[11px] text-emerald-400/70">Enriched</div>
-                </div>
-                {errorCount > 0 && (
-                  <div className="bg-red-400/10 border border-red-400/20 rounded-lg p-3 text-center">
-                    <div className="text-xl font-semibold text-red-400 tabular-nums">{errorCount}</div>
-                    <div className="text-[11px] text-red-400/70">Failed</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Sample results */}
-              <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                {results.filter(r => r.status === 'done').slice(0, 10).map(r => (
-                  <div key={r.id} className="bg-background rounded-lg border border-border p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[11px] text-muted-foreground">{r.sku}</span>
-                      {r.category && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-300/10 text-brand-300 border border-brand-300/20">
-                          {r.category}
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-[13px] font-medium text-foreground mb-1">{r.name}</div>
-                    {r.description && (
-                      <div className="text-[12px] text-muted-foreground line-clamp-2">{r.description}</div>
+            {/* Sample results */}
+            <div className="space-y-2 max-h-[300px] overflow-y-auto">
+              {results.filter(r => r.status === 'done').slice(0, 10).map(r => (
+                <div key={r.id} className="bg-background rounded-lg border border-border p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[11px] text-muted-foreground">{r.sku}</span>
+                    {r.category && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-brand-300/10 text-brand-300 border border-brand-300/20">
+                        {r.category}
+                      </span>
                     )}
                   </div>
-                ))}
-              </div>
+                  <div className="text-[13px] font-medium text-foreground mb-1">{r.name}</div>
+                  {r.description && (
+                    <div className="text-[12px] text-muted-foreground line-clamp-2">{r.description}</div>
+                  )}
+                </div>
+              ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+      </SheetBody>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-border">
+      {/* Footer */}
+      <SheetFooter className="border-t border-border px-5 py-3">
+        <div className="flex items-center justify-end gap-2 w-full">
           {step === 'configure' && (
             <>
-              <button
-                onClick={onClose}
-                className="px-4 py-2 text-sm text-muted-foreground hover:text-gray-200 transition-colors"
-              >
+              <Button intent="outline" size="sm" onPress={() => onOpenChange(false)}>
                 Cancel
-              </button>
-              <button
-                onClick={handleStart}
-                disabled={toProcess.length === 0}
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-foreground rounded-lg text-sm font-medium hover:shadow-lg hover:shadow-brand-300/25 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+              </Button>
+              <Button
+                intent="primary"
+                size="sm"
+                onPress={handleStart}
+                isDisabled={toProcess.length === 0}
               >
-                <Sparkles size={14} />
+                <Sparkles size={14} className="mr-1" />
                 Enrich {toProcess.length} Product{toProcess.length !== 1 ? 's' : ''}
-              </button>
+              </Button>
             </>
           )}
           {step === 'processing' && (
-            <button
-              onClick={() => setCancelled(true)}
-              className="px-4 py-2 text-sm text-red-400 border border-red-400/20 rounded-lg hover:bg-red-400/10 transition-colors"
+            <Button
+              intent="danger"
+              size="sm"
+              onPress={() => setCancelled(true)}
             >
               Stop
-            </button>
+            </Button>
           )}
           {step === 'results' && (
-            <button
-              onClick={() => { onComplete?.(); onClose(); }}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-foreground rounded-lg text-sm font-medium"
+            <Button
+              intent="primary"
+              size="sm"
+              onPress={() => { onComplete?.(); onOpenChange(false); }}
             >
               Done
-            </button>
+            </Button>
           )}
         </div>
-      </div>
-    </div>
+      </SheetFooter>
+    </SheetContent>
   );
 };
 

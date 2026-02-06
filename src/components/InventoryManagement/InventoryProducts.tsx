@@ -21,10 +21,10 @@ import {
 } from 'lucide-react';
 import { productService } from '../../services/productService';
 import { useLoader } from '../../contexts/LoaderContext';
-import AddProductModal from './AddProductModal';
+import AddProductSheet from './AddProductModal';
 import { ProductDetailSheet } from './ProductDetailSheet';
 import { AIProductEnricher } from '../AIProductEnricher';
-import PricelistUpload from './PricelistUpload';
+import PricelistUploadSheet from './PricelistUpload';
 import type { Product } from '../../types/domain';
 import { cn } from '@/lib/utils';
 
@@ -417,26 +417,23 @@ const InventoryProducts: React.FC = () => {
           </div>
         </div>
 
-        {showAddModal && (
-          <AddProductModal
-            brands={brands}
-            onClose={() => setShowAddModal(false)}
-            onAdd={() => {
-              loadItems(1, false);
-              setShowAddModal(false);
-            }}
-          />
-        )}
-        {showAIEnrichModal && (
-          <AIProductEnricher
-            companyId="dm-brands"
-            onClose={() => setShowAIEnrichModal(false)}
-            onComplete={() => {
-              loadItems(pagination.pageIndex + 1, false);
-              setShowAIEnrichModal(false);
-            }}
-          />
-        )}
+        <AddProductSheet
+          brands={brands}
+          open={showAddModal}
+          onOpenChange={setShowAddModal}
+          onAdd={() => {
+            loadItems(1, false);
+            setShowAddModal(false);
+          }}
+        />
+        <AIProductEnricher
+          companyId="dm-brands"
+          open={showAIEnrichModal}
+          onOpenChange={setShowAIEnrichModal}
+          onComplete={() => {
+            loadItems(pagination.pageIndex + 1, false);
+          }}
+        />
       </div>
     );
   }
@@ -628,36 +625,32 @@ const InventoryProducts: React.FC = () => {
         }}
       />
 
-      {showAddModal && (
-        <AddProductModal
-          brands={brands}
-          onClose={() => setShowAddModal(false)}
-          onAdd={() => {
-            loadItems(1, false);
-            setShowAddModal(false);
-          }}
-        />
-      )}
+      <AddProductSheet
+        brands={brands}
+        open={showAddModal}
+        onOpenChange={setShowAddModal}
+        onAdd={() => {
+          loadItems(1, false);
+          setShowAddModal(false);
+        }}
+      />
 
-      {showAIEnrichModal && (
-        <AIProductEnricher
-          companyId="dm-brands"
-          onClose={() => setShowAIEnrichModal(false)}
-          onComplete={() => {
-            loadItems(pagination.pageIndex + 1, false);
-            setShowAIEnrichModal(false);
-          }}
-        />
-      )}
+      <AIProductEnricher
+        companyId="dm-brands"
+        open={showAIEnrichModal}
+        onOpenChange={setShowAIEnrichModal}
+        onComplete={() => {
+          loadItems(pagination.pageIndex + 1, false);
+        }}
+      />
 
-      {showPricelistUpload && (
-        <PricelistUpload
-          onClose={() => {
-            setShowPricelistUpload(false);
-            loadItems(pagination.pageIndex + 1, false);
-          }}
-        />
-      )}
+      <PricelistUploadSheet
+        open={showPricelistUpload}
+        onOpenChange={setShowPricelistUpload}
+        onApplied={() => {
+          loadItems(pagination.pageIndex + 1, false);
+        }}
+      />
     </div>
   );
 };

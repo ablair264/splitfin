@@ -12,7 +12,9 @@ import {
   Loader2
 } from 'lucide-react';
 import { productService } from '../../services/productService';
-import styles from './AddProductModal.module.css'; // Reuse the same styles
+// Note: This component is unused (ProductDetailSheet handles editing inline).
+// Kept for reference but CSS module import removed.
+const styles: Record<string, string> = {};
 
 // Internal inventory item interface for the modal form
 // Maps to Product type from backend with field transformations

@@ -1,17 +1,23 @@
 import React, { useState, useCallback } from 'react';
-import { 
-  Upload, 
-  FileText, 
-  AlertCircle, 
-  CheckCircle, 
-  Eye, 
-  Download,
+import {
+  Upload,
+  FileText,
+  AlertCircle,
+  CheckCircle,
+  Eye,
   X,
   RefreshCw,
   Sparkles
 } from 'lucide-react';
 import { pricelistProcessingService } from '../../services/pricelistProcessingService';
-import styles from './PricelistUpload.module.css';
+import {
+  SheetContent,
+  SheetHeader,
+  SheetBody,
+  SheetFooter,
+} from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface PricelistFile {
   id: string;
@@ -35,11 +41,13 @@ interface PriceChange {
   confidence: number;
 }
 
-interface PricelistUploadProps {
-  onClose: () => void;
+interface PricelistUploadSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onApplied?: () => void;
 }
 
-const PricelistUpload: React.FC<PricelistUploadProps> = ({ onClose }) => {
+const PricelistUploadSheet: React.FC<PricelistUploadSheetProps> = ({ open, onOpenChange, onApplied }) => {
   const [files, setFiles] = useState<PricelistFile[]>([]);
   const [dragActive, setDragActive] = useState(false);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
@@ -59,7 +67,7 @@ const PricelistUpload: React.FC<PricelistUploadProps> = ({ onClose }) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    
+
     const droppedFiles = Array.from(e.dataTransfer.files);
     handleFiles(droppedFiles);
   }, []);
@@ -90,16 +98,15 @@ const PricelistUpload: React.FC<PricelistUploadProps> = ({ onClose }) => {
       setFiles(prev => [...prev, pricelistFile]);
 
       try {
-        // Process the file
-        setFiles(prev => prev.map(f => 
+        setFiles(prev => prev.map(f =>
           f.id === fileId ? { ...f, status: 'processing' } : f
         ));
 
         const result = await pricelistProcessingService.processFile(file);
-        
-        setFiles(prev => prev.map(f => 
-          f.id === fileId ? { 
-            ...f, 
+
+        setFiles(prev => prev.map(f =>
+          f.id === fileId ? {
+            ...f,
             status: 'ready',
             preview: result.preview,
             changes: result.changes
@@ -107,9 +114,9 @@ const PricelistUpload: React.FC<PricelistUploadProps> = ({ onClose }) => {
         ));
 
       } catch (error) {
-        setFiles(prev => prev.map(f => 
-          f.id === fileId ? { 
-            ...f, 
+        setFiles(prev => prev.map(f =>
+          f.id === fileId ? {
+            ...f,
             status: 'error',
             error: error instanceof Error ? error.message : 'Processing failed'
           } : f
@@ -130,7 +137,6 @@ const PricelistUpload: React.FC<PricelistUploadProps> = ({ onClose }) => {
   };
 
   const detectBrand = (filename: string): string => {
-    // Same logic as supplier for now, but could be different
     return detectSupplier(filename);
   };
 
@@ -141,13 +147,10 @@ const PricelistUpload: React.FC<PricelistUploadProps> = ({ onClose }) => {
     setApplying(fileId);
     try {
       await pricelistProcessingService.applyChanges(file.changes);
-      
-      // Remove the file from the list after successful application
       setFiles(prev => prev.filter(f => f.id !== fileId));
-      
+      onApplied?.();
     } catch (error) {
       console.error('Failed to apply changes:', error);
-      // You might want to show an error message here
     } finally {
       setApplying(null);
     }
@@ -160,76 +163,87 @@ const PricelistUpload: React.FC<PricelistUploadProps> = ({ onClose }) => {
   const selectedFileData = selectedFile ? files.find(f => f.id === selectedFile) : null;
 
   return (
-    <div className={styles.overlay}>
-      <div className={styles.modal}>
-        <div className={styles.header}>
-          <div className={styles.headerTitle}>
-            <Sparkles className={styles.headerIcon} />
-            <h2>Supplier Pricelist Upload</h2>
-          </div>
-          <button onClick={onClose} className={styles.closeButton}>
-            <X size={20} />
-          </button>
+    <SheetContent
+      isOpen={open}
+      onOpenChange={onOpenChange}
+      side="right"
+      isFloat={false}
+      className="sm:max-w-2xl w-full"
+      aria-label="Supplier pricelist upload"
+    >
+      <SheetHeader className="border-b border-border px-5 py-4">
+        <div className="flex items-center gap-2.5 pr-6">
+          <Sparkles size={18} className="text-brand-300" />
+          <h2 className="text-base font-semibold text-foreground">Supplier Pricelist Upload</h2>
         </div>
+      </SheetHeader>
 
-        <div className={styles.content}>
-          {selectedFile ? (
-            // Preview Mode
-            <div className={styles.previewMode}>
-              <div className={styles.previewHeader}>
-                <button 
-                  onClick={() => setSelectedFile(null)}
-                  className={styles.backButton}
-                >
-                  ← Back to Upload
-                </button>
-                <h3>{selectedFileData?.file.name}</h3>
-              </div>
-              
-              {selectedFileData && (
-                <PriceChangePreview 
-                  file={selectedFileData}
-                  onApply={() => handleApplyChanges(selectedFile)}
-                  applying={applying === selectedFile}
-                />
-              )}
-            </div>
-          ) : (
-            // Upload Mode
-            <>
-              <div 
-                className={`${styles.dropZone} ${dragActive ? styles.dragActive : ''}`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
+      <SheetBody className="px-5 py-4 overflow-y-auto">
+        {selectedFile ? (
+          /* Preview Mode */
+          <div>
+            <div className="flex items-center gap-3 mb-4">
+              <button
+                onClick={() => setSelectedFile(null)}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
-                <Upload size={48} className={styles.uploadIcon} />
-                <h3>Drop supplier pricelists here</h3>
-                <p>Supports CSV, Excel (.xlsx, .xls), and PDF files</p>
-                <p className={styles.aiNote}>
-                  <Sparkles size={16} />
-                  AI will automatically detect supplier, extract products, and match to your inventory
-                </p>
-                
-                <input
-                  type="file"
-                  multiple
-                  accept=".csv,.xlsx,.xls,.pdf"
-                  onChange={handleFileInput}
-                  className={styles.fileInput}
-                  id="file-input"
-                />
-                <label htmlFor="file-input" className={styles.uploadButton}>
-                  Choose Files
-                </label>
-              </div>
+                &larr; Back to Upload
+              </button>
+              <h3 className="text-sm font-medium text-foreground truncate">{selectedFileData?.file.name}</h3>
+            </div>
 
-              {files.length > 0 && (
-                <div className={styles.fileList}>
-                  <h3>Processing Files</h3>
+            {selectedFileData && (
+              <PriceChangePreview
+                file={selectedFileData}
+                onApply={() => handleApplyChanges(selectedFile)}
+                applying={applying === selectedFile}
+              />
+            )}
+          </div>
+        ) : (
+          /* Upload Mode */
+          <>
+            <div
+              className={cn(
+                'border-2 border-dashed rounded-xl p-12 text-center transition-colors',
+                dragActive
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border bg-background'
+              )}
+              onDragEnter={handleDrag}
+              onDragLeave={handleDrag}
+              onDragOver={handleDrag}
+              onDrop={handleDrop}
+            >
+              <Upload size={48} className="mx-auto mb-3 text-muted-foreground" />
+              <h3 className="text-sm font-semibold text-foreground mb-1">Drop supplier pricelists here</h3>
+              <p className="text-xs text-muted-foreground mb-3">Supports CSV, Excel (.xlsx, .xls), and PDF files</p>
+              <p className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground mb-4">
+                <Sparkles size={14} className="text-brand-300" />
+                AI will automatically detect supplier, extract products, and match to your inventory
+              </p>
+
+              <input
+                type="file"
+                multiple
+                accept=".csv,.xlsx,.xls,.pdf"
+                onChange={handleFileInput}
+                className="hidden"
+                id="pricelist-file-input"
+              />
+              <label htmlFor="pricelist-file-input">
+                <Button intent="outline" size="sm" className="pointer-events-none">
+                  Choose Files
+                </Button>
+              </label>
+            </div>
+
+            {files.length > 0 && (
+              <div className="mt-5">
+                <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Processing Files</h3>
+                <div className="space-y-2">
                   {files.map(file => (
-                    <FileStatus 
+                    <FileStatus
                       key={file.id}
                       file={file}
                       onPreview={() => setSelectedFile(file.id)}
@@ -239,12 +253,20 @@ const PricelistUpload: React.FC<PricelistUploadProps> = ({ onClose }) => {
                     />
                   ))}
                 </div>
-              )}
-            </>
-          )}
+              </div>
+            )}
+          </>
+        )}
+      </SheetBody>
+
+      <SheetFooter className="border-t border-border px-5 py-3">
+        <div className="flex items-center justify-end w-full">
+          <Button intent="outline" size="sm" onPress={() => onOpenChange(false)}>
+            Close
+          </Button>
         </div>
-      </div>
-    </div>
+      </SheetFooter>
+    </SheetContent>
   );
 };
 
@@ -258,13 +280,12 @@ const FileStatus: React.FC<{
   const getStatusIcon = () => {
     switch (file.status) {
       case 'uploading':
-        return <RefreshCw size={16} className={styles.spinning} />;
       case 'processing':
-        return <RefreshCw size={16} className={styles.spinning} />;
+        return <RefreshCw size={14} className="animate-spin text-brand-300" />;
       case 'ready':
-        return <CheckCircle size={16} className={styles.successIcon} />;
+        return <CheckCircle size={14} className="text-success" />;
       case 'error':
-        return <AlertCircle size={16} className={styles.errorIcon} />;
+        return <AlertCircle size={14} className="text-destructive" />;
     }
   };
 
@@ -281,49 +302,51 @@ const FileStatus: React.FC<{
     }
   };
 
+  const borderColor = file.status === 'ready'
+    ? 'border-success/20'
+    : file.status === 'error'
+      ? 'border-destructive/20'
+      : 'border-border';
+
   return (
-    <div className={`${styles.fileItem} ${styles[file.status]}`}>
-      <div className={styles.fileInfo}>
-        <FileText size={20} className={styles.fileIcon} />
-        <div className={styles.fileDetails}>
-          <div className={styles.fileName}>{file.file.name}</div>
-          <div className={styles.fileSupplier}>{file.supplier} • {file.brand}</div>
-          <div className={styles.fileStatus}>
-            {getStatusIcon()}
-            {getStatusText()}
+    <div className={cn('bg-card rounded-lg border p-4', borderColor)}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-3 min-w-0">
+          <FileText size={18} className="text-muted-foreground mt-0.5 shrink-0" />
+          <div className="min-w-0">
+            <div className="text-sm font-medium text-foreground truncate">{file.file.name}</div>
+            <div className="text-[11px] text-muted-foreground">{file.supplier} &bull; {file.brand}</div>
+            <div className="flex items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+              {getStatusIcon()}
+              <span className={file.status === 'error' ? 'text-destructive' : ''}>{getStatusText()}</span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className={styles.fileActions}>
-        {file.status === 'ready' && (
-          <>
-            <button 
-              onClick={onPreview}
-              className={styles.actionButton}
-              title="Preview Changes"
-            >
-              <Eye size={16} />
-            </button>
-            <button 
-              onClick={onApply}
-              className={styles.applyButton}
-              disabled={applying}
-              title="Apply Changes"
-            >
-              {applying ? <RefreshCw size={16} className={styles.spinning} /> : <CheckCircle size={16} />}
-              {applying ? 'Applying...' : 'Apply'}
-            </button>
-          </>
-        )}
-        
-        <button 
-          onClick={onRemove}
-          className={styles.removeButton}
-          title="Remove"
-        >
-          <X size={16} />
-        </button>
+        <div className="flex items-center gap-1.5 shrink-0">
+          {file.status === 'ready' && (
+            <>
+              <Button intent="outline" size="sq-xs" onPress={onPreview}>
+                <Eye size={14} />
+              </Button>
+              <Button
+                intent="primary"
+                size="xs"
+                onPress={onApply}
+                isDisabled={applying}
+              >
+                {applying ? <RefreshCw size={12} className="animate-spin mr-1" /> : <CheckCircle size={12} className="mr-1" />}
+                {applying ? 'Applying...' : 'Apply'}
+              </Button>
+            </>
+          )}
+          <button
+            onClick={onRemove}
+            className="p-1.5 text-muted-foreground hover:text-destructive transition-colors"
+          >
+            <X size={14} />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -342,62 +365,75 @@ const PriceChangePreview: React.FC<{
   const newProducts = file.changes.filter(c => c.action === 'create').length;
 
   return (
-    <div className={styles.preview}>
-      <div className={styles.previewSummary}>
-        <div className={styles.summaryCards}>
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryValue}>{totalChanges}</div>
-            <div className={styles.summaryLabel}>Total Changes</div>
-          </div>
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryValue}>{newProducts}</div>
-            <div className={styles.summaryLabel}>New Products</div>
-          </div>
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryValue}>{priceIncreases}</div>
-            <div className={styles.summaryLabel}>Price Increases</div>
-          </div>
-          <div className={styles.summaryCard}>
-            <div className={styles.summaryValue}>{priceDecreases}</div>
-            <div className={styles.summaryLabel}>Price Decreases</div>
-          </div>
+    <div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-4 gap-2 mb-4">
+        <div className="bg-muted/30 rounded-lg border border-border p-3 text-center">
+          <div className="text-lg font-semibold text-foreground tabular-nums">{totalChanges}</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Total</div>
         </div>
-        
-        <button 
-          onClick={onApply}
-          className={styles.applyAllButton}
-          disabled={applying}
-        >
-          {applying ? <RefreshCw size={16} className={styles.spinning} /> : <CheckCircle size={16} />}
-          {applying ? 'Applying Changes...' : 'Apply All Changes'}
-        </button>
+        <div className="bg-muted/30 rounded-lg border border-border p-3 text-center">
+          <div className="text-lg font-semibold text-primary tabular-nums">{newProducts}</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">New</div>
+        </div>
+        <div className="bg-muted/30 rounded-lg border border-border p-3 text-center">
+          <div className="text-lg font-semibold text-warning tabular-nums">{priceIncreases}</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Increases</div>
+        </div>
+        <div className="bg-muted/30 rounded-lg border border-border p-3 text-center">
+          <div className="text-lg font-semibold text-success tabular-nums">{priceDecreases}</div>
+          <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Decreases</div>
+        </div>
       </div>
 
-      <div className={styles.changesList}>
+      <div className="flex justify-end mb-4">
+        <Button
+          intent="primary"
+          size="sm"
+          onPress={onApply}
+          isDisabled={applying}
+        >
+          {applying ? <RefreshCw size={14} className="animate-spin mr-1" /> : <CheckCircle size={14} className="mr-1" />}
+          {applying ? 'Applying Changes...' : 'Apply All Changes'}
+        </Button>
+      </div>
+
+      {/* Changes List */}
+      <div className="space-y-1.5">
         {file.changes.map((change, index) => (
-          <div key={index} className={`${styles.changeItem} ${styles[change.action]}`}>
-            <div className={styles.changeProduct}>
-              <div className={styles.changeSku}>{change.sku}</div>
-              <div className={styles.changeName}>{change.product_name}</div>
+          <div key={index} className={cn(
+            'flex items-center justify-between gap-3 rounded-lg border p-3',
+            change.action === 'create'
+              ? 'border-primary/20 bg-primary/5'
+              : 'border-border bg-card'
+          )}>
+            <div className="min-w-0">
+              <div className="text-[11px] text-muted-foreground font-mono">{change.sku}</div>
+              <div className="text-sm text-foreground truncate">{change.product_name}</div>
             </div>
-            
-            <div className={styles.changePrices}>
-              {change.action === 'update' && change.current_price && (
+
+            <div className="flex items-center gap-2 shrink-0">
+              {change.action === 'update' && change.current_price != null && (
                 <>
-                  <span className={styles.currentPrice}>£{change.current_price.toFixed(2)}</span>
-                  <span className={styles.arrow}>→</span>
+                  <span className="text-xs text-muted-foreground tabular-nums">&pound;{change.current_price.toFixed(2)}</span>
+                  <span className="text-muted-foreground/50">&rarr;</span>
                 </>
               )}
-              <span className={styles.newPrice}>£{change.new_price.toFixed(2)}</span>
+              <span className="text-sm font-medium text-foreground tabular-nums">&pound;{change.new_price.toFixed(2)}</span>
               {change.action === 'update' && (
-                <span className={`${styles.changeAmount} ${change.price_change > 0 ? styles.increase : styles.decrease}`}>
-                  {change.price_change > 0 ? '+' : ''}£{change.price_change.toFixed(2)} ({change.price_change_percent.toFixed(1)}%)
+                <span className={cn(
+                  'text-xs tabular-nums',
+                  change.price_change > 0 ? 'text-warning' : 'text-success'
+                )}>
+                  {change.price_change > 0 ? '+' : ''}&pound;{change.price_change.toFixed(2)} ({change.price_change_percent.toFixed(1)}%)
                 </span>
               )}
-            </div>
-            
-            <div className={styles.changeAction}>
-              <span className={`${styles.actionBadge} ${styles[change.action]}`}>
+              <span className={cn(
+                'text-[10px] px-1.5 py-0.5 rounded border font-medium',
+                change.action === 'create'
+                  ? 'bg-primary/10 text-primary border-primary/20'
+                  : 'bg-muted text-muted-foreground border-border'
+              )}>
                 {change.action === 'create' ? 'New' : 'Update'}
               </span>
             </div>
@@ -408,4 +444,4 @@ const PriceChangePreview: React.FC<{
   );
 };
 
-export default PricelistUpload;
+export default PricelistUploadSheet;
