@@ -157,10 +157,10 @@ export function DataTableSliderFilter<TData>({
               className="rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               onClick={onReset}
             >
-              <XCircle />
+              <XCircle data-slot="icon" />
             </div>
           ) : (
-            <PlusCircle />
+            <PlusCircle data-slot="icon" />
           )}
           <span>{title}</span>
           {columnFilterValue ? (

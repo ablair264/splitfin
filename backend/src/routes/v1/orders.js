@@ -157,10 +157,35 @@ router.get('/count', async (req, res) => {
 });
 
 // GET /api/v1/orders/salespersons
+// Accepts optional filters: status, search, date_from, date_to
 router.get('/salespersons', async (req, res) => {
   try {
+    const { status, search, date_from, date_to } = req.query;
+    let where = `WHERE salesperson_name IS NOT NULL AND salesperson_name != ''`;
+    const params = [];
+    let idx = 1;
+
+    if (status) {
+      const statuses = status.split(',').map(s => s.trim()).filter(Boolean);
+      if (statuses.length === 1) {
+        where += ` AND status = $${idx++}`;
+        params.push(statuses[0]);
+      } else if (statuses.length > 1) {
+        where += ` AND status = ANY($${idx++}::text[])`;
+        params.push(statuses);
+      }
+    }
+    if (search) {
+      where += ` AND (salesorder_number ILIKE $${idx} OR customer_name ILIKE $${idx})`;
+      params.push(`%${search}%`);
+      idx++;
+    }
+    if (date_from) { where += ` AND date >= $${idx++}`; params.push(date_from); }
+    if (date_to) { where += ` AND date <= $${idx++}`; params.push(date_to); }
+
     const { rows } = await query(
-      `SELECT salesperson_name, COUNT(*) as count FROM orders WHERE salesperson_name IS NOT NULL AND salesperson_name != '' GROUP BY salesperson_name ORDER BY salesperson_name`
+      `SELECT salesperson_name, COUNT(*) as count FROM orders ${where} GROUP BY salesperson_name ORDER BY salesperson_name`,
+      params
     );
     res.json({ data: rows });
   } catch (err) {
@@ -170,10 +195,29 @@ router.get('/salespersons', async (req, res) => {
 });
 
 // GET /api/v1/orders/statuses
+// Accepts optional filters: salesperson_name, search, date_from, date_to
 router.get('/statuses', async (req, res) => {
   try {
+    const { salesperson_name, search, date_from, date_to } = req.query;
+    let where = 'WHERE 1=1';
+    const params = [];
+    let idx = 1;
+
+    if (salesperson_name) {
+      where += ` AND salesperson_name = $${idx++}`;
+      params.push(salesperson_name);
+    }
+    if (search) {
+      where += ` AND (salesorder_number ILIKE $${idx} OR customer_name ILIKE $${idx})`;
+      params.push(`%${search}%`);
+      idx++;
+    }
+    if (date_from) { where += ` AND date >= $${idx++}`; params.push(date_from); }
+    if (date_to) { where += ` AND date <= $${idx++}`; params.push(date_to); }
+
     const { rows } = await query(
-      'SELECT status, COUNT(*) as count FROM orders GROUP BY status ORDER BY count DESC'
+      `SELECT status, COUNT(*) as count FROM orders ${where} GROUP BY status ORDER BY count DESC`,
+      params
     );
     res.json({ data: rows });
   } catch (err) {

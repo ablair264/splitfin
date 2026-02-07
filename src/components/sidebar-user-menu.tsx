@@ -1,7 +1,6 @@
 import { Settings, LogOut, Bell } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { SidebarKbd } from "./sidebar-kbd"
-import { SidebarBadge } from "./sidebar-badge"
 
 interface UserMenuProps {
   isOpen: boolean
@@ -36,7 +35,6 @@ export function UserMenu({ isOpen, userName, userRole, onLogout, onClose }: User
         >
           <Bell size={16} />
           <span>Notifications</span>
-          <SidebarBadge count={3} variant="accent" />
         </button>
       </div>
       <div className="border-t border-zinc-800 p-2">

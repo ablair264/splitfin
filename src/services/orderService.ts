@@ -34,13 +34,13 @@ export const orderService = {
     return result.count;
   },
 
-  async getSalespersons(): Promise<{ salesperson_name: string; count: number }[]> {
-    const result = await api.get<{ data: { salesperson_name: string; count: number }[] }>('/api/v1/orders/salespersons');
+  async getSalespersons(filters?: Record<string, string>): Promise<{ salesperson_name: string; count: number }[]> {
+    const result = await api.get<{ data: { salesperson_name: string; count: number }[] }>('/api/v1/orders/salespersons', filters);
     return result.data;
   },
 
-  async getStatuses(): Promise<{ status: string; count: number }[]> {
-    const result = await api.get<{ data: { status: string; count: number }[] }>('/api/v1/orders/statuses');
+  async getStatuses(filters?: Record<string, string>): Promise<{ status: string; count: number }[]> {
+    const result = await api.get<{ data: { status: string; count: number }[] }>('/api/v1/orders/statuses', filters);
     return result.data;
   },
 

@@ -53,7 +53,7 @@ export function DataTableViewOptions<TData>({
           className="ml-auto hidden h-8 font-normal lg:flex"
           disabled={disabled}
         >
-          <Settings2 />
+          <Settings2 data-slot="icon" />
           View
         </Button>
       </PopoverTrigger>

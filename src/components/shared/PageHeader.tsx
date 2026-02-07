@@ -37,11 +37,9 @@ export default function PageHeader({ title, subtitle, count, breadcrumbs, action
           <h1 className="text-2xl font-semibold tracking-tight text-foreground truncate">
             {title}
           </h1>
-          {(subtitle || count !== undefined) && (
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              {count !== undefined
-                ? `${count.toLocaleString()} ${subtitle || title.toLowerCase()}`
-                : subtitle}
+          {(count !== undefined || subtitle) && (
+            <p className="text-sm text-muted-foreground mt-0.5">
+              {count !== undefined ? count.toLocaleString() : ''}{count !== undefined && subtitle ? ' ' : ''}{subtitle || ''}
             </p>
           )}
         </div>

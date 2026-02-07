@@ -83,11 +83,11 @@ export function IconRail({ userName, onExpand }: IconRailProps) {
     { id: "d0", divider: true, icon: null, label: "" },
     { id: "inventory", icon: <BoxesIcon size={18} />, label: "Inventory", path: "/inventory/products" },
     { id: "shipping", icon: <ShipIcon size={18} />, label: "Shipping", path: "/shipping/warehouse" },
-    { id: "finance", icon: <PoundSterlingIcon size={18} />, label: "Finance", path: "/finance/invoices", badge: { count: 7, variant: "warning" } },
+    { id: "finance", icon: <PoundSterlingIcon size={18} />, label: "Finance", path: "/finance/invoices" },
     { id: "suppliers", icon: <UsersIcon size={18} />, label: "Suppliers", path: "/suppliers" },
     { id: "d1", divider: true, icon: null, label: "" },
     { id: "images", icon: <GalleryThumbnailsIcon size={18} />, label: "Image Management", path: "/image-management" },
-    { id: "messages", icon: <MessageCircleMoreIcon size={18} />, label: "Team Messages", path: "/messaging", badge: { count: 4, variant: "accent" }, hasDot: true },
+    { id: "messages", icon: <MessageCircleMoreIcon size={18} />, label: "Team Messages", path: "/messaging" },
   ]
 
   const isActive = (path?: string) => {

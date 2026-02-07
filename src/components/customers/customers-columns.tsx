@@ -122,10 +122,10 @@ export function getCustomerColumns(): ColumnDef<Customer>[] {
           </div>
         </div>
       ),
-      minSize: 220,
+      size: 240,
       enableColumnFilter: true,
       meta: {
-        label: "Search customers",
+        label: "Customer",
         placeholder: "Search customers...",
         variant: "text" as const,
       },
@@ -147,6 +147,7 @@ export function getCustomerColumns(): ColumnDef<Customer>[] {
       size: 220,
       enableSorting: false,
       enableColumnFilter: false,
+      meta: { label: "Contact" },
     },
     {
       id: "region",
@@ -180,6 +181,7 @@ export function getCustomerColumns(): ColumnDef<Customer>[] {
       ),
       size: 100,
       enableColumnFilter: false,
+      meta: { label: "Spent" },
     },
     {
       id: "outstanding_receivable",
@@ -197,6 +199,7 @@ export function getCustomerColumns(): ColumnDef<Customer>[] {
       },
       size: 100,
       enableColumnFilter: false,
+      meta: { label: "Owed" },
     },
     {
       id: "last_order_date",
@@ -211,6 +214,7 @@ export function getCustomerColumns(): ColumnDef<Customer>[] {
       ),
       size: 110,
       enableColumnFilter: false,
+      meta: { label: "Last Order" },
     },
     {
       id: "payment_terms_label",

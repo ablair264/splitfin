@@ -103,7 +103,7 @@ export function getOrderColumns(
       size: 130,
       enableColumnFilter: true,
       meta: {
-        label: "Search orders",
+        label: "Order #",
         placeholder: "Search orders...",
         variant: "text" as const,
       },
@@ -122,8 +122,9 @@ export function getOrderColumns(
           </span>
         </div>
       ),
-      minSize: 200,
+      size: 220,
       enableColumnFilter: false,
+      meta: { label: "Customer" },
     },
     {
       id: "salesperson_name",
@@ -157,6 +158,7 @@ export function getOrderColumns(
       ),
       size: 120,
       enableColumnFilter: false,
+      meta: { label: "Date" },
     },
     {
       id: "status",
@@ -186,6 +188,7 @@ export function getOrderColumns(
       ),
       size: 110,
       enableColumnFilter: false,
+      meta: { label: "Total" },
     },
   ];
 }

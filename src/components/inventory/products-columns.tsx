@@ -34,22 +34,6 @@ function StockBadge({ stock }: { stock: number }) {
   );
 }
 
-function MarginBar({ rate, costPrice }: { rate: number; costPrice: number | null }) {
-  if (costPrice == null || rate <= 0) return <span className="text-sm text-muted-foreground">-</span>;
-  const margin = ((rate - costPrice) / rate) * 100;
-  const clamped = Math.max(0, Math.min(100, margin));
-  const color = margin >= 50 ? "bg-emerald-400" : margin >= 30 ? "bg-amber-400" : "bg-red-400";
-  const textColor = margin >= 50 ? "text-emerald-400" : margin >= 30 ? "text-amber-400" : "text-red-400";
-  return (
-    <div className="flex items-center gap-2">
-      <div className="h-1.5 w-12 rounded-full bg-muted overflow-hidden">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${clamped}%` }} />
-      </div>
-      <span className={`text-xs font-medium ${textColor}`}>{margin.toFixed(0)}%</span>
-    </div>
-  );
-}
-
 const STOCK_OPTIONS = [
   { label: "In Stock", value: "in-stock" },
   { label: "Low Stock", value: "low-stock" },
@@ -121,10 +105,10 @@ export function getProductColumns(
           </div>
         </div>
       ),
-      minSize: 280,
+      size: 280,
       enableColumnFilter: true,
       meta: {
-        label: "Search products",
+        label: "Product",
         placeholder: "Search products...",
         variant: "text" as const,
       },
@@ -180,6 +164,7 @@ export function getProductColumns(
       ),
       size: 90,
       enableColumnFilter: false,
+      meta: { label: "Cost" },
     },
     {
       id: "rate",
@@ -194,21 +179,7 @@ export function getProductColumns(
       ),
       size: 90,
       enableColumnFilter: false,
-    },
-    {
-      id: "margin",
-      accessorFn: (row) =>
-        row.cost_price != null && row.rate > 0
-          ? ((row.rate - row.cost_price) / row.rate) * 100
-          : null,
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} label="Margin" />
-      ),
-      cell: ({ row }) => (
-        <MarginBar rate={row.original.rate} costPrice={row.original.cost_price} />
-      ),
-      size: 100,
-      enableColumnFilter: false,
+      meta: { label: "Price" },
     },
     {
       id: "status",

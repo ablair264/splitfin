@@ -789,14 +789,63 @@ const InventoryProducts: React.FC = () => {
   return (
     <div className="min-h-screen p-6 space-y-3">
       <PageHeader
-        title="Inventory"
+        title="Products"
         count={totalItems}
         subtitle="products"
+        actions={
+          <>
+            <Button intent="outline" size="sm" onPress={() => setShowPricelistUpload(true)}>
+              <Upload data-slot="icon" size={14} /> Pricelists
+            </Button>
+            <Button intent="outline" size="sm" onPress={() => setShowAIEnrichModal(true)}>
+              <Sparkles data-slot="icon" size={14} /> AI Enhance
+            </Button>
+            <Button intent="primary" size="sm" onPress={() => setShowAddModal(true)}>
+              <Plus data-slot="icon" size={14} /> Add Product
+            </Button>
+          </>
+        }
       />
 
-      {/* Toolbar */}
+      {/* Stock summary chips */}
+      <div className="flex items-center gap-2">
+        <StockChip
+          label="In Stock"
+          count={stockCounts.inStock}
+          icon={TrendingUp}
+          color="text-emerald-400"
+          active={filters.stockFilter === 'in-stock'}
+          onClick={() =>
+            handleFilterChange('stockFilter', filters.stockFilter === 'in-stock' ? '' : 'in-stock')
+          }
+        />
+        <StockChip
+          label="Low"
+          count={stockCounts.lowStock}
+          icon={AlertTriangle}
+          color="text-amber-400"
+          active={filters.stockFilter === 'low-stock'}
+          onClick={() =>
+            handleFilterChange('stockFilter', filters.stockFilter === 'low-stock' ? '' : 'low-stock')
+          }
+        />
+        <StockChip
+          label="Out"
+          count={stockCounts.outOfStock}
+          icon={PackageX}
+          color="text-red-400"
+          active={filters.stockFilter === 'out-of-stock'}
+          onClick={() =>
+            handleFilterChange(
+              'stockFilter',
+              filters.stockFilter === 'out-of-stock' ? '' : 'out-of-stock'
+            )
+          }
+        />
+      </div>
+
+      {/* Toolbar: Search + Filters + View controls */}
       <div className="flex items-center gap-3">
-        {/* Left: Search + Filters */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-4 h-4" />
@@ -834,12 +883,23 @@ const InventoryProducts: React.FC = () => {
               ))}
             </SelectContent>
           </Select>
+
+          <AnimatePresence>
+            {filters.brand && (
+              <FilterChip
+                label={`Brand: ${filters.brand}`}
+                onRemove={() => handleFilterChange('brand', '')}
+              />
+            )}
+            {filters.search && (
+              <FilterChip
+                label={`"${filters.search}"`}
+                onRemove={() => handleFilterChange('search', '')}
+              />
+            )}
+          </AnimatePresence>
         </div>
 
-        {/* Separator */}
-        <div className="w-px h-6 bg-border/50" />
-
-        {/* Right: View controls + Actions */}
         <div className="flex items-center gap-2">
           <DensityToggle density={density} onChange={setDensity} />
 
@@ -858,77 +918,6 @@ const InventoryProducts: React.FC = () => {
             </TooltipTrigger>
             <TooltipContent>{showImages ? 'Hide images' : 'Show images'}</TooltipContent>
           </Tooltip>
-
-          <div className="w-px h-6 bg-border/50" />
-
-          <Button intent="outline" size="sm" onPress={() => setShowPricelistUpload(true)}>
-            <Upload size={12} className="mr-1.5" /> Pricelists
-          </Button>
-          <Button intent="outline" size="sm" onPress={() => setShowAIEnrichModal(true)}>
-            <Sparkles size={12} className="mr-1.5" /> AI Enhance
-          </Button>
-          <Button intent="primary" size="sm" onPress={() => setShowAddModal(true)}>
-            <Plus size={14} className="mr-1.5" /> Add Product
-          </Button>
-        </div>
-      </div>
-
-      {/* Stock summary chips + Active filters */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <StockChip
-            label="In Stock"
-            count={stockCounts.inStock}
-            icon={TrendingUp}
-            color="text-emerald-400"
-            active={filters.stockFilter === 'in-stock'}
-            onClick={() =>
-              handleFilterChange('stockFilter', filters.stockFilter === 'in-stock' ? '' : 'in-stock')
-            }
-          />
-          <StockChip
-            label="Low"
-            count={stockCounts.lowStock}
-            icon={AlertTriangle}
-            color="text-amber-400"
-            active={filters.stockFilter === 'low-stock'}
-            onClick={() =>
-              handleFilterChange('stockFilter', filters.stockFilter === 'low-stock' ? '' : 'low-stock')
-            }
-          />
-          <StockChip
-            label="Out"
-            count={stockCounts.outOfStock}
-            icon={PackageX}
-            color="text-red-400"
-            active={filters.stockFilter === 'out-of-stock'}
-            onClick={() =>
-              handleFilterChange(
-                'stockFilter',
-                filters.stockFilter === 'out-of-stock' ? '' : 'out-of-stock'
-              )
-            }
-          />
-        </div>
-
-        <div className="flex items-center gap-2">
-          <AnimatePresence>
-            {filters.brand && (
-              <FilterChip
-                label={`Brand: ${filters.brand}`}
-                onRemove={() => handleFilterChange('brand', '')}
-              />
-            )}
-            {filters.search && (
-              <FilterChip
-                label={`"${filters.search}"`}
-                onRemove={() => handleFilterChange('search', '')}
-              />
-            )}
-          </AnimatePresence>
-          <span className="text-xs text-muted-foreground/60 tabular-nums">
-            {totalItems.toLocaleString()} product{totalItems !== 1 ? 's' : ''}
-          </span>
         </div>
       </div>
 

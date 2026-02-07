@@ -188,12 +188,12 @@ const ALL_NAV_ITEMS: Record<string, NavItemDef> = {
   warehouse: { id: "warehouse", label: "Warehouse", icon: <BoxIcon size={18} />, path: "/shipping/warehouse" },
   couriers: { id: "couriers", label: "Couriers", icon: <MailCheckIcon size={18} />, path: "/shipping/couriers" },
   deliveries: { id: "deliveries", label: "Deliveries", icon: <TruckIcon size={18} />, path: "/shipping/deliveries" },
-  invoices: { id: "invoices", label: "Invoices", icon: <PoundSterlingIcon size={18} />, path: "/finance/invoices", badge: 7, badgeVariant: "warning" },
+  invoices: { id: "invoices", label: "Invoices", icon: <PoundSterlingIcon size={18} />, path: "/finance/invoices" },
   purchaseOrders: { id: "purchaseOrders", label: "Purchase Orders", icon: <HandCoinsIcon size={18} />, path: "/finance/purchase-orders" },
   supplierMgmt: { id: "supplierMgmt", label: "Supplier Management", icon: <UsersIcon size={18} />, path: "/suppliers" },
   supplierAdd: { id: "supplierAdd", label: "Add New Supplier", icon: <UserPlus size={18} />, path: "/suppliers/new" },
   images: { id: "images", label: "Image Management", icon: <GalleryThumbnailsIcon size={18} />, path: "/image-management" },
-  messages: { id: "messages", label: "Team Messages", icon: <MessageCircleMoreIcon size={18} />, path: "/messaging", badge: 4, badgeVariant: "accent" },
+  messages: { id: "messages", label: "Team Messages", icon: <MessageCircleMoreIcon size={18} />, path: "/messaging" },
   settings: { id: "settings", label: "Settings", icon: <Settings size={18} />, path: "/settings" },
 }
 
@@ -380,8 +380,6 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
               <AccordionSection
                 icon={<ShipIcon size={18} />}
                 title="Shipping"
-                badge={3}
-                badgeVariant="accent"
                 isOpen={openSection === "shipping"}
                 onToggle={() => toggleSection("shipping")}
               >
@@ -396,8 +394,6 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
               <AccordionSection
                 icon={<PoundSterlingIcon size={18} />}
                 title="Finance"
-                badge={7}
-                badgeVariant="warning"
                 isOpen={openSection === "finance"}
                 onToggle={() => toggleSection("finance")}
               >

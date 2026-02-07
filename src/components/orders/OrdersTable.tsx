@@ -26,35 +26,6 @@ export default function OrdersTable() {
     { label: string; value: string; count?: number }[]
   >([]);
 
-  // Fetch filter options on mount
-  useEffect(() => {
-    async function fetchFilterOptions() {
-      try {
-        const [statuses, salespersons] = await Promise.all([
-          orderService.getStatuses(),
-          orderService.getSalespersons(),
-        ]);
-        setStatusOptions(
-          statuses.map((s) => ({
-            label: s.status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
-            value: s.status,
-            count: Number(s.count),
-          }))
-        );
-        setSalespersonOptions(
-          salespersons.map((s) => ({
-            label: s.salesperson_name,
-            value: s.salesperson_name,
-            count: Number(s.count),
-          }))
-        );
-      } catch (err) {
-        console.error("Failed to fetch filter options:", err);
-      }
-    }
-    fetchFilterOptions();
-  }, []);
-
   const columns = useMemo(
     () => getOrderColumns(statusOptions, salespersonOptions),
     [statusOptions, salespersonOptions]
@@ -77,6 +48,58 @@ export default function OrdersTable() {
   const pagination = table.getState().pagination;
   const sorting = table.getState().sorting;
   const columnFilters = table.getState().columnFilters;
+
+  // Build cross-filter params for cascading filter option fetches
+  const crossFilters = useMemo(() => {
+    const base: Record<string, string> = {};
+    for (const filter of columnFilters) {
+      const value = filter.value;
+      if (filter.id === "search" && typeof value === "string" && value) {
+        base.search = value;
+      } else if (filter.id === "search" && Array.isArray(value) && value.length) {
+        base.search = value[0];
+      } else if (filter.id === "status" && Array.isArray(value) && value.length) {
+        base.status = value.join(",");
+      } else if (filter.id === "salesperson_name" && Array.isArray(value) && value.length) {
+        base.salesperson_name = value[0];
+      }
+    }
+    return base;
+  }, [columnFilters]);
+
+  // Re-fetch filter options when cross-filters change (cascading filters)
+  useEffect(() => {
+    async function fetchFilterOptions() {
+      try {
+        // For status options: pass all filters EXCEPT status
+        const { status: _s, ...statusFilters } = crossFilters;
+        // For salesperson options: pass all filters EXCEPT salesperson_name
+        const { salesperson_name: _sp, ...salespersonFilters } = crossFilters;
+
+        const [statuses, salespersons] = await Promise.all([
+          orderService.getStatuses(Object.keys(statusFilters).length > 0 ? statusFilters : undefined),
+          orderService.getSalespersons(Object.keys(salespersonFilters).length > 0 ? salespersonFilters : undefined),
+        ]);
+        setStatusOptions(
+          statuses.map((s) => ({
+            label: s.status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+            value: s.status,
+            count: Number(s.count),
+          }))
+        );
+        setSalespersonOptions(
+          salespersons.map((s) => ({
+            label: s.salesperson_name,
+            value: s.salesperson_name,
+            count: Number(s.count),
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to fetch filter options:", err);
+      }
+    }
+    fetchFilterOptions();
+  }, [crossFilters]);
 
   // Build API filters from table state
   const apiFilters = useMemo(() => {
@@ -143,7 +166,7 @@ export default function OrdersTable() {
           columnCount={7}
           rowCount={10}
           filterCount={3}
-          cellWidths={["40px", "130px", "200px", "140px", "120px", "140px", "110px"]}
+          cellWidths={["40px", "130px", "220px", "140px", "120px", "140px", "110px"]}
         />
       </div>
     );

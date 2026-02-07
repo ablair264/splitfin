@@ -645,33 +645,16 @@ export function ProductDetailSheet({
                 </DetailRow>
 
                 <DetailRow label="Margin" editing={false}>
-                  <div className="flex items-center gap-2.5 justify-end">
-                    <span className={cn(
-                      'text-sm font-semibold tabular-nums',
-                      !margin ? 'text-muted-foreground'
-                        : margin >= 40 ? 'text-emerald-400'
-                        : margin >= 20 ? 'text-primary'
-                        : margin >= 0 ? 'text-amber-400'
-                        : 'text-red-400'
-                    )}>
-                      {margin !== null ? `${Math.round(margin)}%` : '—'}
-                    </span>
-                    <div className="w-20 h-1.5 rounded-full bg-muted/30 overflow-hidden">
-                      <motion.div
-                        className={cn(
-                          'h-full rounded-full',
-                          !margin ? 'bg-muted'
-                            : margin >= 40 ? 'bg-emerald-500'
-                            : margin >= 20 ? 'bg-primary'
-                            : margin >= 0 ? 'bg-amber-500'
-                            : 'bg-red-500'
-                        )}
-                        initial={{ width: 0 }}
-                        animate={{ width: `${Math.min(Math.max(margin || 0, 0), 100)}%` }}
-                        transition={{ duration: 0.6, ease: 'easeOut' }}
-                      />
-                    </div>
-                  </div>
+                  <span className={cn(
+                    'text-sm font-semibold tabular-nums',
+                    !margin ? 'text-muted-foreground'
+                      : margin >= 40 ? 'text-emerald-400'
+                      : margin >= 20 ? 'text-primary'
+                      : margin >= 0 ? 'text-amber-400'
+                      : 'text-red-400'
+                  )}>
+                    {margin !== null ? `${Math.round(margin)}%` : '—'}
+                  </span>
                 </DetailRow>
 
                 <div className={cn(

@@ -34,7 +34,7 @@ export function DataTable<TData>({
     >
       {children}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
-        <Table className="bg-card">
+        <Table className="bg-card table-fixed">
           <TableHeader className="bg-secondary">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
@@ -46,6 +46,7 @@ export function DataTable<TData>({
                     key={header.id}
                     colSpan={header.colSpan}
                     style={{
+                      width: header.getSize(),
                       ...getColumnPinningStyle({ column: header.column }),
                     }}
                   >
@@ -76,6 +77,7 @@ export function DataTable<TData>({
                     <TableCell
                       key={cell.id}
                       style={{
+                        width: cell.column.getSize(),
                         ...getColumnPinningStyle({ column: cell.column }),
                       }}
                     >

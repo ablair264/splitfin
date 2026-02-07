@@ -189,10 +189,10 @@ export function DataTableDateFilter<TData>({
               onClick={onReset}
               className="rounded-sm opacity-70 transition-opacity hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <XCircle />
+              <XCircle data-slot="icon" />
             </div>
           ) : (
-            <CalendarIcon />
+            <CalendarIcon data-slot="icon" />
           )}
           {label}
         </Button>
