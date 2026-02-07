@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Bar, BarChart, Cell, Pie, PieChart,
+  Area, AreaChart, Bar, BarChart, Cell, Pie, PieChart,
   RadialBar, RadialBarChart, XAxis, YAxis,
 } from 'recharts';
 import {
@@ -16,7 +16,8 @@ import {
 
 const CHART_COLORS = [
   'var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)',
-  'var(--chart-4)', 'var(--chart-5)',
+  'var(--chart-4)', 'var(--chart-5)', 'var(--chart-6)',
+  'var(--chart-7)', 'var(--chart-8)',
 ] as const;
 
 const formatGBP = (n: number) =>
@@ -46,38 +47,6 @@ function AgentTooltip({ active, payload, formatValue }: {
                 style={{ background: (item.payload.fill as string) || CHART_COLORS[i % CHART_COLORS.length] }}
               />
               <span className="text-muted-foreground">{item.payload.name as string}</span>
-            </div>
-            <span className="font-mono font-medium tabular-nums text-foreground">
-              {fmt(item.value)}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Multi-series tooltip for bar charts where each Bar has dataKey = agent name
-function MultiBarTooltip({ active, payload, label, formatValue }: {
-  active?: boolean;
-  payload?: Array<{ name: string; value: number; color: string; fill: string }>;
-  label?: string;
-  formatValue?: (v: number) => string;
-}) {
-  if (!active || !payload?.length) return null;
-  const fmt = formatValue ?? ((v: number) => v.toLocaleString());
-  return (
-    <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
-      {label && <div className="font-medium mb-1">{label}</div>}
-      <div className="grid gap-1">
-        {payload.filter(p => p.value > 0).map((item, i) => (
-          <div key={i} className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-1.5">
-              <div
-                className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
-                style={{ background: item.color || item.fill }}
-              />
-              <span className="text-muted-foreground">{item.name}</span>
             </div>
             <span className="font-mono font-medium tabular-nums text-foreground">
               {fmt(item.value)}
@@ -235,38 +204,115 @@ export function AgentRevenueRadialChart({
 }
 
 // ---------------------------------------------------------------------------
-// 3. Agent Activity — Grouped Bar Chart (orders per period per agent)
+// 3. Average Order Value — Horizontal Bar Chart per Agent
 // ---------------------------------------------------------------------------
 
-interface AgentActivityBarChartProps {
-  data: Record<string, unknown>[];
-  dataKeys: string[];
+interface AgentAOVChartProps {
+  data: { name: string; revenue: number; orders: number }[];
   title?: string;
 }
 
-export function AgentActivityBarChart({
+export function AgentAOVChart({
   data,
-  dataKeys,
-  title = 'Agent Activity',
-}: AgentActivityBarChartProps) {
-  // Sum total orders across all agents & periods
-  const totalOrders = useMemo(() => {
-    let sum = 0;
-    for (const row of data) {
-      for (const key of dataKeys) {
-        sum += (typeof row[key] === 'number' ? row[key] as number : 0);
-      }
-    }
-    return sum;
-  }, [data, dataKeys]);
+  title = 'Avg Order Value',
+}: AgentAOVChartProps) {
+  const chartData = useMemo(
+    () => data
+      .filter(d => d.orders > 0)
+      .map((d, i) => ({
+        name: d.name,
+        aov: Math.round(d.revenue / d.orders),
+        fill: CHART_COLORS[i % CHART_COLORS.length],
+      }))
+      .sort((a, b) => b.aov - a.aov),
+    [data],
+  );
+
+  const overallAOV = useMemo(() => {
+    const totRev = data.reduce((s, d) => s + d.revenue, 0);
+    const totOrd = data.reduce((s, d) => s + d.orders, 0);
+    return totOrd > 0 ? Math.round(totRev / totOrd) : 0;
+  }, [data]);
 
   const chartConfig = useMemo<ChartConfig>(() => {
     const cfg: ChartConfig = {};
-    dataKeys.forEach((key, i) => {
-      cfg[key] = { label: key, color: CHART_COLORS[i % CHART_COLORS.length] };
-    });
+    chartData.forEach((d) => { cfg[d.name] = { label: d.name, color: d.fill }; });
     return cfg;
-  }, [dataKeys]);
+  }, [chartData]);
+
+  return (
+    <Card className="py-4 gap-3 h-full">
+      <CardHeader className="px-4 pb-0 gap-1">
+        <CardDescription className="text-[11px] uppercase tracking-wider font-medium">{title}</CardDescription>
+        <CardTitle className="text-xl tabular-nums">
+          {formatGBP(overallAOV)} <span className="text-sm font-normal text-muted-foreground">avg</span>
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-2 pb-0 mt-auto">
+        <ChartContainer config={chartConfig} className="h-28 w-full">
+          <BarChart
+            accessibilityLayer
+            data={chartData}
+            layout="vertical"
+            margin={{ left: 4, right: 4, top: 4, bottom: 0 }}
+          >
+            <YAxis
+              dataKey="name"
+              type="category"
+              tickLine={false}
+              axisLine={false}
+              tick={{ fontSize: 10 }}
+              tickFormatter={(v) => (typeof v === 'string' && v.length > 10 ? v.split(' ')[0] : v)}
+              width={56}
+            />
+            <XAxis type="number" hide />
+            <ChartTooltip content={<AgentTooltip formatValue={formatGBP} />} />
+            <Bar dataKey="aov" radius={3}>
+              {chartData.map((d, i) => (
+                <Cell key={i} fill={d.fill} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// 4. Monthly Order Trend — Area Chart
+// ---------------------------------------------------------------------------
+
+interface MonthlyTrendChartProps {
+  /** Time-bucketed rows with a `name` key (period label) and agent-name keys (order counts) */
+  data: Record<string, unknown>[];
+  title?: string;
+}
+
+export function MonthlyTrendChart({
+  data,
+  title = 'Order Trend',
+}: MonthlyTrendChartProps) {
+  // Collapse multi-agent rows into a single total per period
+  const chartData = useMemo(() => {
+    return data.map((row) => {
+      let total = 0;
+      for (const [key, val] of Object.entries(row)) {
+        if (key !== 'name' && typeof val === 'number') total += val;
+      }
+      return { name: row.name as string, total };
+    });
+  }, [data]);
+
+  const totalOrders = useMemo(
+    () => chartData.reduce((s, d) => s + d.total, 0),
+    [chartData],
+  );
+
+  const chartConfig = useMemo<ChartConfig>(
+    () => ({ total: { label: 'Orders', color: CHART_COLORS[0] } }),
+    [],
+  );
 
   return (
     <Card className="py-4 gap-3 h-full">
@@ -278,16 +324,16 @@ export function AgentActivityBarChart({
       </CardHeader>
       <CardContent className="px-2 pb-0 mt-auto">
         <ChartContainer config={chartConfig} className="h-28 w-full">
-          <BarChart
+          <AreaChart
             accessibilityLayer
-            data={data}
+            data={chartData}
             margin={{ left: 4, right: 4, top: 4, bottom: 0 }}
           >
-            <rect x="0" y="0" width="100%" height="85%" fill="url(#agent-activity-dots)" />
             <defs>
-              <pattern id="agent-activity-dots" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-                <circle className="dark:text-muted/40 text-muted" cx="2" cy="2" r="1" fill="currentColor" />
-              </pattern>
+              <linearGradient id="trend-fill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--chart-1)" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="var(--chart-1)" stopOpacity={0.02} />
+              </linearGradient>
             </defs>
             <XAxis
               dataKey="name"
@@ -295,90 +341,20 @@ export function AgentActivityBarChart({
               axisLine={false}
               tickMargin={6}
               tick={{ fontSize: 10 }}
-              tickFormatter={(v) => (typeof v === 'string' ? v.slice(0, 3) : v)}
             />
-            <ChartTooltip content={<MultiBarTooltip />} />
-            {dataKeys.map((key, ki) => (
-              <Bar key={key} dataKey={key} fill={CHART_COLORS[ki % CHART_COLORS.length]} radius={3} />
-            ))}
-          </BarChart>
-        </ChartContainer>
-      </CardContent>
-    </Card>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// 4. Brand Spread — Grouped Bar Chart (revenue per brand per agent)
-// ---------------------------------------------------------------------------
-
-interface BrandSpreadChartProps {
-  data: Record<string, unknown>[];
-  dataKeys: string[];
-  title?: string;
-}
-
-export function BrandSpreadChart({
-  data,
-  dataKeys,
-  title = 'Brand Spread',
-}: BrandSpreadChartProps) {
-  // Sum total revenue across brands
-  const totalRevenue = useMemo(() => {
-    let sum = 0;
-    for (const row of data) {
-      for (const key of dataKeys) {
-        sum += (typeof row[key] === 'number' ? row[key] as number : 0);
-      }
-    }
-    return sum;
-  }, [data, dataKeys]);
-
-  const chartConfig = useMemo<ChartConfig>(() => {
-    const cfg: ChartConfig = {};
-    dataKeys.forEach((key, i) => {
-      cfg[key] = { label: key, color: CHART_COLORS[i % CHART_COLORS.length] };
-    });
-    return cfg;
-  }, [dataKeys]);
-
-  return (
-    <Card className="py-4 gap-3 h-full">
-      <CardHeader className="px-4 pb-0 gap-1">
-        <CardDescription className="text-[11px] uppercase tracking-wider font-medium">{title}</CardDescription>
-        <CardTitle className="text-xl tabular-nums">
-          {formatGBP(totalRevenue)}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="px-2 pb-0 mt-auto">
-        <ChartContainer config={chartConfig} className="h-28 w-full">
-          <BarChart
-            accessibilityLayer
-            data={data}
-            layout="vertical"
-            margin={{ left: 60, right: 4, top: 4, bottom: 0 }}
-          >
-            <rect x="0" y="0" width="100%" height="100%" fill="url(#brand-spread-dots)" />
-            <defs>
-              <pattern id="brand-spread-dots" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
-                <circle className="dark:text-muted/40 text-muted" cx="2" cy="2" r="1" fill="currentColor" />
-              </pattern>
-            </defs>
-            <YAxis
-              dataKey="brand"
-              type="category"
-              tickLine={false}
-              axisLine={false}
-              tick={{ fontSize: 10 }}
-              tickFormatter={(v) => (typeof v === 'string' && v.length > 9 ? v.slice(0, 8) + '\u2026' : v)}
-              width={56}
+            <ChartTooltip
+              content={<AgentTooltip />}
             />
-            <XAxis type="number" hide />
-            <ChartTooltip content={<MultiBarTooltip formatValue={formatGBP} />} />
-            {dataKeys.map((key, ki) => (
-              <Bar key={key} dataKey={key} fill={CHART_COLORS[ki % CHART_COLORS.length]} radius={3} />
-            ))}
-          </BarChart>
+            <Area
+              type="monotone"
+              dataKey="total"
+              stroke="var(--chart-1)"
+              strokeWidth={2}
+              fill="url(#trend-fill)"
+              dot={false}
+              activeDot={{ r: 3, strokeWidth: 0, fill: 'var(--chart-1)' }}
+            />
+          </AreaChart>
         </ChartContainer>
       </CardContent>
     </Card>

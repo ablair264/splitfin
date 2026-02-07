@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { motion, AnimatePresence, useReducedMotion } from "motion/react"
 import {
   ShoppingCart, Users, Settings, ChevronDown,
-  Pin, Bell, Mail, Sun, Moon,
+  Pin, Bell, Mail, Sun, Moon, ChevronsLeft, ChevronsRight,
 } from "lucide-react"
 
 // Animated icons
@@ -38,11 +38,6 @@ import {
 } from "@/components/ui/sidebar"
 import { authService } from "@/services/authService"
 import type { Agent } from "@/types/domain"
-
-// ---------- Constants ----------
-
-const HOVER_EXPAND_DELAY = 200
-const HOVER_COLLAPSE_DELAY = 600
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: Agent | null
@@ -300,7 +295,7 @@ const COLLAPSED_ITEMS: { id: string; item: NavItemDef; divider?: boolean; adminO
 export default function AppSidebar({ user, unreadNotifications = 0, onNotificationsClick, ...props }: AppSidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
-  const { state, setOpen } = useSidebar()
+  const { state, toggleSidebar } = useSidebar()
   const isCollapsed = state === "collapsed"
 
   const [commandOpen, setCommandOpen] = useState(false)
@@ -321,39 +316,6 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
     if (p.startsWith("/agents") || p.startsWith("/reports") || p.startsWith("/suppliers") || p.startsWith("/settings/users")) return "management"
     return null
   })
-
-  // Hover expand/collapse timers
-  const expandTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const collapseTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const handleMouseEnter = useCallback(() => {
-    if (collapseTimer.current) {
-      clearTimeout(collapseTimer.current)
-      collapseTimer.current = null
-    }
-    expandTimer.current = setTimeout(() => {
-      setOpen(true)
-    }, HOVER_EXPAND_DELAY)
-  }, [setOpen])
-
-  const handleMouseLeave = useCallback(() => {
-    if (expandTimer.current) {
-      clearTimeout(expandTimer.current)
-      expandTimer.current = null
-    }
-    if (profileOpen) return
-    collapseTimer.current = setTimeout(() => {
-      setOpen(false)
-    }, HOVER_COLLAPSE_DELAY)
-  }, [setOpen, profileOpen])
-
-  // Cleanup timers on unmount
-  useEffect(() => {
-    return () => {
-      if (expandTimer.current) clearTimeout(expandTimer.current)
-      if (collapseTimer.current) clearTimeout(collapseTimer.current)
-    }
-  }, [])
 
   // Persist pinned items
   useEffect(() => {
@@ -418,16 +380,21 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
 
   return (
     <>
-      <Sidebar
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-        {...props}
-      >
+      <Sidebar {...props}>
         <SidebarHeader className={`pt-5 pb-4 space-y-4 ${isCollapsed ? "px-2 items-center" : "px-4"}`}>
           {/* Logo + utility icons */}
           <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
             {isCollapsed ? (
-              <img src="/logos/splitfin-white.png" alt="Splitfin" className="h-7 w-7 shrink-0" />
+              <>
+                <img src="/logos/splitfin-white.png" alt="Splitfin" className="h-7 w-7 shrink-0" />
+                <button
+                  onClick={toggleSidebar}
+                  className="flex items-center justify-center size-8 rounded-md text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 transition-colors"
+                  aria-label="Expand sidebar"
+                >
+                  <ChevronsRight size={16} />
+                </button>
+              </>
             ) : (
               <>
                 <motion.div
@@ -471,11 +438,11 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
                     <Mail size={14} />
                   </button>
                   <button
-                    onClick={() => navigate('/settings')}
+                    onClick={toggleSidebar}
                     className="flex items-center justify-center size-7 rounded-md text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 transition-colors"
-                    aria-label="Settings"
+                    aria-label="Collapse sidebar"
                   >
-                    <Settings size={14} />
+                    <ChevronsLeft size={14} />
                   </button>
                 </motion.div>
               </>

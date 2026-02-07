@@ -172,7 +172,7 @@ export default function MasterLayout() {
   }
 
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={true}>
       <AppSidebar
         user={user}
         collapsible="dock"

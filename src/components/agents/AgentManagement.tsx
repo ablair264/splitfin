@@ -8,8 +8,8 @@ import SplitfinTable from '@/components/shared/SplitfinTable';
 import {
   AgentOrdersPieChart,
   AgentRevenueRadialChart,
-  AgentActivityBarChart,
-  BrandSpreadChart,
+  AgentAOVChart,
+  MonthlyTrendChart,
 } from './AgentCharts';
 
 // ---------------------------------------------------------------------------
@@ -31,7 +31,6 @@ interface AgentAnalytics {
   ordersByAgentChart: { name: string; value: number }[];
   revenueByAgentChart: { name: string; value: number }[];
   activityChart: Record<string, unknown>[];
-  brandSpreadChart: Record<string, unknown>[];
 }
 
 type DateRange = '7_days' | '30_days' | '90_days' | 'this_year' | 'all_time';
@@ -87,24 +86,15 @@ const AgentManagement: React.FC = () => {
     }
   };
 
-  // Derive unique agent names from activity/brand chart data for dataKeys
-  const activityDataKeys = useMemo(() => {
-    if (!data?.activityChart?.length) return [];
-    const keys = new Set<string>();
-    data.activityChart.forEach((row) => {
-      Object.keys(row).forEach((k) => { if (k !== 'name') keys.add(k); });
-    });
-    return Array.from(keys);
-  }, [data?.activityChart]);
-
-  const brandDataKeys = useMemo(() => {
-    if (!data?.brandSpreadChart?.length) return [];
-    const keys = new Set<string>();
-    data.brandSpreadChart.forEach((row) => {
-      Object.keys(row).forEach((k) => { if (k !== 'brand') keys.add(k); });
-    });
-    return Array.from(keys);
-  }, [data?.brandSpreadChart]);
+  // AOV data derived from agents
+  const aovData = useMemo(() =>
+    (data?.agents ?? []).map((a) => ({
+      name: a.name,
+      revenue: a.revenue,
+      orders: a.orderCount,
+    })),
+    [data?.agents],
+  );
 
   // Ranked table data
   const byOrders = useMemo<RankedAgent[]>(() =>
@@ -225,18 +215,16 @@ const AgentManagement: React.FC = () => {
         </motion.div>
 
         <motion.div className="h-full" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.1 }}>
-          <AgentActivityBarChart
-            data={data?.activityChart ?? []}
-            dataKeys={activityDataKeys}
-            title="Agent Activity"
+          <AgentAOVChart
+            data={aovData}
+            title="Avg Order Value"
           />
         </motion.div>
 
         <motion.div className="h-full" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.15 }}>
-          <BrandSpreadChart
-            data={data?.brandSpreadChart ?? []}
-            dataKeys={brandDataKeys}
-            title="Brand Spread"
+          <MonthlyTrendChart
+            data={data?.activityChart ?? []}
+            title="Order Trend"
           />
         </motion.div>
       </div>
