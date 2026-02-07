@@ -20,8 +20,8 @@ router.get('/dashboard', async (req, res) => {
       getOrderMetricsForDashboard(startDate),
       getStockTotal(),
       getTopAgent(startDate),
-      getOrdersByDayOfWeek(startDate),
-      getRevenueByDayOfWeek(startDate)
+      getOrderTimeSeries(startDate, date_range, 'count'),
+      getOrderTimeSeries(startDate, date_range, 'revenue')
     ]);
 
     res.json({
@@ -100,36 +100,78 @@ async function getTopAgent(startDate) {
   };
 }
 
-async function getOrdersByDayOfWeek(startDate) {
+/**
+ * Smart time-series aggregation that adapts granularity to the date range:
+ *   7 days   → daily   (Mon 3, Tue 4 …)
+ *   30 days  → daily   (3 Feb, 4 Feb …)
+ *   90 days  → weekly  (W1 Jan, W2 Jan …)
+ *   this_year / 1 year → monthly (Jan, Feb …)
+ *   all_time → yearly  (2021, 2022 …)
+ */
+async function getOrderTimeSeries(startDate, dateRange, mode = 'count') {
+  const agg = mode === 'revenue' ? 'COALESCE(SUM(total), 0)' : 'COUNT(*)';
+
+  // Pick granularity
+  let sqlGroup, sqlOrder, sqlLabel;
+  let granularity; // 'day' | 'week' | 'month' | 'year'
+
+  switch (dateRange) {
+    case '7_days':
+      granularity = 'day';
+      sqlLabel = `TO_CHAR(date, 'Dy DD')`;
+      sqlGroup = `DATE(date)`;
+      sqlOrder = `DATE(date)`;
+      break;
+    case '30_days':
+      granularity = 'day';
+      sqlLabel = `TO_CHAR(date, 'DD Mon')`;
+      sqlGroup = `DATE(date)`;
+      sqlOrder = `DATE(date)`;
+      break;
+    case '90_days':
+    case 'quarter':
+      granularity = 'week';
+      sqlLabel = `'W' || EXTRACT(WEEK FROM date)::int || ' ' || TO_CHAR(date_trunc('week', date), 'Mon')`;
+      sqlGroup = `date_trunc('week', date)`;
+      sqlOrder = `date_trunc('week', date)`;
+      break;
+    case 'all_time':
+      // If span > 3 years use yearly, otherwise monthly
+      const yearsSpan = (new Date().getFullYear() - startDate.getFullYear());
+      if (yearsSpan > 3) {
+        granularity = 'year';
+        sqlLabel = `EXTRACT(YEAR FROM date)::int::text`;
+        sqlGroup = `date_trunc('year', date)`;
+        sqlOrder = `date_trunc('year', date)`;
+      } else {
+        granularity = 'month';
+        sqlLabel = `TO_CHAR(date, 'Mon YY')`;
+        sqlGroup = `date_trunc('month', date)`;
+        sqlOrder = `date_trunc('month', date)`;
+      }
+      break;
+    default: // this_year, 12_months, 1_year, last_year
+      granularity = 'month';
+      sqlLabel = `TO_CHAR(date, 'Mon')`;
+      sqlGroup = `date_trunc('month', date)`;
+      sqlOrder = `date_trunc('month', date)`;
+      break;
+  }
+
   const { rows } = await query(`
     SELECT
-      TO_CHAR(date, 'Dy') as name,
-      COUNT(*) as value
+      ${sqlLabel} as name,
+      ${agg} as value
     FROM orders
     WHERE date >= $1
-    GROUP BY TO_CHAR(date, 'Dy'), EXTRACT(DOW FROM date)
-    ORDER BY EXTRACT(DOW FROM date)
+    GROUP BY ${sqlGroup}, ${sqlLabel}
+    ORDER BY ${sqlOrder}
   `, [startDate.toISOString()]);
 
-  const dayOrder = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const dataMap = new Map(rows.map(r => [r.name, parseInt(r.value)]));
-  return dayOrder.map(day => ({ name: day, value: dataMap.get(day) || 0 }));
-}
-
-async function getRevenueByDayOfWeek(startDate) {
-  const { rows } = await query(`
-    SELECT
-      TO_CHAR(date, 'Dy') as name,
-      COALESCE(SUM(total), 0) as value
-    FROM orders
-    WHERE date >= $1
-    GROUP BY TO_CHAR(date, 'Dy'), EXTRACT(DOW FROM date)
-    ORDER BY EXTRACT(DOW FROM date)
-  `, [startDate.toISOString()]);
-
-  const dayOrder = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const dataMap = new Map(rows.map(r => [r.name, parseFloat(r.value)]));
-  return dayOrder.map(day => ({ name: day, value: Math.round(dataMap.get(day) || 0) }));
+  return rows.map(r => ({
+    name: r.name,
+    value: mode === 'revenue' ? Math.round(parseFloat(r.value)) : parseInt(r.value)
+  }));
 }
 
 async function getStockByBrand() {
