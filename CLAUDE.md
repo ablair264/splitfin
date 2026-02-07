@@ -160,6 +160,7 @@ Components must NOT import database clients directly. All data flows through typ
 - [x] **Phase 3.4** — Customer detail: breadcrumb nav (`Customers / {company_name}`), semantic order status badges (amber/emerald/blue/purple), financial card hides Outstanding/Credits when zero, empty address fields hidden, dynamic page title with company name.
 - [x] **Phase 3.5** — Enquiries: removed contradictory "being migrated" message, clean empty state ("No enquiries yet" + CTA), filters hidden when no data.
 - [x] **Phase 3.6** — Settings: collapsible Admin Tools section, Theme/Language/Currency as informational labels (not dropdowns), Integrations section with Zoho connected + Tax Settings coming soon.
+- [x] **Sidebar Upgrade** — Complete sidebar rebuild per `docs/splitfin-sidebar-upgrade-prompt.md`. Replaced MynaUI icons with Lucide Animated (12 animated icon components in `src/components/icons/`). New features: Command Palette (Cmd+K) with grouped navigation search, accordion sections with AnimatePresence, pinned favourites (localStorage), icon rail collapsed state with tooltips, user menu popup, teal active indicator with layoutId animation, section labels (Tools, Communication). Components: `sidebar-badge.tsx`, `sidebar-kbd.tsx`, `sidebar-animated-icon.tsx`, `sidebar-search.tsx`, `sidebar-user-menu.tsx`, `sidebar-icon-rail.tsx`. Build passes.
 
 ### Key Decisions
 
@@ -191,5 +192,9 @@ Adapted Evil Charts live in `src/components/dashboard/DashboardCharts.tsx`. All 
 | Type definitions | `src/types/domain.ts`, `src/types/data-table.ts` |
 | API services | `src/services/orderService.ts`, `customerService.ts`, `productService.ts` |
 | API config | `src/config/api.ts` |
+| Sidebar (main) | `src/components/app-sidebar.tsx` |
+| Sidebar sub-components | `src/components/sidebar-*.tsx` (badge, kbd, search, user-menu, icon-rail, animated-icon) |
+| Animated icons | `src/components/icons/` (12 components) |
 | Overhaul plan | `docs/splitfin-ui-overhaul-prompt.md` |
+| Sidebar upgrade spec | `docs/splitfin-sidebar-upgrade-prompt.md` |
 | DB analysis | `docs/db-analysis.md` |

@@ -36,7 +36,7 @@ export const buttonStyles = tv({
     size: {
       xs: [
         "min-h-8 gap-x-1.5 px-[calc(--spacing(3)-1px)] py-[calc(--spacing(1.5)-1px)] text-sm sm:min-h-7 sm:px-2 sm:py-[calc(--spacing(1.5)-1px)] sm:text-xs/4",
-        "*:data-[slot=icon]:-mx-px *:data-[slot=icon]:size-3.5 sm:*:data-[slot=icon]:size-3",
+        "*:data-[slot=icon]:-mx-px *:data-[slot=icon]:size-2.5 sm:*:data-[slot=icon]:size-2",
         "*:data-[slot=loader]:-mx-px *:data-[slot=loader]:size-3.5 sm:*:data-[slot=loader]:size-3",
       ],
       sm: [

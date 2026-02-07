@@ -759,7 +759,7 @@ const InventoryProducts: React.FC = () => {
                 <Upload size={14} className="mr-1.5" /> Upload Pricelist
               </Button>
               <Button intent="primary" size="sm" onPress={() => setShowAddModal(true)}>
-                <Plus size={16} className="mr-1.5" /> Add Product
+                <Plus size={14} className="mr-1.5" /> Add Product
               </Button>
             </div>
           </div>
@@ -862,13 +862,13 @@ const InventoryProducts: React.FC = () => {
           <div className="w-px h-6 bg-border/50" />
 
           <Button intent="outline" size="sm" onPress={() => setShowPricelistUpload(true)}>
-            <Upload size={14} className="mr-1.5" /> Pricelists
+            <Upload size={12} className="mr-1.5" /> Pricelists
           </Button>
           <Button intent="outline" size="sm" onPress={() => setShowAIEnrichModal(true)}>
-            <Sparkles size={14} className="mr-1.5" /> AI Enhance
+            <Sparkles size={12} className="mr-1.5" /> AI Enhance
           </Button>
           <Button intent="primary" size="sm" onPress={() => setShowAddModal(true)}>
-            <Plus size={16} className="mr-1.5" /> Add Product
+            <Plus size={14} className="mr-1.5" /> Add Product
           </Button>
         </div>
       </div>

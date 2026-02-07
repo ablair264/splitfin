@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Sparkles, Upload } from "lucide-react";
 import { productService } from "@/services/productService";
 import type { Product } from "@/types/domain";
 import { useDataTable } from "@/hooks/use-data-table";
@@ -8,6 +9,10 @@ import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
 import { DataTableSkeleton } from "@/components/data-table/data-table-skeleton";
 import PageHeader from "@/components/shared/PageHeader";
 import { usePageTitle } from "@/hooks/usePageTitle";
+import { ProductDetailSheet } from "@/components/InventoryManagement/ProductDetailSheet";
+import { AIProductEnricher } from "@/components/AIProductEnricher";
+import PricelistUploadSheet from "@/components/InventoryManagement/PricelistUpload";
+import { Button } from "@/components/ui/button";
 
 const PAGE_SIZE = 50;
 
@@ -25,6 +30,11 @@ export default function ProductsTable() {
   const [loading, setLoading] = useState(true);
   const [stockCounts, setStockCounts] = useState<StockCounts | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [showAIEnrichModal, setShowAIEnrichModal] = useState(false);
+  const [showPricelistUpload, setShowPricelistUpload] = useState(false);
+  const [brands, setBrands] = useState<{ brand: string; count: number }[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [brandOptions, setBrandOptions] = useState<
     { label: string; value: string; count?: number }[]
   >([]);
@@ -33,9 +43,10 @@ export default function ProductsTable() {
   useEffect(() => {
     async function fetchBrands() {
       try {
-        const brands = await productService.getBrands();
+        const brandsData = await productService.getBrands();
+        setBrands(brandsData);
         setBrandOptions(
-          brands
+          brandsData
             .filter((b) => b.brand && b.brand !== "nan" && b.brand !== "")
             .map((b) => ({
               label: b.brand,
@@ -137,10 +148,17 @@ export default function ProductsTable() {
 
     fetchProducts();
     return () => { cancelled = true; };
-  }, [apiFilters]);
+  }, [apiFilters, refreshKey]);
+
+  const handleProductUpdated = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
 
   const handleRowClick = useCallback(
-    (row: Product) => setSelectedProduct(row),
+    (row: Product) => {
+      setSelectedProduct(row);
+      setSheetOpen(true);
+    },
     []
   );
 
@@ -172,12 +190,49 @@ export default function ProductsTable() {
     );
   }
 
+  const headerActions = (
+    <div className="flex items-center gap-2">
+      {stockSummary}
+      <div className="w-px h-5 bg-border/50 mx-1" />
+      <Button intent="outline" size="sm" onPress={() => setShowPricelistUpload(true)}>
+        <Upload size={12} className="mr-1.5" /> Pricelists
+      </Button>
+      <Button intent="outline" size="sm" onPress={() => setShowAIEnrichModal(true)}>
+        <Sparkles size={12} className="mr-1.5" /> AI Enhance
+      </Button>
+    </div>
+  );
+
   return (
     <div>
-      <PageHeader title="Products" count={totalCount} subtitle="products" actions={stockSummary} />
+      <PageHeader title="Products" count={totalCount} subtitle="products" actions={headerActions} />
       <DataTable table={table} onRowClick={handleRowClick}>
         <DataTableToolbar table={table} />
       </DataTable>
+
+      <ProductDetailSheet
+        product={selectedProduct}
+        brands={brands}
+        open={sheetOpen}
+        onOpenChange={(open) => {
+          setSheetOpen(open);
+          if (!open) setSelectedProduct(null);
+        }}
+        onUpdated={handleProductUpdated}
+      />
+
+      <AIProductEnricher
+        companyId="dm-brands"
+        open={showAIEnrichModal}
+        onOpenChange={setShowAIEnrichModal}
+        onComplete={handleProductUpdated}
+      />
+
+      <PricelistUploadSheet
+        open={showPricelistUpload}
+        onOpenChange={setShowPricelistUpload}
+        onApplied={handleProductUpdated}
+      />
     </div>
   );
 }
