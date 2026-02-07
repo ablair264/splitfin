@@ -179,7 +179,7 @@ export default function ProductsTable() {
   if (loading && products.length === 0) {
     return (
       <div>
-        <PageHeader title="Products" count={0} subtitle="products" />
+        <PageHeader title="Products" />
         <DataTableSkeleton
           columnCount={8}
           rowCount={10}
@@ -190,24 +190,25 @@ export default function ProductsTable() {
     );
   }
 
-  const headerActions = (
-    <div className="flex items-center gap-2">
-      {stockSummary}
-      <div className="w-px h-5 bg-border/50 mx-1" />
-      <Button intent="outline" size="sm" onPress={() => setShowPricelistUpload(true)}>
-        <Upload size={12} className="mr-1.5" /> Pricelists
-      </Button>
-      <Button intent="outline" size="sm" onPress={() => setShowAIEnrichModal(true)}>
-        <Sparkles size={12} className="mr-1.5" /> AI Enhance
-      </Button>
-    </div>
-  );
-
   return (
     <div>
-      <PageHeader title="Products" count={totalCount} subtitle="products" actions={headerActions} />
+      <PageHeader
+        title="Products"
+        actions={
+          <div className="flex items-center gap-2">
+            <Button intent="outline" size="sm" onPress={() => setShowPricelistUpload(true)}>
+              <Upload size={12} className="mr-1.5" /> Pricelists
+            </Button>
+            <Button intent="outline" size="sm" onPress={() => setShowAIEnrichModal(true)}>
+              <Sparkles size={12} className="mr-1.5" /> AI Enhance
+            </Button>
+          </div>
+        }
+      />
       <DataTable table={table} onRowClick={handleRowClick}>
-        <DataTableToolbar table={table} />
+        <DataTableToolbar table={table}>
+          {stockSummary}
+        </DataTableToolbar>
       </DataTable>
 
       <ProductDetailSheet

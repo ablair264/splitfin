@@ -1,13 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, Routes, Route } from 'react-router-dom';
 import { authService } from '../services/authService';
-import { customerService } from '../services/customerService';
 import { notificationService } from '../services/notificationService';
 import type { Agent, Notification } from '../types/domain';
 
 // New Intent UI Sidebar
 import AppSidebar from '../components/app-sidebar';
-import AppSidebarNav from '../components/app-sidebar-nav';
 import { SidebarProvider, SidebarInset } from '../components/ui/sidebar';
 
 // Components
@@ -106,7 +104,7 @@ export default function MasterLayout() {
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [customerNames, setCustomerNames] = useState<Record<string, string>>({});
+
   const { isLoading, message } = useLoader();
 
   // Check authentication on mount (skip in dev mode)
@@ -153,31 +151,6 @@ export default function MasterLayout() {
     }
   };
 
-  // Fetch customer name for breadcrumbs when viewing a customer
-  useEffect(() => {
-    const match = location.pathname.match(/^\/customers\/([^/]+)/);
-    if (match) {
-      const customerId = match[1];
-      if (!customerNames[customerId] && customerId !== 'map' && customerId !== 'new') {
-        fetchCustomerName(customerId);
-      }
-    }
-  }, [location.pathname]);
-
-  const fetchCustomerName = useCallback(async (customerId: string) => {
-    try {
-      const customer = await customerService.getById(customerId);
-      if (customer) {
-        setCustomerNames((prev) => ({
-          ...prev,
-          [customerId]: customer.company_name,
-        }));
-      }
-    } catch (error) {
-      console.error('Failed to fetch customer name:', error);
-    }
-  }, []);
-
   // Handle notification click
   const handleNotificationsClick = () => {
     setShowNotifications(!showNotifications);
@@ -199,13 +172,14 @@ export default function MasterLayout() {
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <AppSidebar user={user} collapsible="dock" intent="inset" />
+      <AppSidebar
+        user={user}
+        collapsible="dock"
+        intent="inset"
+        unreadNotifications={unreadCount}
+        onNotificationsClick={handleNotificationsClick}
+      />
       <SidebarInset className="dark:bg-gradient-to-br dark:from-[#0f1419] dark:via-[#1a1f2a] dark:to-[#2c3e50]">
-        <AppSidebarNav
-          customerNames={customerNames}
-          unreadNotifications={unreadCount}
-          onNotificationsClick={handleNotificationsClick}
-        />
 
         {/* Notifications Panel */}
         {showNotifications && (

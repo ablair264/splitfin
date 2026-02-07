@@ -108,7 +108,7 @@ export default function CustomersTable() {
   if (loading && customers.length === 0) {
     return (
       <div>
-        <PageHeader title="Customers" count={0} subtitle="customers" />
+        <PageHeader title="Customers" />
         <DataTableSkeleton
           columnCount={9}
           rowCount={10}
@@ -121,7 +121,7 @@ export default function CustomersTable() {
 
   return (
     <div>
-      <PageHeader title="Customers" count={totalCount} subtitle="customers" />
+      <PageHeader title="Customers" />
       <DataTable table={table} onRowClick={handleRowClick}>
         <DataTableToolbar table={table} />
       </DataTable>

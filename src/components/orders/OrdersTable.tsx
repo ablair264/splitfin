@@ -161,7 +161,7 @@ export default function OrdersTable() {
   if (loading && orders.length === 0) {
     return (
       <div>
-        <PageHeader title="Orders" count={0} subtitle="orders" />
+        <PageHeader title="Orders" />
         <DataTableSkeleton
           columnCount={7}
           rowCount={10}
@@ -174,7 +174,7 @@ export default function OrdersTable() {
 
   return (
     <div>
-      <PageHeader title="Orders" count={totalCount} subtitle="orders" />
+      <PageHeader title="Orders" />
       <DataTable table={table} onRowClick={handleRowClick}>
         <DataTableToolbar table={table} />
       </DataTable>
