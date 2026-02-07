@@ -333,7 +333,7 @@ async function getAgentBrandSpread(startDate) {
     FROM orders o
     JOIN agents a ON o.agent_id = a.id AND (a.is_admin = false OR a.is_admin IS NULL)
     JOIN order_line_items oli ON oli.order_id = o.id
-    JOIN products p ON p.zoho_item_id = oli.item_id
+    JOIN products p ON p.zoho_item_id = oli.zoho_item_id
     WHERE o.date >= $1 AND p.brand IS NOT NULL AND p.brand != ''
     GROUP BY a.name, p.brand
     ORDER BY brand_revenue DESC

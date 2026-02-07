@@ -6,7 +6,6 @@ import type { Agent, Notification } from '../types/domain';
 
 // New Intent UI Sidebar
 import AppSidebar from '../components/app-sidebar';
-import SidebarIconRail from '../components/sidebar-icon-rail';
 import { SidebarProvider, SidebarInset } from '../components/ui/sidebar';
 
 // Components
@@ -174,14 +173,12 @@ export default function MasterLayout() {
 
   return (
     <SidebarProvider defaultOpen={false}>
-      <SidebarIconRail
-        unreadNotifications={unreadCount}
-        onNotificationsClick={handleNotificationsClick}
-      />
       <AppSidebar
         user={user}
         collapsible="dock"
         intent="inset"
+        unreadNotifications={unreadCount}
+        onNotificationsClick={handleNotificationsClick}
       />
       <SidebarInset className="dark:bg-gradient-to-br dark:from-[#0f1419] dark:via-[#1a1f2a] dark:to-[#2c3e50]">
 

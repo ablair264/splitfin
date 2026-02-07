@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { motion, AnimatePresence, useReducedMotion } from "motion/react"
 import {
   ShoppingCart, Users, MapPin, MessageSquare, Settings, ChevronDown,
-  Pin, UserPlus,
+  Pin, UserPlus, Bell, Mail, Sun, Moon,
 } from "lucide-react"
 
 // Animated icons
@@ -44,6 +44,8 @@ const HOVER_COLLAPSE_DELAY = 400
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: Agent | null
+  unreadNotifications?: number
+  onNotificationsClick?: () => void
 }
 
 // ---------- Nav item definition ----------
@@ -282,7 +284,7 @@ const COLLAPSED_ITEMS: { id: string; item: NavItemDef; divider?: boolean }[] = [
 
 // ---------- Main Sidebar ----------
 
-export default function AppSidebar({ user, ...props }: AppSidebarProps) {
+export default function AppSidebar({ user, unreadNotifications = 0, onNotificationsClick, ...props }: AppSidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const { state, setOpen } = useSidebar()
@@ -372,6 +374,28 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
     }
   }
 
+  // Dark mode state
+  const [isDark, setIsDark] = useState(() => {
+    if (typeof document !== 'undefined') {
+      return document.documentElement.classList.contains('dark')
+    }
+    return true
+  })
+
+  const handleThemeToggle = useCallback(() => {
+    setIsDark((prev) => {
+      const next = !prev
+      if (next) {
+        document.documentElement.classList.add('dark')
+        localStorage.setItem('theme', 'dark')
+      } else {
+        document.documentElement.classList.remove('dark')
+        localStorage.setItem('theme', 'light')
+      }
+      return next
+    })
+  }, [])
+
   const isAdmin = user?.is_admin ?? false
   const userName = user?.name || user?.id || "User"
   const userRole = user?.is_admin ? "Admin" : "Sales Agent"
@@ -386,19 +410,61 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
         {...props}
       >
         <SidebarHeader className={`pt-5 pb-4 space-y-4 ${isCollapsed ? "px-2 items-center" : "px-4"}`}>
-          {/* Logo */}
-          <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-start gap-2.5"}`}>
+          {/* Logo + utility icons */}
+          <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
             {isCollapsed ? (
               <img src="/logos/splitfin-white.png" alt="Splitfin" className="h-7 w-7 shrink-0" />
             ) : (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
-              >
-                <img src="/logos/splitfinrow.png" alt="Splitfin" className="h-7 w-auto shrink-0 hidden dark:block" />
-                <img src="/logos/splitfinrow.png" alt="Splitfin" className="h-7 w-auto shrink-0 dark:hidden brightness-0" />
-              </motion.div>
+              <>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <img src="/logos/splitfinrow.png" alt="Splitfin" className="h-7 w-auto shrink-0 hidden dark:block" />
+                  <img src="/logos/splitfinrow.png" alt="Splitfin" className="h-7 w-auto shrink-0 dark:hidden brightness-0" />
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.2, delay: 0.05 }}
+                  className="flex items-center gap-0.5"
+                >
+                  <button
+                    onClick={handleThemeToggle}
+                    className="flex items-center justify-center size-7 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
+                    aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+                  >
+                    {isDark ? <Sun size={14} /> : <Moon size={14} />}
+                  </button>
+                  <button
+                    onClick={onNotificationsClick}
+                    className="relative flex items-center justify-center size-7 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
+                    aria-label="Notifications"
+                  >
+                    <Bell size={14} />
+                    {unreadNotifications > 0 && (
+                      <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-destructive text-[8px] font-medium text-white">
+                        {unreadNotifications > 9 ? '9+' : unreadNotifications}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => navigate('/messaging')}
+                    className="flex items-center justify-center size-7 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
+                    aria-label="Messages"
+                  >
+                    <Mail size={14} />
+                  </button>
+                  <button
+                    onClick={() => navigate('/settings')}
+                    className="flex items-center justify-center size-7 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
+                    aria-label="Settings"
+                  >
+                    <Settings size={14} />
+                  </button>
+                </motion.div>
+              </>
             )}
           </div>
 

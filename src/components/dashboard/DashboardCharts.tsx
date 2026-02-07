@@ -395,7 +395,6 @@ export function AgentChart({ data, agentName, orderCount, revenue, onClick }: Ag
               axisLine={false}
               tickMargin={6}
               tick={{ fontSize: 10 }}
-              tickFormatter={(v) => (typeof v === 'string' ? v.slice(0, 3) : v)}
             />
             <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
             <Line
