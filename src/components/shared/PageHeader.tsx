@@ -16,7 +16,7 @@ interface PageHeaderProps {
 
 export default function PageHeader({ title, subtitle, count, breadcrumbs, actions }: PageHeaderProps) {
   return (
-    <div className="mb-6 space-y-1">
+    <div className="space-y-1">
       {/* Row 1: Breadcrumbs */}
       {breadcrumbs && breadcrumbs.length > 0 && (
         <Breadcrumbs className="text-sm">

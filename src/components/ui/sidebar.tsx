@@ -29,7 +29,7 @@ import { Link } from "./link"
 import { Tooltip, TooltipContent } from "./tooltip"
 
 const SIDEBAR_WIDTH = "17rem"
-const SIDEBAR_WIDTH_DOCK = "3.25rem"
+const SIDEBAR_WIDTH_DOCK = "4rem"
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 
@@ -174,6 +174,8 @@ interface SidebarProps extends React.ComponentProps<"div"> {
   collapsible?: "hidden" | "dock" | "none"
   side?: "left" | "right"
   closeButton?: boolean
+  onMouseEnter?: React.MouseEventHandler<HTMLDivElement>
+  onMouseLeave?: React.MouseEventHandler<HTMLDivElement>
 }
 
 const Sidebar = ({
@@ -182,6 +184,8 @@ const Sidebar = ({
   collapsible = "hidden",
   side = "left",
   intent = "default",
+  onMouseEnter,
+  onMouseLeave,
   className,
   ...props
 }: SidebarProps) => {
@@ -231,6 +235,8 @@ const Sidebar = ({
       data-side={side}
       data-slot="sidebar"
       className="group peer hidden text-sidebar-fg md:block"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
       {...props}
     >
       <div

@@ -198,9 +198,9 @@ export default function MasterLayout() {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <AppSidebar user={user} collapsible="dock" intent="inset" />
-      <SidebarInset>
+      <SidebarInset className="dark:bg-gradient-to-br dark:from-[#0f1419] dark:via-[#1a1f2a] dark:to-[#2c3e50]">
         <AppSidebarNav
           customerNames={customerNames}
           unreadNotifications={unreadCount}
@@ -216,7 +216,7 @@ export default function MasterLayout() {
         )}
 
         {/* Main Content */}
-        <div className="flex-1 overflow-auto p-4 lg:p-6 min-h-screen bg-background text-foreground dark:bg-gradient-to-br dark:from-[#0f1419] dark:via-[#1a1f2a] dark:to-[#2c3e50] relative">
+        <div className="flex-1 overflow-auto p-4 lg:p-6 min-h-screen text-foreground relative">
           <Routes>
             {/* Dashboard */}
             <Route path="/dashboard" element={<Dashboard />} />

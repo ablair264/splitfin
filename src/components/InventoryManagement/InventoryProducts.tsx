@@ -807,100 +807,84 @@ const InventoryProducts: React.FC = () => {
         }
       />
 
-      {/* Stock summary chips */}
-      <div className="flex items-center gap-2">
-        <StockChip
-          label="In Stock"
-          count={stockCounts.inStock}
-          icon={TrendingUp}
-          color="text-emerald-400"
-          active={filters.stockFilter === 'in-stock'}
-          onClick={() =>
-            handleFilterChange('stockFilter', filters.stockFilter === 'in-stock' ? '' : 'in-stock')
-          }
-        />
-        <StockChip
-          label="Low"
-          count={stockCounts.lowStock}
-          icon={AlertTriangle}
-          color="text-amber-400"
-          active={filters.stockFilter === 'low-stock'}
-          onClick={() =>
-            handleFilterChange('stockFilter', filters.stockFilter === 'low-stock' ? '' : 'low-stock')
-          }
-        />
-        <StockChip
-          label="Out"
-          count={stockCounts.outOfStock}
-          icon={PackageX}
-          color="text-red-400"
-          active={filters.stockFilter === 'out-of-stock'}
-          onClick={() =>
-            handleFilterChange(
-              'stockFilter',
-              filters.stockFilter === 'out-of-stock' ? '' : 'out-of-stock'
-            )
-          }
-        />
-      </div>
-
-      {/* Toolbar: Search + Filters + View controls */}
+      {/* Toolbar: Search + Brand + Stock chips + View controls */}
       <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-4 h-4" />
-            <Input
-              ref={searchInputRef}
-              type="text"
-              placeholder="Search products..."
-              value={filters.search}
-              onChange={(e) => handleFilterChange('search', e.target.value)}
-              className="pl-9 pr-16"
-            />
-            <button
-              type="button"
-              onClick={() => setShowCommandPalette(true)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-muted/80 border border-border/50 text-[10px] text-muted-foreground font-mono hover:bg-muted hover:border-primary/30 transition-colors cursor-pointer"
-              title="Open command palette"
-            >
-              <Command size={9} />K
-            </button>
-          </div>
-
-          <Select
-            value={filters.brand || 'all'}
-            onValueChange={(val) => handleFilterChange('brand', val === 'all' ? '' : val)}
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-4 h-4" />
+          <Input
+            ref={searchInputRef}
+            type="text"
+            placeholder="Search products..."
+            value={filters.search}
+            onChange={(e) => handleFilterChange('search', e.target.value)}
+            className="pl-9 pr-16"
+          />
+          <button
+            type="button"
+            onClick={() => setShowCommandPalette(true)}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-muted/80 border border-border/50 text-[10px] text-muted-foreground font-mono hover:bg-muted hover:border-primary/30 transition-colors cursor-pointer"
+            title="Open command palette"
           >
-            <SelectTrigger className="w-[150px]">
-              <SelectValue placeholder="All Brands" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Brands</SelectItem>
-              {brands.map((b) => (
-                <SelectItem key={b.brand} value={b.brand}>
-                  {b.brand} ({b.count})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <AnimatePresence>
-            {filters.brand && (
-              <FilterChip
-                label={`Brand: ${filters.brand}`}
-                onRemove={() => handleFilterChange('brand', '')}
-              />
-            )}
-            {filters.search && (
-              <FilterChip
-                label={`"${filters.search}"`}
-                onRemove={() => handleFilterChange('search', '')}
-              />
-            )}
-          </AnimatePresence>
+            <Command size={9} />K
+          </button>
         </div>
 
-        <div className="flex items-center gap-2">
+        <Select
+          value={filters.brand || 'all'}
+          onValueChange={(val) => handleFilterChange('brand', val === 'all' ? '' : val)}
+        >
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="All Brands" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Brands</SelectItem>
+            {brands.map((b) => (
+              <SelectItem key={b.brand} value={b.brand}>
+                {b.brand} ({b.count})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <div className="h-5 w-px bg-border/60" />
+
+        <div className="flex items-center gap-1.5">
+          <StockChip
+            label="In Stock"
+            count={stockCounts.inStock}
+            icon={TrendingUp}
+            color="text-emerald-400"
+            active={filters.stockFilter === 'in-stock'}
+            onClick={() =>
+              handleFilterChange('stockFilter', filters.stockFilter === 'in-stock' ? '' : 'in-stock')
+            }
+          />
+          <StockChip
+            label="Low"
+            count={stockCounts.lowStock}
+            icon={AlertTriangle}
+            color="text-amber-400"
+            active={filters.stockFilter === 'low-stock'}
+            onClick={() =>
+              handleFilterChange('stockFilter', filters.stockFilter === 'low-stock' ? '' : 'low-stock')
+            }
+          />
+          <StockChip
+            label="Out"
+            count={stockCounts.outOfStock}
+            icon={PackageX}
+            color="text-red-400"
+            active={filters.stockFilter === 'out-of-stock'}
+            onClick={() =>
+              handleFilterChange(
+                'stockFilter',
+                filters.stockFilter === 'out-of-stock' ? '' : 'out-of-stock'
+              )
+            }
+          />
+        </div>
+
+        <div className="ml-auto flex items-center gap-2">
           <DensityToggle density={density} onChange={setDensity} />
 
           <Tooltip>
@@ -920,6 +904,31 @@ const InventoryProducts: React.FC = () => {
           </Tooltip>
         </div>
       </div>
+
+      {/* Active filter chips */}
+      <AnimatePresence>
+        {(filters.brand || filters.search) && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="flex items-center gap-2"
+          >
+            {filters.brand && (
+              <FilterChip
+                label={`Brand: ${filters.brand}`}
+                onRemove={() => handleFilterChange('brand', '')}
+              />
+            )}
+            {filters.search && (
+              <FilterChip
+                label={`"${filters.search}"`}
+                onRemove={() => handleFilterChange('search', '')}
+              />
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Error */}
       <AnimatePresence>
@@ -941,20 +950,28 @@ const InventoryProducts: React.FC = () => {
         ref={tableContainerRef}
         className="overflow-hidden rounded-xl border border-border/60 bg-card"
       >
-        <Table className="bg-card">
+        <Table className="bg-card table-fixed">
           <TableHeader className="bg-secondary/50">
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
                 className="border-b border-border/60 bg-secondary/50 hover:bg-secondary/50"
               >
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} colSpan={header.colSpan}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const isRightAligned = ['gross_stock_level', 'cost_price', 'rate', 'margin'].includes(header.column.id);
+                  return (
+                    <TableHead
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      style={{ width: header.getSize() }}
+                      className={cn(isRightAligned && 'text-right')}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                    </TableHead>
+                  );
+                })}
               </TableRow>
             ))}
           </TableHeader>
@@ -968,20 +985,24 @@ const InventoryProducts: React.FC = () => {
                   onMouseLeave={() => setHoveredRow(null)}
                   onClick={() => handleRowClick(row.original)}
                   className={cn(
-                    'border-b border-border/30 bg-card cursor-pointer transition-all duration-150',
+                    'border-b border-border/30 border-l-2 border-l-transparent bg-card cursor-pointer transition-all duration-150',
                     'hover:bg-primary/[0.03]',
                     focusedRowIndex === idx && 'bg-primary/[0.06] ring-1 ring-inset ring-primary/20',
-                    hoveredRow === row.original.id && 'border-l-2 border-l-primary/40'
+                    hoveredRow === row.original.id && 'border-l-primary/40'
                   )}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={cn(densityConfig.rowPadding)}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const isRightAligned = ['gross_stock_level', 'cost_price', 'rate', 'margin'].includes(cell.column.id);
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        style={{ width: cell.column.getSize() }}
+                        className={cn(densityConfig.rowPadding, isRightAligned && 'text-right')}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))
             ) : (

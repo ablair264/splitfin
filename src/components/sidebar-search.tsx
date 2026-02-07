@@ -91,7 +91,7 @@ export function SearchTrigger({ onClick }: { onClick: () => void }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-3 w-full rounded-lg px-3 h-10 text-[13px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/40 border border-zinc-800/60 bg-zinc-900/40"
+      className="flex items-center gap-3 w-full rounded-lg px-3 h-10 text-[13px] text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/40 border border-teal-500/20 bg-zinc-900/40 shadow-[0_0_10px_rgba(20,184,166,0.08)] hover:border-teal-500/30 hover:shadow-[0_0_12px_rgba(20,184,166,0.12)] transition-all duration-200"
     >
       <Search size={16} />
       <span>Search...</span>

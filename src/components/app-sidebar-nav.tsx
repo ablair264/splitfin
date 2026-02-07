@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useLocation } from "react-router-dom"
 import { Cog, Bell, Mail, Sun, Moon } from "@mynaui/icons-react"
 import { Breadcrumbs, BreadcrumbsItem } from "@/components/ui/breadcrumbs"
-import { SidebarNav, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarNav } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
 import { Link } from "@/components/ui/link"
 import { Tooltip, TooltipContent } from "@/components/ui/tooltip"
@@ -124,8 +124,6 @@ export default function AppSidebarNav({
 
       {/* Right: sidebar toggle + actions */}
       <div className="ml-auto flex items-center gap-3">
-        <SidebarTrigger className="-mr-1" />
-
         <Tooltip delay={0}>
           <Switch
             checked={isDark}
