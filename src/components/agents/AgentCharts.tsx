@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import {
-  Bar, BarChart, Cell, LabelList, Pie, PieChart,
-  RadialBar, RadialBarChart, XAxis,
+  Bar, BarChart, Cell, Pie, PieChart,
+  RadialBar, RadialBarChart, XAxis, YAxis,
 } from 'recharts';
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from '@/components/ui/card';
 import {
-  ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent,
+  ChartConfig, ChartContainer, ChartTooltip,
 } from '@/components/ui/chart';
 
 // ---------------------------------------------------------------------------
@@ -25,80 +25,121 @@ const formatGBP = (n: number) =>
     minimumFractionDigits: 0, maximumFractionDigits: 0,
   }).format(n);
 
+// Custom tooltip that reads agent name from the data payload directly,
+// bypassing the shadcn nameKey lookup bug where item.name (= dataKey)
+// shadows payload.name (= actual data field).
+function AgentTooltip({ active, payload, formatValue }: {
+  active?: boolean;
+  payload?: Array<{ value: number; payload: Record<string, unknown> }>;
+  formatValue?: (v: number) => string;
+}) {
+  if (!active || !payload?.length) return null;
+  const fmt = formatValue ?? ((v: number) => v.toLocaleString());
+  return (
+    <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
+      <div className="grid gap-1">
+        {payload.map((item, i) => (
+          <div key={i} className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-1.5">
+              <div
+                className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
+                style={{ background: (item.payload.fill as string) || CHART_COLORS[i % CHART_COLORS.length] }}
+              />
+              <span className="text-muted-foreground">{item.payload.name as string}</span>
+            </div>
+            <span className="font-mono font-medium tabular-nums text-foreground">
+              {fmt(item.value)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Multi-series tooltip for bar charts where each Bar has dataKey = agent name
+function MultiBarTooltip({ active, payload, label, formatValue }: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; color: string; fill: string }>;
+  label?: string;
+  formatValue?: (v: number) => string;
+}) {
+  if (!active || !payload?.length) return null;
+  const fmt = formatValue ?? ((v: number) => v.toLocaleString());
+  return (
+    <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
+      {label && <div className="font-medium mb-1">{label}</div>}
+      <div className="grid gap-1">
+        {payload.filter(p => p.value > 0).map((item, i) => (
+          <div key={i} className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-1.5">
+              <div
+                className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
+                style={{ background: item.color || item.fill }}
+              />
+              <span className="text-muted-foreground">{item.name}</span>
+            </div>
+            <span className="font-mono font-medium tabular-nums text-foreground">
+              {fmt(item.value)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
-// 1. Agent Orders — Increase-Size Pie Chart
+// 1. Agent Orders — Donut Pie Chart
 // ---------------------------------------------------------------------------
 
 interface AgentOrdersPieChartProps {
   data: { name: string; value: number }[];
   title?: string;
-  description?: string;
 }
-
-const BASE_RADIUS = 50;
-const SIZE_INCREMENT = 10;
 
 export function AgentOrdersPieChart({
   data,
   title = 'Orders by Agent',
-  description,
 }: AgentOrdersPieChartProps) {
-  const sorted = useMemo(
-    () => [...data]
-      .sort((a, b) => a.value - b.value)
+  const chartData = useMemo(
+    () => data
+      .filter(d => d.value > 0)
       .map((d, i) => ({ ...d, fill: CHART_COLORS[i % CHART_COLORS.length] })),
     [data],
   );
 
-  const total = useMemo(() => sorted.reduce((s, d) => s + d.value, 0), [sorted]);
+  const total = useMemo(() => chartData.reduce((s, d) => s + d.value, 0), [chartData]);
 
   const chartConfig = useMemo<ChartConfig>(() => {
-    const cfg: ChartConfig = { value: { label: 'Orders' } };
-    sorted.forEach((d) => { cfg[d.name] = { label: d.name, color: d.fill }; });
+    const cfg: ChartConfig = {};
+    chartData.forEach((d) => { cfg[d.name] = { label: d.name, color: d.fill }; });
     return cfg;
-  }, [sorted]);
+  }, [chartData]);
 
   return (
     <Card className="py-4 gap-3 h-full">
       <CardHeader className="px-4 pb-0 gap-1">
         <CardDescription className="text-[11px] uppercase tracking-wider font-medium">{title}</CardDescription>
         <CardTitle className="text-xl tabular-nums">{total.toLocaleString('en-GB')}</CardTitle>
-        {description && <CardDescription className="text-xs">{description}</CardDescription>}
       </CardHeader>
       <CardContent className="px-2 pb-0 mt-auto">
-        <ChartContainer
-          config={chartConfig}
-          className="[&_.recharts-text]:fill-background mx-auto aspect-square max-h-[160px]"
-        >
+        <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[160px]">
           <PieChart>
-            <ChartTooltip content={<ChartTooltipContent nameKey="value" hideLabel />} />
-            {sorted.map((entry, index) => (
-              <Pie
-                key={`pie-${index}`}
-                data={[entry]}
-                innerRadius={24}
-                outerRadius={BASE_RADIUS + index * SIZE_INCREMENT}
-                dataKey="value"
-                nameKey="name"
-                cornerRadius={4}
-                startAngle={
-                  (sorted.slice(0, index).reduce((sum, d) => sum + d.value, 0) / total) * 360
-                }
-                endAngle={
-                  (sorted.slice(0, index + 1).reduce((sum, d) => sum + d.value, 0) / total) * 360
-                }
-              >
-                <Cell fill={entry.fill} />
-                <LabelList
-                  dataKey="value"
-                  stroke="none"
-                  fontSize={11}
-                  fontWeight={500}
-                  fill="currentColor"
-                  formatter={(v: number) => v.toString()}
-                />
-              </Pie>
-            ))}
+            <ChartTooltip content={<AgentTooltip />} />
+            <Pie
+              data={chartData}
+              dataKey="value"
+              nameKey="name"
+              innerRadius={28}
+              outerRadius={65}
+              paddingAngle={2}
+              cornerRadius={4}
+            >
+              {chartData.map((d, i) => (
+                <Cell key={i} fill={d.fill} />
+              ))}
+            </Pie>
           </PieChart>
         </ChartContainer>
       </CardContent>
@@ -133,7 +174,7 @@ export function AgentRevenueRadialChart({
   const total = useMemo(() => data.reduce((s, d) => s + d.value, 0), [data]);
 
   const chartConfig = useMemo<ChartConfig>(() => {
-    const cfg: ChartConfig = { value: { label: 'Revenue' } };
+    const cfg: ChartConfig = {};
     chartData.forEach((d) => { cfg[d.name] = { label: d.name, color: d.fill }; });
     return cfg;
   }, [chartData]);
@@ -157,7 +198,7 @@ export function AgentRevenueRadialChart({
             }}
             onMouseLeave={() => setActiveKey(null)}
           >
-            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel nameKey="name" />} />
+            <ChartTooltip cursor={false} content={<AgentTooltip formatValue={formatGBP} />} />
             <RadialBar cornerRadius={8} dataKey="value" background className="drop-shadow-lg">
               {chartData.map((entry, i) => (
                 <Cell
@@ -180,7 +221,7 @@ export function AgentRevenueRadialChart({
         </ChartContainer>
         {/* Legend */}
         <div className="flex flex-col gap-1 pr-4">
-          {chartData.map((d) => (
+          {chartData.filter(d => d.value > 0).map((d) => (
             <div key={d.name} className="flex items-center gap-2 text-[11px]">
               <div className="w-2 h-2 rounded-full shrink-0" style={{ background: d.fill }} />
               <span className="text-muted-foreground truncate max-w-[80px]">{d.name}</span>
@@ -194,7 +235,7 @@ export function AgentRevenueRadialChart({
 }
 
 // ---------------------------------------------------------------------------
-// 3. Agent Activity — Multi-series Bar Chart
+// 3. Agent Activity — Grouped Bar Chart (orders per period per agent)
 // ---------------------------------------------------------------------------
 
 interface AgentActivityBarChartProps {
@@ -208,7 +249,16 @@ export function AgentActivityBarChart({
   dataKeys,
   title = 'Agent Activity',
 }: AgentActivityBarChartProps) {
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  // Sum total orders across all agents & periods
+  const totalOrders = useMemo(() => {
+    let sum = 0;
+    for (const row of data) {
+      for (const key of dataKeys) {
+        sum += (typeof row[key] === 'number' ? row[key] as number : 0);
+      }
+    }
+    return sum;
+  }, [data, dataKeys]);
 
   const chartConfig = useMemo<ChartConfig>(() => {
     const cfg: ChartConfig = {};
@@ -223,7 +273,7 @@ export function AgentActivityBarChart({
       <CardHeader className="px-4 pb-0 gap-1">
         <CardDescription className="text-[11px] uppercase tracking-wider font-medium">{title}</CardDescription>
         <CardTitle className="text-xl tabular-nums">
-          {dataKeys.length} <span className="text-sm font-normal text-muted-foreground">agents</span>
+          {totalOrders.toLocaleString('en-GB')} <span className="text-sm font-normal text-muted-foreground">orders</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="px-2 pb-0 mt-auto">
@@ -231,7 +281,6 @@ export function AgentActivityBarChart({
           <BarChart
             accessibilityLayer
             data={data}
-            onMouseLeave={() => setActiveIndex(null)}
             margin={{ left: 4, right: 4, top: 4, bottom: 0 }}
           >
             <rect x="0" y="0" width="100%" height="85%" fill="url(#agent-activity-dots)" />
@@ -248,19 +297,9 @@ export function AgentActivityBarChart({
               tick={{ fontSize: 10 }}
               tickFormatter={(v) => (typeof v === 'string' ? v.slice(0, 3) : v)}
             />
-            <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dashed" />} />
+            <ChartTooltip content={<MultiBarTooltip />} />
             {dataKeys.map((key, ki) => (
-              <Bar key={key} dataKey={key} fill={`var(--color-${key.replace(/\s+/g, '-')})`} radius={3} stackId="a">
-                {data.map((_, index) => (
-                  <Cell
-                    key={`cell-${key}-${index}`}
-                    fillOpacity={activeIndex === null ? 1 : activeIndex === index ? 1 : 0.3}
-                    fill={CHART_COLORS[ki % CHART_COLORS.length]}
-                    onMouseEnter={() => setActiveIndex(index)}
-                    className="duration-200"
-                  />
-                ))}
-              </Bar>
+              <Bar key={key} dataKey={key} fill={CHART_COLORS[ki % CHART_COLORS.length]} radius={3} />
             ))}
           </BarChart>
         </ChartContainer>
@@ -270,7 +309,7 @@ export function AgentActivityBarChart({
 }
 
 // ---------------------------------------------------------------------------
-// 4. Brand Spread — Highlighted Multiple Bar Chart
+// 4. Brand Spread — Grouped Bar Chart (revenue per brand per agent)
 // ---------------------------------------------------------------------------
 
 interface BrandSpreadChartProps {
@@ -284,7 +323,16 @@ export function BrandSpreadChart({
   dataKeys,
   title = 'Brand Spread',
 }: BrandSpreadChartProps) {
-  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  // Sum total revenue across brands
+  const totalRevenue = useMemo(() => {
+    let sum = 0;
+    for (const row of data) {
+      for (const key of dataKeys) {
+        sum += (typeof row[key] === 'number' ? row[key] as number : 0);
+      }
+    }
+    return sum;
+  }, [data, dataKeys]);
 
   const chartConfig = useMemo<ChartConfig>(() => {
     const cfg: ChartConfig = {};
@@ -299,7 +347,7 @@ export function BrandSpreadChart({
       <CardHeader className="px-4 pb-0 gap-1">
         <CardDescription className="text-[11px] uppercase tracking-wider font-medium">{title}</CardDescription>
         <CardTitle className="text-xl tabular-nums">
-          {data.length} <span className="text-sm font-normal text-muted-foreground">brands</span>
+          {formatGBP(totalRevenue)}
         </CardTitle>
       </CardHeader>
       <CardContent className="px-2 pb-0 mt-auto">
@@ -307,37 +355,28 @@ export function BrandSpreadChart({
           <BarChart
             accessibilityLayer
             data={data}
-            onMouseLeave={() => setActiveIndex(null)}
-            margin={{ left: 4, right: 4, top: 4, bottom: 0 }}
+            layout="vertical"
+            margin={{ left: 60, right: 4, top: 4, bottom: 0 }}
           >
-            <rect x="0" y="0" width="100%" height="85%" fill="url(#brand-spread-dots)" />
+            <rect x="0" y="0" width="100%" height="100%" fill="url(#brand-spread-dots)" />
             <defs>
               <pattern id="brand-spread-dots" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
                 <circle className="dark:text-muted/40 text-muted" cx="2" cy="2" r="1" fill="currentColor" />
               </pattern>
             </defs>
-            <XAxis
+            <YAxis
               dataKey="brand"
+              type="category"
               tickLine={false}
               axisLine={false}
-              tickMargin={6}
               tick={{ fontSize: 10 }}
-              tickFormatter={(v) => (typeof v === 'string' && v.length > 8 ? v.slice(0, 7) + '\u2026' : v)}
+              tickFormatter={(v) => (typeof v === 'string' && v.length > 9 ? v.slice(0, 8) + '\u2026' : v)}
+              width={56}
             />
-            <ChartTooltip cursor={false} content={<ChartTooltipContent indicator="dashed" />} />
+            <XAxis type="number" hide />
+            <ChartTooltip content={<MultiBarTooltip formatValue={formatGBP} />} />
             {dataKeys.map((key, ki) => (
-              <Bar key={key} dataKey={key} fill={CHART_COLORS[ki % CHART_COLORS.length]} radius={3}>
-                {data.map((_, index) => (
-                  <Cell
-                    key={`cell-${key}-${index}`}
-                    fillOpacity={activeIndex === null ? 1 : activeIndex === index ? 1 : 0.3}
-                    fill={CHART_COLORS[ki % CHART_COLORS.length]}
-                    stroke={activeIndex === index ? CHART_COLORS[ki % CHART_COLORS.length] : ''}
-                    onMouseEnter={() => setActiveIndex(index)}
-                    className="duration-200"
-                  />
-                ))}
-              </Bar>
+              <Bar key={key} dataKey={key} fill={CHART_COLORS[ki % CHART_COLORS.length]} radius={3} />
             ))}
           </BarChart>
         </ChartContainer>

@@ -175,7 +175,7 @@ export function getCustomerColumns(): ColumnDef<Customer>[] {
         <DataTableColumnHeader column={column} label="Spent" />
       ),
       cell: ({ row }) => (
-        <span className={`text-sm text-right block ${row.original.total_spent > 0 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
+        <span className={`text-sm tabular-nums ${row.original.total_spent > 0 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
           {formatCurrency(row.original.total_spent)}
         </span>
       ),
@@ -192,7 +192,7 @@ export function getCustomerColumns(): ColumnDef<Customer>[] {
       cell: ({ row }) => {
         const val = row.original.outstanding_receivable;
         return (
-          <span className={`text-sm text-right block ${val > 0 ? "font-semibold text-red-400" : "text-muted-foreground"}`}>
+          <span className={`text-sm tabular-nums ${val > 0 ? "font-semibold text-red-400" : "text-muted-foreground"}`}>
             {val > 0 ? formatCurrency(val) : "-"}
           </span>
         );

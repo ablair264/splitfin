@@ -182,7 +182,7 @@ export function getOrderColumns(
         <DataTableColumnHeader column={column} label="Total" />
       ),
       cell: ({ row }) => (
-        <span className="text-sm font-semibold text-foreground text-right block">
+        <span className="text-sm font-semibold text-foreground tabular-nums">
           {formatCurrency(row.original.total)}
         </span>
       ),

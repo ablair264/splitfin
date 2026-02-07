@@ -14,17 +14,24 @@ interface ProfileDropdownProps extends React.HTMLAttributes<HTMLDivElement> {
   userName: string
   userRole: string
   onLogout: () => void
+  onOpenChange?: (open: boolean) => void
 }
 
 export default function ProfileDropdown({
   userName,
   userRole,
   onLogout,
+  onOpenChange,
   className,
   ...props
 }: ProfileDropdownProps) {
   const [isOpen, setIsOpen] = React.useState(false)
   const navigate = useNavigate()
+
+  const handleOpenChange = React.useCallback((open: boolean) => {
+    setIsOpen(open)
+    onOpenChange?.(open)
+  }, [onOpenChange])
 
   const menuItems = [
     {
@@ -46,24 +53,24 @@ export default function ProfileDropdown({
 
   return (
     <div className={cn("relative", className)} {...props}>
-      <DropdownMenu onOpenChange={setIsOpen}>
+      <DropdownMenu onOpenChange={handleOpenChange}>
         <div className="group relative">
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="flex items-center gap-3 w-full p-3 rounded-xl bg-zinc-900/60 border border-zinc-800/60 hover:border-zinc-700 hover:bg-zinc-800/40 transition-all duration-200 focus:outline-none"
+              className="flex items-center gap-3 w-full p-3 rounded-xl bg-zinc-100 dark:bg-zinc-900/60 border border-zinc-200 dark:border-zinc-800/60 hover:border-zinc-300 dark:hover:border-zinc-700 hover:bg-zinc-200/60 dark:hover:bg-zinc-800/40 transition-all duration-200 focus:outline-none"
             >
               <div className="text-left flex-1 min-w-0">
-                <div className="text-[13px] font-medium text-zinc-100 tracking-tight leading-tight truncate">
+                <div className="text-[13px] font-medium text-zinc-800 dark:text-zinc-100 tracking-tight leading-tight truncate">
                   {userName}
                 </div>
-                <div className="text-[11px] text-zinc-500 tracking-tight leading-tight truncate">
+                <div className="text-[11px] text-zinc-400 dark:text-zinc-500 tracking-tight leading-tight truncate">
                   {userRole} &middot; SplitFin
                 </div>
               </div>
               <div className="relative shrink-0">
                 <div className="size-9 rounded-full bg-gradient-to-br from-teal-500 via-teal-600 to-emerald-600 p-0.5">
-                  <div className="size-full rounded-full bg-zinc-900 flex items-center justify-center text-[13px] font-semibold text-white">
+                  <div className="size-full rounded-full bg-white dark:bg-zinc-900 flex items-center justify-center text-[13px] font-semibold text-teal-700 dark:text-white">
                     {userName.charAt(0).toUpperCase()}
                   </div>
                 </div>
@@ -105,26 +112,26 @@ export default function ProfileDropdown({
             align="start"
             side="top"
             sideOffset={8}
-            className="w-56 p-2 bg-zinc-900/95 backdrop-blur-sm border border-zinc-800/60 rounded-xl shadow-xl shadow-zinc-950/30"
+            className="w-56 p-2 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm border border-zinc-200 dark:border-zinc-800/60 rounded-xl shadow-xl shadow-zinc-950/10 dark:shadow-zinc-950/30"
           >
             <div className="space-y-1">
               {menuItems.map((item) => (
                 <DropdownMenuItem
                   key={item.label}
-                  className="flex items-center gap-3 p-2.5 hover:bg-zinc-800/60 rounded-lg transition-all duration-200 cursor-pointer group border border-transparent hover:border-zinc-700/50 focus:bg-zinc-800/60 focus:text-zinc-100"
+                  className="flex items-center gap-3 p-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-800/60 rounded-lg transition-all duration-200 cursor-pointer group border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700/50 focus:bg-zinc-100 dark:focus:bg-zinc-800/60 focus:text-zinc-800 dark:focus:text-zinc-100"
                   onSelect={() => navigate(item.path)}
                 >
-                  <span className="text-zinc-500 group-hover:text-zinc-400 transition-colors">
+                  <span className="text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-600 dark:group-hover:text-zinc-400 transition-colors">
                     {item.icon}
                   </span>
-                  <span className="text-[13px] font-medium text-zinc-300 group-hover:text-zinc-100 transition-colors">
+                  <span className="text-[13px] font-medium text-zinc-600 dark:text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-zinc-100 transition-colors">
                     {item.label}
                   </span>
                 </DropdownMenuItem>
               ))}
             </div>
 
-            <DropdownMenuSeparator className="my-2 bg-gradient-to-r from-transparent via-zinc-800 to-transparent" />
+            <DropdownMenuSeparator className="my-2 bg-gradient-to-r from-transparent via-zinc-200 dark:via-zinc-800 to-transparent" />
 
             <DropdownMenuItem
               className="flex items-center gap-3 p-2.5 rounded-lg cursor-pointer group bg-red-500/10 hover:bg-red-500/20 border border-transparent hover:border-red-500/30 transition-all duration-200 focus:bg-red-500/20 focus:text-red-400"

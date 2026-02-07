@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { motion, AnimatePresence, useReducedMotion } from "motion/react"
 import {
-  ShoppingCart, Users, MapPin, MessageSquare, Settings, ChevronDown,
-  Pin, UserPlus, Bell, Mail, Sun, Moon,
+  ShoppingCart, Users, Settings, ChevronDown,
+  Pin, Bell, Mail, Sun, Moon,
 } from "lucide-react"
 
 // Animated icons
@@ -19,6 +19,8 @@ import { HandCoinsIcon } from "@/components/icons/hand-coins"
 import { UsersIcon } from "@/components/icons/users"
 import { GalleryThumbnailsIcon } from "@/components/icons/gallery-thumbnails"
 import { MessageCircleMoreIcon } from "@/components/icons/message-circle-more"
+import { ChartLineIcon } from "@/components/ui/chart-line"
+import { UserIcon } from "@/components/ui/user"
 
 // Sidebar sub-components
 import { SidebarBadge } from "./sidebar-badge"
@@ -40,7 +42,7 @@ import type { Agent } from "@/types/domain"
 // ---------- Constants ----------
 
 const HOVER_EXPAND_DELAY = 200
-const HOVER_COLLAPSE_DELAY = 400
+const HOVER_COLLAPSE_DELAY = 600
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: Agent | null
@@ -82,7 +84,7 @@ function CollapsedTooltip({ children, label }: { children: React.ReactNode; labe
           className="fixed z-50 pointer-events-none"
           style={{ top: coords.top, left: coords.left, transform: "translateY(-50%)" }}
         >
-          <div className="bg-zinc-800 border border-zinc-700/50 text-white text-xs font-medium px-3 py-2 rounded-lg shadow-xl whitespace-nowrap">
+          <div className="bg-zinc-800 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700/50 text-white text-xs font-medium px-3 py-2 rounded-lg shadow-xl whitespace-nowrap">
             {label}
           </div>
         </div>
@@ -129,12 +131,12 @@ function NavItem({
         } ${
           isActive
             ? isCollapsed
-              ? "bg-zinc-800 text-teal-400"
-              : "bg-zinc-800/80 text-white"
-            : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40"
+              ? "bg-teal-50 dark:bg-zinc-800 text-teal-600 dark:text-teal-400"
+              : "bg-teal-50 dark:bg-zinc-800/80 text-teal-700 dark:text-white"
+            : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/40"
         }`}
       >
-        <span className={`flex-shrink-0 ${isActive ? "text-teal-400" : "text-zinc-500 group-hover:text-zinc-400"}`}>
+        <span className={`flex-shrink-0 ${isActive ? "text-teal-500 dark:text-teal-400" : "text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-500 dark:group-hover:text-zinc-400"}`}>
           {item.icon}
         </span>
         {!isCollapsed && (
@@ -153,8 +155,8 @@ function NavItem({
         {!isCollapsed && onPin && (
           <span
             onClick={(e) => { e.stopPropagation(); onPin() }}
-            className={`ml-auto opacity-0 group-hover:opacity-100 text-zinc-600 hover:text-teal-400 cursor-pointer ${
-              pinned ? "!opacity-100 text-teal-400/60 hover:text-teal-400" : ""
+            className={`ml-auto opacity-0 group-hover:opacity-100 text-zinc-400 dark:text-zinc-600 hover:text-teal-500 dark:hover:text-teal-400 cursor-pointer ${
+              pinned ? "!opacity-100 text-teal-500/60 dark:text-teal-400/60 hover:text-teal-500 dark:hover:text-teal-400" : ""
             }`}
             role="button"
             aria-label={pinned ? "Unpin" : "Pin"}
@@ -193,9 +195,9 @@ function AccordionSection({
     <div>
       <button
         onClick={onToggle}
-        className="group flex items-center gap-3 w-full rounded-lg px-3 h-10 text-left text-[13px] font-semibold text-zinc-300 hover:text-white hover:bg-zinc-800/40"
+        className="group flex items-center gap-3 w-full rounded-lg px-3 h-10 text-left text-[13px] font-semibold text-zinc-500 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-zinc-800/40"
       >
-        <span className="flex-shrink-0 text-zinc-500 group-hover:text-zinc-400">{icon}</span>
+        <span className="flex-shrink-0 text-zinc-400 dark:text-zinc-500 group-hover:text-zinc-500 dark:group-hover:text-zinc-400">{icon}</span>
         <motion.span
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -204,7 +206,7 @@ function AccordionSection({
         >
           {title}
         </motion.span>
-        <span className={`ml-auto text-zinc-600 transition-transform ${isOpen ? "" : "-rotate-90"}`}>
+        <span className={`ml-auto text-zinc-400 dark:text-zinc-600 transition-transform ${isOpen ? "" : "-rotate-90"}`}>
           <ChevronDown size={14} />
         </span>
       </button>
@@ -234,7 +236,7 @@ function SectionLabel({ label, action }: { label: string; action?: React.ReactNo
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.2 }}
-        className="text-[10px] font-semibold uppercase tracking-widest text-zinc-600"
+        className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400 dark:text-zinc-600"
       >
         {label}
       </motion.span>
@@ -247,39 +249,50 @@ function SectionLabel({ label, action }: { label: string; action?: React.ReactNo
 
 const ALL_NAV_ITEMS: Record<string, NavItemDef> = {
   dashboard: { id: "dashboard", label: "Dashboard", icon: <HomeIcon size={18} />, path: "/dashboard" },
+  // Sales
+  customers: { id: "customers", label: "Customers", icon: <Users size={18} />, path: "/customers" },
   orders: { id: "orders", label: "Orders", icon: <ShoppingCart size={18} />, path: "/orders" },
-  customers: { id: "customers", label: "View Customers", icon: <Users size={18} />, path: "/customers" },
-  customerMap: { id: "customerMap", label: "Customer Map", icon: <MapPin size={18} />, path: "/customers/map" },
-  enquiries: { id: "enquiries", label: "Enquiries", icon: <MessageSquare size={18} />, path: "/enquiries" },
-  inventory: { id: "inventory", label: "Inventory Management", icon: <BoxesIcon size={18} />, path: "/inventory/products" },
-  warehouse: { id: "warehouse", label: "Warehouse", icon: <BoxIcon size={18} />, path: "/shipping/warehouse" },
+  enquiries: { id: "enquiries", label: "Enquiries", icon: <MessageCircleMoreIcon size={18} />, path: "/enquiries" },
+  invoices: { id: "invoices", label: "Invoices", icon: <PoundSterlingIcon size={18} />, path: "/finance/invoices" },
+  // Inventory
+  products: { id: "products", label: "Products", icon: <BoxesIcon size={18} />, path: "/inventory/products" },
+  purchaseOrders: { id: "purchaseOrders", label: "Purchase Orders", icon: <HandCoinsIcon size={18} />, path: "/finance/purchase-orders" },
+  imageBank: { id: "imageBank", label: "Image Bank", icon: <GalleryThumbnailsIcon size={18} />, path: "/image-management" },
+  // Warehouse
+  pipeline: { id: "pipeline", label: "Pipeline", icon: <BoxIcon size={18} />, path: "/shipping/warehouse" },
   couriers: { id: "couriers", label: "Couriers", icon: <MailCheckIcon size={18} />, path: "/shipping/couriers" },
   deliveries: { id: "deliveries", label: "Deliveries", icon: <TruckIcon size={18} />, path: "/shipping/deliveries" },
-  invoices: { id: "invoices", label: "Invoices", icon: <PoundSterlingIcon size={18} />, path: "/finance/invoices" },
-  purchaseOrders: { id: "purchaseOrders", label: "Purchase Orders", icon: <HandCoinsIcon size={18} />, path: "/finance/purchase-orders" },
-  supplierMgmt: { id: "supplierMgmt", label: "Supplier Management", icon: <UsersIcon size={18} />, path: "/suppliers" },
-  supplierAdd: { id: "supplierAdd", label: "Add New Supplier", icon: <UserPlus size={18} />, path: "/suppliers/new" },
-  images: { id: "images", label: "Image Management", icon: <GalleryThumbnailsIcon size={18} />, path: "/image-management" },
-  agents: { id: "agents", label: "Agent Performance", icon: <ClipboardCheckIcon size={18} />, path: "/agents" },
-  messages: { id: "messages", label: "Team Messages", icon: <MessageCircleMoreIcon size={18} />, path: "/messaging" },
-  settings: { id: "settings", label: "Settings", icon: <Settings size={18} />, path: "/settings" },
+  // Management
+  agents: { id: "agents", label: "Agents", icon: <ClipboardCheckIcon size={18} />, path: "/agents" },
+  reportSuite: { id: "reportSuite", label: "Report Suite", icon: <ChartLineIcon size={18} />, path: "/reports" },
+  suppliers: { id: "suppliers", label: "Suppliers", icon: <UsersIcon size={18} />, path: "/suppliers" },
+  users: { id: "users", label: "Users", icon: <UserIcon size={18} />, path: "/settings/users" },
 }
 
 // Collapsed-mode items: just the top-level section icons
-const COLLAPSED_ITEMS: { id: string; item: NavItemDef; divider?: boolean }[] = [
+const COLLAPSED_ITEMS: { id: string; item: NavItemDef; divider?: boolean; adminOnly?: boolean }[] = [
   { id: "dashboard", item: ALL_NAV_ITEMS.dashboard },
-  { id: "orders", item: ALL_NAV_ITEMS.orders },
-  { id: "agents", item: ALL_NAV_ITEMS.agents },
+  { id: "d0", item: ALL_NAV_ITEMS.dashboard, divider: true },
+  // Sales
   { id: "customers", item: ALL_NAV_ITEMS.customers },
-  { id: "d0", item: ALL_NAV_ITEMS.customers, divider: true },
-  { id: "inventory", item: ALL_NAV_ITEMS.inventory },
-  { id: "shipping", item: ALL_NAV_ITEMS.warehouse },
-  { id: "finance", item: ALL_NAV_ITEMS.invoices },
-  { id: "suppliers", item: ALL_NAV_ITEMS.supplierMgmt },
-  { id: "d1", item: ALL_NAV_ITEMS.supplierMgmt, divider: true },
-  { id: "images", item: ALL_NAV_ITEMS.images },
-  { id: "messages", item: ALL_NAV_ITEMS.messages },
-  { id: "settings", item: ALL_NAV_ITEMS.settings },
+  { id: "orders", item: ALL_NAV_ITEMS.orders },
+  { id: "enquiries", item: ALL_NAV_ITEMS.enquiries },
+  { id: "invoices", item: ALL_NAV_ITEMS.invoices, adminOnly: true },
+  { id: "d1", item: ALL_NAV_ITEMS.dashboard, divider: true },
+  // Inventory
+  { id: "products", item: ALL_NAV_ITEMS.products, adminOnly: true },
+  { id: "purchaseOrders", item: ALL_NAV_ITEMS.purchaseOrders, adminOnly: true },
+  { id: "imageBank", item: ALL_NAV_ITEMS.imageBank, adminOnly: true },
+  { id: "d2", item: ALL_NAV_ITEMS.dashboard, divider: true },
+  // Warehouse
+  { id: "pipeline", item: ALL_NAV_ITEMS.pipeline, adminOnly: true },
+  { id: "couriers", item: ALL_NAV_ITEMS.couriers, adminOnly: true },
+  { id: "deliveries", item: ALL_NAV_ITEMS.deliveries, adminOnly: true },
+  { id: "d3", item: ALL_NAV_ITEMS.dashboard, divider: true },
+  // Management
+  { id: "agents", item: ALL_NAV_ITEMS.agents, adminOnly: true },
+  { id: "suppliers", item: ALL_NAV_ITEMS.suppliers, adminOnly: true },
+  { id: "users", item: ALL_NAV_ITEMS.users, adminOnly: true },
 ]
 
 // ---------- Main Sidebar ----------
@@ -291,6 +304,7 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
   const isCollapsed = state === "collapsed"
 
   const [commandOpen, setCommandOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
   const [pinnedIds, setPinnedIds] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem("splitfin_pinned")
@@ -301,11 +315,10 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
   // Accordion: track which section is open
   const [openSection, setOpenSection] = useState<string | null>(() => {
     const p = location.pathname
-    if (p.startsWith("/customers") || p.startsWith("/enquiries")) return "customers"
-    if (p.startsWith("/inventory")) return "inventory"
-    if (p.startsWith("/shipping")) return "shipping"
-    if (p.startsWith("/finance")) return "finance"
-    if (p.startsWith("/suppliers")) return "suppliers"
+    if (p.startsWith("/customers") || p.startsWith("/orders") || p.startsWith("/enquiries") || p.startsWith("/finance/invoices")) return "sales"
+    if (p.startsWith("/inventory") || p.startsWith("/finance/purchase-orders") || p.startsWith("/image-management")) return "inventory"
+    if (p.startsWith("/shipping")) return "warehouse"
+    if (p.startsWith("/agents") || p.startsWith("/reports") || p.startsWith("/suppliers") || p.startsWith("/settings/users")) return "management"
     return null
   })
 
@@ -328,10 +341,11 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
       clearTimeout(expandTimer.current)
       expandTimer.current = null
     }
+    if (profileOpen) return
     collapseTimer.current = setTimeout(() => {
       setOpen(false)
     }, HOVER_COLLAPSE_DELAY)
-  }, [setOpen])
+  }, [setOpen, profileOpen])
 
   // Cleanup timers on unmount
   useEffect(() => {
@@ -432,14 +446,14 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
                 >
                   <button
                     onClick={handleThemeToggle}
-                    className="flex items-center justify-center size-7 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
+                    className="flex items-center justify-center size-7 rounded-md text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 transition-colors"
                     aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
                   >
                     {isDark ? <Sun size={14} /> : <Moon size={14} />}
                   </button>
                   <button
                     onClick={onNotificationsClick}
-                    className="relative flex items-center justify-center size-7 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
+                    className="relative flex items-center justify-center size-7 rounded-md text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 transition-colors"
                     aria-label="Notifications"
                   >
                     <Bell size={14} />
@@ -451,14 +465,14 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
                   </button>
                   <button
                     onClick={() => navigate('/messaging')}
-                    className="flex items-center justify-center size-7 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
+                    className="flex items-center justify-center size-7 rounded-md text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 transition-colors"
                     aria-label="Messages"
                   >
                     <Mail size={14} />
                   </button>
                   <button
                     onClick={() => navigate('/settings')}
-                    className="flex items-center justify-center size-7 rounded-md text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
+                    className="flex items-center justify-center size-7 rounded-md text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 transition-colors"
                     aria-label="Settings"
                   >
                     <Settings size={14} />
@@ -478,13 +492,8 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
               /* ---- Collapsed: icon-only nav ---- */
               <>
                 {COLLAPSED_ITEMS.map((entry) => {
-                  if (entry.divider) return <div key={entry.id} className="w-6 mx-auto my-2 border-t border-zinc-800/60" />
-                  if (entry.id === "inventory" && !isAdmin) return null
-                  if (entry.id === "shipping" && !isAdmin) return null
-                  if (entry.id === "finance" && !isAdmin) return null
-                  if (entry.id === "suppliers" && !isAdmin) return null
-                  if (entry.id === "agents" && !isAdmin) return null
-                  if (entry.id === "images" && !isAdmin) return null
+                  if (entry.adminOnly && !isAdmin) return null
+                  if (entry.divider) return <div key={entry.id} className="w-6 mx-auto my-2 border-t border-zinc-200 dark:border-zinc-800/60" />
                   return (
                     <NavItem
                       key={entry.id}
@@ -506,20 +515,15 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
                   <SidebarKbd>&#8984;D</SidebarKbd>
                 </div>
 
-                {/* Orders */}
-                <NavItem item={ALL_NAV_ITEMS.orders} isActive={isPathActive("/orders")} isCollapsed={false} />
-
-                {/* Agent Performance — Admin only */}
-                {isAdmin && (
-                  <NavItem item={ALL_NAV_ITEMS.agents} isActive={isPathActive("/agents")} isCollapsed={false} />
-                )}
+                {/* Divider */}
+                <div className="mx-0 my-4 border-t border-zinc-200 dark:border-zinc-800/60" />
 
                 {/* Pinned Favourites */}
                 {pinnedIds.length > 0 && (
                   <>
                     <SectionLabel
                       label="Pinned"
-                      action={<span className="text-zinc-600 text-[10px] tabular-nums">{pinnedIds.length}</span>}
+                      action={<span className="text-zinc-400 dark:text-zinc-600 text-[10px] tabular-nums">{pinnedIds.length}</span>}
                     />
                     <div className="space-y-0.5">
                       {pinnedIds.map((id) => {
@@ -537,24 +541,24 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
                         )
                       })}
                     </div>
+                    {/* Divider after pinned */}
+                    <div className="mx-0 my-4 border-t border-zinc-200 dark:border-zinc-800/60" />
                   </>
                 )}
 
-                {/* Divider */}
-                <div className="mx-0 my-4 border-t border-zinc-800/60" />
-
                 {/* Accordion sections */}
                 <div className="space-y-1">
-                  {/* Customers */}
+                  {/* Sales */}
                   <AccordionSection
-                    icon={<Users size={18} />}
-                    title="Customers"
-                    isOpen={openSection === "customers"}
-                    onToggle={() => toggleSection("customers")}
+                    icon={<ShoppingCart size={18} />}
+                    title="Sales"
+                    isOpen={openSection === "sales"}
+                    onToggle={() => toggleSection("sales")}
                   >
-                    <NavItem indent item={ALL_NAV_ITEMS.customers} isActive={isPathActive("/customers") && !isPathActive("/customers/map")} isCollapsed={false} onPin={() => togglePin("customers")} pinned={pinnedIds.includes("customers")} />
-                    <NavItem indent item={ALL_NAV_ITEMS.customerMap} isActive={isPathActive("/customers/map")} isCollapsed={false} onPin={() => togglePin("customerMap")} pinned={pinnedIds.includes("customerMap")} />
+                    <NavItem indent item={ALL_NAV_ITEMS.customers} isActive={isPathActive("/customers")} isCollapsed={false} onPin={() => togglePin("customers")} pinned={pinnedIds.includes("customers")} />
+                    <NavItem indent item={ALL_NAV_ITEMS.orders} isActive={isPathActive("/orders")} isCollapsed={false} onPin={() => togglePin("orders")} pinned={pinnedIds.includes("orders")} />
                     <NavItem indent item={ALL_NAV_ITEMS.enquiries} isActive={isPathActive("/enquiries")} isCollapsed={false} onPin={() => togglePin("enquiries")} pinned={pinnedIds.includes("enquiries")} />
+                    <NavItem indent item={ALL_NAV_ITEMS.invoices} isActive={isPathActive("/finance/invoices")} isCollapsed={false} onPin={() => togglePin("invoices")} pinned={pinnedIds.includes("invoices")} />
                   </AccordionSection>
 
                   {/* Inventory - Admin only */}
@@ -565,66 +569,41 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
                       isOpen={openSection === "inventory"}
                       onToggle={() => toggleSection("inventory")}
                     >
-                      <NavItem indent item={ALL_NAV_ITEMS.inventory} isActive={isPathActive("/inventory/products")} isCollapsed={false} onPin={() => togglePin("inventory")} pinned={pinnedIds.includes("inventory")} />
+                      <NavItem indent item={ALL_NAV_ITEMS.products} isActive={isPathActive("/inventory/products")} isCollapsed={false} onPin={() => togglePin("products")} pinned={pinnedIds.includes("products")} />
+                      <NavItem indent item={ALL_NAV_ITEMS.purchaseOrders} isActive={isPathActive("/finance/purchase-orders")} isCollapsed={false} onPin={() => togglePin("purchaseOrders")} pinned={pinnedIds.includes("purchaseOrders")} />
+                      <NavItem indent item={ALL_NAV_ITEMS.imageBank} isActive={isPathActive("/image-management")} isCollapsed={false} onPin={() => togglePin("imageBank")} pinned={pinnedIds.includes("imageBank")} />
                     </AccordionSection>
                   )}
 
-                  {/* Shipping - Admin only */}
+                  {/* Warehouse - Admin only */}
                   {isAdmin && (
                     <AccordionSection
                       icon={<ShipIcon size={18} />}
-                      title="Shipping"
-                      isOpen={openSection === "shipping"}
-                      onToggle={() => toggleSection("shipping")}
+                      title="Warehouse"
+                      isOpen={openSection === "warehouse"}
+                      onToggle={() => toggleSection("warehouse")}
                     >
-                      <NavItem indent item={ALL_NAV_ITEMS.warehouse} isActive={isPathActive("/shipping/warehouse")} isCollapsed={false} onPin={() => togglePin("warehouse")} pinned={pinnedIds.includes("warehouse")} />
+                      <NavItem indent item={ALL_NAV_ITEMS.pipeline} isActive={isPathActive("/shipping/warehouse")} isCollapsed={false} onPin={() => togglePin("pipeline")} pinned={pinnedIds.includes("pipeline")} />
                       <NavItem indent item={ALL_NAV_ITEMS.couriers} isActive={isPathActive("/shipping/couriers")} isCollapsed={false} onPin={() => togglePin("couriers")} pinned={pinnedIds.includes("couriers")} />
                       <NavItem indent item={ALL_NAV_ITEMS.deliveries} isActive={isPathActive("/shipping/deliveries")} isCollapsed={false} onPin={() => togglePin("deliveries")} pinned={pinnedIds.includes("deliveries")} />
                     </AccordionSection>
                   )}
 
-                  {/* Finance - Admin only */}
+                  {/* Management - Admin only */}
                   {isAdmin && (
                     <AccordionSection
-                      icon={<PoundSterlingIcon size={18} />}
-                      title="Finance"
-                      isOpen={openSection === "finance"}
-                      onToggle={() => toggleSection("finance")}
+                      icon={<ClipboardCheckIcon size={18} />}
+                      title="Management"
+                      isOpen={openSection === "management"}
+                      onToggle={() => toggleSection("management")}
                     >
-                      <NavItem indent item={ALL_NAV_ITEMS.invoices} isActive={isPathActive("/finance/invoices")} isCollapsed={false} onPin={() => togglePin("invoices")} pinned={pinnedIds.includes("invoices")} />
-                      <NavItem indent item={ALL_NAV_ITEMS.purchaseOrders} isActive={isPathActive("/finance/purchase-orders")} isCollapsed={false} onPin={() => togglePin("purchaseOrders")} pinned={pinnedIds.includes("purchaseOrders")} />
-                    </AccordionSection>
-                  )}
-
-                  {/* Suppliers - Admin only */}
-                  {isAdmin && (
-                    <AccordionSection
-                      icon={<UsersIcon size={18} />}
-                      title="Suppliers"
-                      isOpen={openSection === "suppliers"}
-                      onToggle={() => toggleSection("suppliers")}
-                    >
-                      <NavItem indent item={ALL_NAV_ITEMS.supplierMgmt} isActive={isPathActive("/suppliers") && !isPathActive("/suppliers/new")} isCollapsed={false} onPin={() => togglePin("supplierMgmt")} pinned={pinnedIds.includes("supplierMgmt")} />
-                      <NavItem indent item={ALL_NAV_ITEMS.supplierAdd} isActive={isPathActive("/suppliers/new")} isCollapsed={false} />
+                      <NavItem indent item={ALL_NAV_ITEMS.agents} isActive={isPathActive("/agents")} isCollapsed={false} onPin={() => togglePin("agents")} pinned={pinnedIds.includes("agents")} />
+                      <NavItem indent item={ALL_NAV_ITEMS.reportSuite} isActive={isPathActive("/reports")} isCollapsed={false} onPin={() => togglePin("reportSuite")} pinned={pinnedIds.includes("reportSuite")} />
+                      <NavItem indent item={ALL_NAV_ITEMS.suppliers} isActive={isPathActive("/suppliers")} isCollapsed={false} onPin={() => togglePin("suppliers")} pinned={pinnedIds.includes("suppliers")} />
+                      <NavItem indent item={ALL_NAV_ITEMS.users} isActive={isPathActive("/settings/users")} isCollapsed={false} onPin={() => togglePin("users")} pinned={pinnedIds.includes("users")} />
                     </AccordionSection>
                   )}
                 </div>
-
-                {/* Tools */}
-                {isAdmin && (
-                  <>
-                    <SectionLabel label="Tools" />
-                    <NavItem item={ALL_NAV_ITEMS.images} isActive={isPathActive("/image-management")} isCollapsed={false} />
-                  </>
-                )}
-
-                {/* Communication */}
-                <SectionLabel label="Communication" />
-                <NavItem item={ALL_NAV_ITEMS.messages} isActive={isPathActive("/messaging")} isCollapsed={false} />
-
-                {/* Settings */}
-                <SectionLabel label="" />
-                <NavItem item={ALL_NAV_ITEMS.settings} isActive={isPathActive("/settings")} isCollapsed={false} />
               </>
             )}
           </nav>
@@ -632,12 +611,12 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
 
         {/* Footer: Utility icons + User */}
         <SidebarFooter className={isCollapsed ? "p-2" : "px-3 py-3"}>
-          <div className={`relative ${!isCollapsed ? 'pt-0' : 'pt-3 border-t border-zinc-800/50'}`}>
+          <div className={`relative ${!isCollapsed ? 'pt-0' : 'pt-3 border-t border-zinc-200 dark:border-zinc-800/50'}`}>
             {isCollapsed ? (
               <CollapsedTooltip label={userName}>
                 <div className="flex items-center justify-center">
                   <div className="size-9 rounded-full bg-gradient-to-br from-teal-500 via-teal-600 to-emerald-600 p-0.5 cursor-pointer">
-                    <div className="size-full rounded-full bg-zinc-900 flex items-center justify-center text-[13px] font-semibold text-white">
+                    <div className="size-full rounded-full bg-white dark:bg-zinc-900 flex items-center justify-center text-[13px] font-semibold text-teal-700 dark:text-white">
                       {userName.charAt(0).toUpperCase()}
                     </div>
                   </div>
@@ -648,6 +627,7 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
                 userName={userName}
                 userRole={userRole}
                 onLogout={handleLogout}
+                onOpenChange={setProfileOpen}
               />
             )}
           </div>

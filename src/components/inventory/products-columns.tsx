@@ -139,9 +139,7 @@ export function getProductColumns(
         <DataTableColumnHeader column={column} label="Stock" />
       ),
       cell: ({ row }) => (
-        <div className="text-right">
-          <StockBadge stock={row.original.stock_on_hand} />
-        </div>
+        <StockBadge stock={row.original.stock_on_hand} />
       ),
       size: 80,
       enableColumnFilter: true,
@@ -158,7 +156,7 @@ export function getProductColumns(
         <DataTableColumnHeader column={column} label="Cost" />
       ),
       cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground text-right block">
+        <span className="text-sm text-muted-foreground tabular-nums">
           {formatCurrency(row.original.cost_price)}
         </span>
       ),
@@ -173,7 +171,7 @@ export function getProductColumns(
         <DataTableColumnHeader column={column} label="Price" />
       ),
       cell: ({ row }) => (
-        <span className="text-sm font-semibold text-foreground text-right block">
+        <span className="text-sm font-semibold text-foreground tabular-nums">
           {formatCurrency(row.original.rate)}
         </span>
       ),

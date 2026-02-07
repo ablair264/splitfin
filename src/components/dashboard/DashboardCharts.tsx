@@ -4,14 +4,12 @@ import {
   RadialBar, RadialBarChart, ReferenceLine, XAxis,
 } from 'recharts';
 import { useSpring, useMotionValueEvent } from 'motion/react';
-import { TrendingUp, TrendingDown } from 'lucide-react';
 import {
   Card, CardContent, CardDescription, CardHeader, CardTitle,
 } from '@/components/ui/card';
 import {
-  ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent,
+  ChartConfig, ChartContainer, ChartTooltip,
 } from '@/components/ui/chart';
-import { Badge } from '@/components/ui/badge';
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -32,6 +30,38 @@ const formatGBP = (n: number) =>
 
 const formatCompact = (n: number) =>
   new Intl.NumberFormat('en-GB', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
+
+// Custom tooltip that reads the data point's name from payload directly,
+// bypassing the shadcn nameKey lookup bug where item.name (= dataKey)
+// shadows payload.name (= actual data field).
+function DataTooltip({ active, payload, formatValue }: {
+  active?: boolean;
+  payload?: Array<{ value: number; payload: Record<string, unknown> }>;
+  formatValue?: (v: number) => string;
+}) {
+  if (!active || !payload?.length) return null;
+  const fmt = formatValue ?? ((v: number) => v.toLocaleString());
+  return (
+    <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
+      <div className="grid gap-1">
+        {payload.map((item, i) => (
+          <div key={i} className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-1.5">
+              <div
+                className="h-2.5 w-2.5 shrink-0 rounded-[2px]"
+                style={{ background: (item.payload.fill as string) || 'var(--chart-1)' }}
+              />
+              <span className="text-muted-foreground">{item.payload.name as string}</span>
+            </div>
+            <span className="font-mono font-medium tabular-nums text-foreground">
+              {fmt(item.value)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // 1. Revenue Card — Clipped Area Chart
@@ -313,7 +343,7 @@ export function StockChart({ data, total, onClick }: StockChartProps) {
             }}
             onMouseLeave={() => setActiveKey(null)}
           >
-            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel nameKey="name" />} />
+            <ChartTooltip cursor={false} content={<DataTooltip />} />
             <RadialBar cornerRadius={8} dataKey="value" background className="drop-shadow-lg">
               {chartData.map((entry, i) => (
                 <Cell
@@ -396,7 +426,7 @@ export function AgentChart({ data, agentName, orderCount, revenue, onClick }: Ag
               tickMargin={6}
               tick={{ fontSize: 10 }}
             />
-            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+            <ChartTooltip cursor={false} content={<DataTooltip />} />
             <Line
               dataKey="value"
               type="bump"
