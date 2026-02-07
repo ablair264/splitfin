@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   Mail, Phone, MapPin, ExternalLink, Save, X, Loader2, ShoppingCart,
 } from 'lucide-react';
@@ -47,16 +48,18 @@ const formatDate = (dateString: string | undefined | null) => {
 
 const orderStatusColor = (status: string) => {
   switch (status?.toLowerCase()) {
-    case 'confirmed': case 'invoiced':
-      return 'text-primary bg-primary/8 border-primary/15';
     case 'draft':
-      return 'text-muted-foreground bg-muted/30 border-border/30';
+      return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+    case 'confirmed': case 'fulfilled':
+      return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+    case 'shipped': case 'partially_shipped':
+      return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+    case 'invoiced': case 'partially_invoiced':
+      return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
     case 'void': case 'cancelled':
-      return 'text-destructive bg-destructive/10 border-destructive/20';
-    case 'closed':
-      return 'text-muted-foreground bg-muted/30 border-border/30';
+      return 'bg-destructive/20 text-destructive border-destructive/30';
     default:
-      return 'text-muted-foreground bg-muted/30 border-border/30';
+      return 'bg-muted-foreground/10 text-muted-foreground border-muted-foreground/20';
   }
 };
 
@@ -80,6 +83,8 @@ function DetailRow({
 // ---------------------------------------------------------------------------
 
 export default function CustomerDetail() {
+  const [pageTitle, setPageTitle] = useState('Customer');
+  usePageTitle(pageTitle);
   const { customerId } = useParams();
   const navigate = useNavigate();
   const { showLoader, hideLoader } = useLoader();
@@ -112,6 +117,7 @@ export default function CustomerDetail() {
       showLoader('Loading Customer...');
       const customer = await customerService.getById(customerId!);
       setCustomerData(customer);
+      if (customer?.company_name) setPageTitle(customer.company_name);
     } catch (error) {
       console.error('Error fetching customer:', error);
     } finally {
@@ -231,6 +237,15 @@ export default function CustomerDetail() {
 
   return (
     <div className="w-full p-6">
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-5">
+        <button onClick={() => navigate('/customers')} className="hover:text-foreground transition-colors">
+          Customers
+        </button>
+        <span className="text-muted-foreground/50">/</span>
+        <span className="text-foreground font-medium truncate max-w-[300px]">{customerData.company_name}</span>
+      </nav>
+
       {/* ── Identity + Metrics strip ── */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
@@ -513,12 +528,16 @@ export default function CustomerDetail() {
               <DetailRow label="Total Spent">
                 <span className="text-[13px] font-semibold text-primary tabular-nums">{formatCurrency(customerData.total_spent)}</span>
               </DetailRow>
-              <DetailRow label="Outstanding">
-                <span className="text-[13px] font-medium text-foreground tabular-nums">{formatCurrency(outstandingAmount)}</span>
-              </DetailRow>
-              <DetailRow label="Unused Credits">
-                <span className="text-[13px] font-medium text-foreground tabular-nums">{formatCurrency(customerData.unused_credits)}</span>
-              </DetailRow>
+              {outstandingAmount > 0 && (
+                <DetailRow label="Outstanding">
+                  <span className="text-[13px] font-medium text-warning tabular-nums">{formatCurrency(outstandingAmount)}</span>
+                </DetailRow>
+              )}
+              {(customerData.unused_credits ?? 0) > 0 && (
+                <DetailRow label="Unused Credits">
+                  <span className="text-[13px] font-medium text-foreground tabular-nums">{formatCurrency(customerData.unused_credits)}</span>
+                </DetailRow>
+              )}
               <DetailRow label="Currency">
                 <span className="text-[13px] font-medium text-foreground">{customerData.currency_code}</span>
               </DetailRow>
@@ -707,7 +726,10 @@ export default function CustomerDetail() {
                   <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Billing</span>
                 </div>
                 <div className="space-y-1 pl-[17px]">
-                  {ADDRESS_FIELDS.map(({ key, label }) => (
+                  {ADDRESS_FIELDS.filter(({ key }) => {
+                    const val = (customerData.billing_address as Address)?.[key];
+                    return val && val.trim() !== '';
+                  }).map(({ key, label }) => (
                     <div key={key} className="flex items-center justify-between">
                       <span className="text-[11px] text-muted-foreground/60">{label}</span>
                       <Editable
@@ -735,7 +757,10 @@ export default function CustomerDetail() {
                   <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Shipping</span>
                 </div>
                 <div className="space-y-1 pl-[17px]">
-                  {ADDRESS_FIELDS.map(({ key, label }) => (
+                  {ADDRESS_FIELDS.filter(({ key }) => {
+                    const val = (customerData.shipping_address as Address)?.[key];
+                    return val && val.trim() !== '';
+                  }).map(({ key, label }) => (
                     <div key={key} className="flex items-center justify-between">
                       <span className="text-[11px] text-muted-foreground/60">{label}</span>
                       <Editable

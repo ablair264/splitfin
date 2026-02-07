@@ -1,0 +1,632 @@
+{
+  "site": "https://splitfin.co.uk",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "timestamp": "2026-02-06 23:42:12",
+  "pages": [
+    {
+      "name": "01-dashboard",
+      "intended_path": "/dashboard",
+      "actual_url": "https://splitfin.co.uk/dashboard",
+      "screenshot": "./screenshots/01-dashboard.png",
+      "title": "Splitfin",
+      "text_summary": "Dashboard\nOrders\nCustomers\nInventory\nShipping\nFinance\nSuppliers\nTools\nImage Management\nCommunication\nTeam Messages\nMatt\nAdmin\nHome\nToggle Sidebar\nDashboard\nLast 7 Days\nLast 30 Days\nLast 90 Days\nThis Year\nAll Time\nToday, there were 2 orders with a total revenue of \u00a3802.06. This week, there have been 81 orders generating \u00a344,247.20 in revenue, with 2 pending orders.\nORDERS\n204\nTotal orders\nSun\nSat\nREVENUE\n\u00a375,033\nOrder value\nSun\nSat\nSTOCK TOTAL\n25,175\nUnits in stock\nR\u00e4der\nRelaxound\nTOP AGENT\nGay Croker\n7 orders \u2022 \u00a36,623\nUnassigned\nKate Ellis\nLatest Orders\nView All\nORDER #\tCUSTOMER\tDATE\tSTATUS\tTOTAL\nSO-05215\n\tBladons\t6 Feb 2026\tdraft\t\u00a3401\nSO-05216\n\tBladons\t6 Feb 2026\tdraft\t\u00a3401\nSO-05214\nMY FLAME\n\tCofion Cynnes\t5 Feb 2026\tconfirmed\t\u00a3120\nSO-05213\n342560000000000149 RELAXOUND\n\tBlue Diamond Busy Bee Garden Centre\t5 Feb 2026\tconfirmed\t\u00a3810\nSO-05212\nPPD\n\tHelen's Homewares\t5 Feb 2026\tconfirmed\t\u00a3382\nNew Customers\nView All\nCUSTOMER\tEMAIL\tORDERS\tSPENT\nBlue Diamond Busy Bee Garden Centre\tfleur.davies@bluediamond.gg\t1\t\u00a30\nHelen's Homewares\thelen_kirkham@btinternet.com\t1\t\u00a30\nRephil TA With Love\tbecky@withlove.cc\t1\t\u00a30\nThe Consortium\tmary@theconsortiumonline.co.uk\t1\t\u00a30\nBits and Pieces\tpenny_newland@yahoo.co.uk\t1\t\u00a30\nRecently Added Products\nView All\nPRODUCT\tBRAND\tPRICE\tSTOCK\nHeavenly Sisters Assortment Large\n93154\n\tR\u00e4der\t\u00a310\t0\nLight house - Birdhouse Light house - Tree house Light house - Cat\n14447\n\tR\u00e4der\t\u00a30\t0\nLunch napkin\n93090\n\tR\u00e4der\t\u00a32\t0\nCocktail napkin\n18631\n\tR\u00e4der\t\u00a32\t0\nKEY RING\n51805\n\tR\u00e4der\t\u00a35\t0",
+      "elements": {
+        "forms": 0,
+        "tables": 3,
+        "buttons": 15,
+        "inputs": 1,
+        "cards": 31,
+        "modals": 0,
+        "links": 1,
+        "images": 4,
+        "headings": [
+          {
+            "tag": "H3",
+            "text": "Customers"
+          },
+          {
+            "tag": "H3",
+            "text": "Inventory"
+          },
+          {
+            "tag": "H3",
+            "text": "Shipping"
+          },
+          {
+            "tag": "H3",
+            "text": "Finance"
+          },
+          {
+            "tag": "H3",
+            "text": "Suppliers"
+          },
+          {
+            "tag": "H1",
+            "text": "Dashboard"
+          },
+          {
+            "tag": "H3",
+            "text": "ORDERS"
+          },
+          {
+            "tag": "H3",
+            "text": "REVENUE"
+          },
+          {
+            "tag": "H3",
+            "text": "STOCK TOTAL"
+          },
+          {
+            "tag": "H3",
+            "text": "TOP AGENT"
+          },
+          {
+            "tag": "H3",
+            "text": "Latest Orders"
+          },
+          {
+            "tag": "H3",
+            "text": "New Customers"
+          },
+          {
+            "tag": "H3",
+            "text": "Recently Added Products"
+          }
+        ]
+      },
+      "button_labels": [
+        "Customers",
+        "Inventory",
+        "Shipping",
+        "Finance",
+        "Suppliers",
+        "Matt\nAdmin",
+        "Toggle Sidebar",
+        "View All",
+        "View All",
+        "View All"
+      ],
+      "sidebar_items": []
+    },
+    {
+      "name": "02-orders",
+      "intended_path": "/orders",
+      "actual_url": "https://splitfin.co.uk/orders",
+      "screenshot": "./screenshots/02-orders.png",
+      "title": "Splitfin",
+      "text_summary": "Dashboard\nOrders\nCustomers\nInventory\nShipping\nFinance\nSuppliers\nTools\nImage Management\nCommunication\nTeam Messages\nMatt\nAdmin\nOrders\nToggle Sidebar\nAll Status\nPending\nShipped\nClosed\n50 orders\nORDER #\nCUSTOMER\nDATE\nSTATUS\nTOTAL\nSO-05216\nBL\nBladons\n06/02/2026\nDraft\nNot Shipped\n|\nNot Invoiced\n\u00a3401.03\nSO-05215\nBL\nBladons\n06/02/2026\nDraft\nNot Shipped\n|\nNot Invoiced\n\u00a3401.03\nSO-05209\nJL\nJust Lily\n05/02/2026\nConfirmed\nNot Shipped\n|\nNot Invoiced\n\u00a3657.44\nSO-05210\nJL\nJust Lily\n05/02/2026\nConfirmed\nNot Shipped\n|\nNot Invoiced\n\u00a3657.44\nSO-05211\nJL\nJust Lily\n05/02/2026\nConfirmed\nNot Shipped\n|\nNot Invoiced\n\u00a3657.44\nSO-05212\nHH\nHelen's Homewares\n05/02/2026\nConfirmed\nNot Shipped\n|\nNot Invoiced\n\u00a3381.74\nSO-05213\nBD\nBlue Diamond Busy Bee Garden Centre\n05/02/2026\nConfirmed\nNot Shipped\n|\nNot Invoiced\n\u00a3809.93\nSO-05214\nCC\nCofion Cynnes\n05/02/2026\nConfirmed\nPartial\n|\nNot Invoiced\n\u00a3120.00\nSO-05201\nAU\nAmazon UK - Customer\n04/02/2026\nShipped\nShipped\n|\nInvoiced\n\u00a359.99\nSO-05200\nAU\nAmazon UK - Customer\n04/02/2026\nShipped\nShipped\n|\nInvoiced\n\u00a312.99\nSO-05206\nMM\nMichelle Mitton Design Gallery\n04/02/2026\nDraft\nNot Shipped\n|\nNot Invoiced\n\u00a32,375.98\nSO-05205\nLL\nLeafy Lytham\n04/02/2026\nConfirmed\nNot Shipped\n|\nNot Invoiced\n\u00a3240.00\nSO-05203\nVD\nVincent Davies\n04/02/2026\nConfirmed\nNot Shipped\n|\nNot Invoiced\n\u00a3385.91\nSO-05202\nGG\nGarthowen Garden Centre Ltd\n04/02/2026\nConfirmed\nNot Shipped\n|\nNot Invoiced\n\u00a3724.81\nSO-05207\nAU\nAmazon UK - Customer\n04/02/2026\nShipped\nShipped\n|\nInvoiced\n\u00a39.95\nSO-05204\nAU\nAmazon UK - Customer\n04/02/2026\nShipped\nShipped\n|\nInvoiced\n\u00a322.99\nSO-05208\nAU\nAmazon UK - Customer\n04/02/2026\nShipped\nShipped\n|\nInvoiced\n\u00a329.99\nSO-05192\nPS\nPort Sunlight Garden Centre\n03/02/2026\nConfirmed\nNot Shipped\n|\nNot Invoiced\n\u00a3853.01\nSO-05194\nPP\nPrior Park Garden Centre\n03/02/2026\nConfirmed\nNot Shipped\n|\nNot Invoiced\n\u00a3757.28\nSO-05196\nBA\nBits and Pieces\n03/02/2026\nConfirmed\nNot Shipped\n|\nNot Invoiced\n\u00a3389.32\nSO-05197\nTC\nThe Consortium\n03/02/2026\nConfirmed\nNot Shipped\n|\nNot Invoiced\n\u00a3458.50\nSO-05199\nAU\nAmazon UK - C",
+      "elements": {
+        "forms": 0,
+        "tables": 0,
+        "buttons": 12,
+        "inputs": 2,
+        "cards": 3,
+        "modals": 0,
+        "links": 1,
+        "images": 4,
+        "headings": [
+          {
+            "tag": "H3",
+            "text": "Customers"
+          },
+          {
+            "tag": "H3",
+            "text": "Inventory"
+          },
+          {
+            "tag": "H3",
+            "text": "Shipping"
+          },
+          {
+            "tag": "H3",
+            "text": "Finance"
+          },
+          {
+            "tag": "H3",
+            "text": "Suppliers"
+          }
+        ]
+      },
+      "button_labels": [
+        "Customers",
+        "Inventory",
+        "Shipping",
+        "Finance",
+        "Suppliers",
+        "Matt\nAdmin",
+        "Toggle Sidebar"
+      ],
+      "sidebar_items": []
+    },
+    {
+      "name": "03-order-detail",
+      "intended_path": "/order/10130",
+      "actual_url": "https://splitfin.co.uk/order/10130",
+      "screenshot": "./screenshots/03-order-detail.png",
+      "title": "Splitfin",
+      "text_summary": "Dashboard\nOrders\nCustomers\nInventory\nShipping\nFinance\nSuppliers\nTools\nImage Management\nCommunication\nTeam Messages\nMatt\nAdmin\nOrder\n#10130\nToggle Sidebar\nBack to Orders\nOrder SO-05216\nDRAFT\nPrint\nInvoice\nSend to Packing\nEdit Order\nOrder Details\nORDER NUMBER\nSO-05216\nORDER DATE\n6 February 2026\nPROGRESS\nOrder Confirmed\nCURRENT\nSent to Warehouse\nPacked\nShipped\nDelivered\nOrder Notes\nOrder placed by DC Roberts Required delivery date: 2026-02-16 Send when or if almost complete\nOrder Items\nTotal: \u00a3401.03\nAll Items (13)\nShipped (0)\nPartial (0)\nAwaiting (13)\nITEM\nSKU\nQTY\nUNIT PRICE\nTOTAL\nSHIPPED\nSTATUS\nSnacks & nibbles bowl bites along D9,5cm H4,5cm\n18037\n4\n\u00a37.50\n\u00a330.00\n0 / 4\nPending\nRader Piece of Jewelry Tray Ring\n17681\n6\n\u00a33.22\n\u00a319.32\n0 / 6\nPending\nRader Love Mini vases Set of 4pcs Diameter3.5cm Height.9cm\n13802\n4\n\u00a39.22\n\u00a336.88\n0 / 4\nPending\nRader Mini-Ballvase Heart Gold\n17714\n6\n\u00a35.22\n\u00a331.32\n0 / 6\nPending\nRader Ballvase Heart Gold\n17713\n4\n\u00a37.97\n\u00a331.88\n0 / 4\nPending\nRader Love vases heart gold Diameter5.5cm H.17cm\n15583\n6\n\u00a35.97\n\u00a335.82\n0 / 6\nPending\nRader Measuring jug Do small things great love 120ml - Discontinued 30% Discount\n12666\n1\n\u00a33.65\n\u00a33.65\n0 / 1\nPending\nRader Piece of Jewelry Tray Treasure\n17682\n6\n\u00a35.22\n\u00a331.32\n0 / 6\nPending\nRader Guardin angel coin- Guardin An Diameter 3.3cm\n12619\n12\n\u00a32.82\n\u00a333.84\n0 / 12\nPending\nPPD Formart Birthday Napkin 33x33\n133003272\n12\n\u00a31.67\n\u00a320.04\n0 / 12\nPending\nPPD US SHARED Avocado & Dots Napkin 33x33\n133003292\n12\n\u00a31.67\n\u00a320.04\n0 / 12\nPending\nPPD US SHARED Strawberry & Stripes Napkin 33x33\n133003288\n12\n\u00a31.67\n\u00a320.04\n0 / 12\nPending\nPPD Heart & Stripes eucalyptus Napkin 33x33\n133003325\n12\n\u00a31.67\n\u00a320.04\n0 / 12\nPending\nSubtotal:\n\u00a3334.19\nTax:\n\u00a366.84\nAdjustment:\n\u00a30.00\nTotal:\n\u00a3401.03\nInvoices\nNo invoice generated yet",
+      "elements": {
+        "forms": 0,
+        "tables": 0,
+        "buttons": 21,
+        "inputs": 0,
+        "cards": 5,
+        "modals": 0,
+        "links": 2,
+        "images": 4,
+        "headings": [
+          {
+            "tag": "H3",
+            "text": "Customers"
+          },
+          {
+            "tag": "H3",
+            "text": "Inventory"
+          },
+          {
+            "tag": "H3",
+            "text": "Shipping"
+          },
+          {
+            "tag": "H3",
+            "text": "Finance"
+          },
+          {
+            "tag": "H3",
+            "text": "Suppliers"
+          },
+          {
+            "tag": "H1",
+            "text": "Order SO-05216"
+          },
+          {
+            "tag": "H3",
+            "text": "Order Details"
+          },
+          {
+            "tag": "H4",
+            "text": "PROGRESS"
+          },
+          {
+            "tag": "H3",
+            "text": "Order Notes"
+          },
+          {
+            "tag": "H3",
+            "text": "Order Items"
+          },
+          {
+            "tag": "H3",
+            "text": "Invoices"
+          }
+        ]
+      },
+      "button_labels": [
+        "Customers",
+        "Inventory",
+        "Shipping",
+        "Finance",
+        "Suppliers",
+        "Matt\nAdmin",
+        "Toggle Sidebar",
+        "Back to Orders",
+        "Print",
+        "Invoice",
+        "Send to Packing",
+        "Edit Order",
+        "All Items (13)",
+        "Shipped (0)",
+        "Partial (0)",
+        "Awaiting (13)"
+      ],
+      "sidebar_items": [
+        {
+          "text": "Order",
+          "href": "/order"
+        }
+      ]
+    },
+    {
+      "name": "04-customers",
+      "intended_path": "/customers",
+      "actual_url": "https://splitfin.co.uk/customers",
+      "screenshot": "./screenshots/04-customers.png",
+      "title": "Splitfin",
+      "text_summary": "Dashboard\nOrders\nCustomers\nView Customers\nCustomer Map\nEnquiries\nInventory\nShipping\nFinance\nSuppliers\nTools\nImage Management\nCommunication\nTeam Messages\nMatt\nAdmin\nCustomers\nToggle Sidebar\nSort by Name\nSort by Date Created\nSort by Total Value\nSort by Last Order\nNew Customer\n1580 customers\nCUSTOMER\nCONTACT\nSPENT\nOWED\nLAST ORDER\nTERMS\nACTIONS\n&\n& halt\nSouth East\ninfo@andhalt.com\n01273 107028\n\u00a31,062\n-\n1 Feb 2026\nNet 30\nView\nOrders\n2\n2 C Trading\nWales\nheathersimpson2604@gmail.com\n01686 625 993\n\u00a30\n-\n-\nNet 30\nView\nOrders\n2\n27 Alloway\nScotland\nlinda@27alloway.co.uk\n01292 440 202\n\u00a30\n-\n26 Jan 2026\nNet 30\nView\nOrders\n3\n3shiresgardencentre.co.uk\nMidlands\nLaura.Phillips@3shiresgardencentre.co.uk\n01531 820 941\n\u00a30\n-\n25 Jan 2026\nNet 30\nView\nOrders\nA\nA & C Ross\nScotland\naandcross@btconnect.com\n01555 811 272\n\u00a30\n-\n-\nNet 30\nView\nOrders\nA\nA Broader Picture\nScotland\nsiobhan@abroaderpicture.com\n02870 836 844\n\u00a30\n-\n-\nNet 30\nView\nOrders\nA\nA Fly Went By\nMidlands\nhello@aflywent.by\n01636 918 284\n\u00a30\n-\n-\nNet 30\nView\nOrders\nA\nA Little Decorum\nOther\nalittledecorum1@gmail.com\n07776 253 988\n\u00a30\n-\n-\nNet 30\nView\nOrders\nA\nA Touch of Simplicity\nNo email\n\u00a30\n-\n-\nDue on Receipt\nView\nOrders\nA\nA\u2019ila Home\nScotland\nannemarie@ailahome.com\n01786 445 788\n\u00a30\n-\n-\nNet 30\nView\nOrders\nA\nA2Arts\nOther\nlja2525@aol.com\n01449 741 370\n\u00a3396\n-\n10 Oct 2023\nNet 30\nView\nOrders\nA\nAbbey Road Framing\nLondon\ninfo@abbeyroadframing.co.uk\n02079 374 482\n\u00a32,315\n-\n24 Jun 2025\nNet 30\nView\nOrders\nA\nAbbeygate Lighting\nOther\nsales@abbeygatelighting.co.uk\n01603 408 777\n\u00a30\n-\n-\nNet 30\nView\nOrders\nA\nabfusion.com\nSouth East\ntony@abfusion.com\n\u00a30\n-\n25 Sept 2024\nDue On Receipt\nView\nOrders\nA\nAbigail Vincent\nMidlands\nabigail.c.vincent@gmail.com\n\u00a3152\n-\n29 Oct 2024\nDue On Receipt\nView\nOrders\nA\nAbout Face\nWales\nsales@aboutfaceonline.co.uk\n01179 237 405\n\u00a30\n-\n-\nNet 30\nView\nOrders\nA\nAbout Living\nScotland\ngary@aboutliving.co.uk\n0141 638 1112\n\u00a30\n-\n-\nNet 30\nView\nOrders\nA\nAbout Living (Giffnock)\nScotland\ngary@aboutliving.co.uk\n0141 638 1112\n\u00a32,872\n-\n17 Jun 2024\nN",
+      "elements": {
+        "forms": 0,
+        "tables": 0,
+        "buttons": 67,
+        "inputs": 2,
+        "cards": 2,
+        "modals": 0,
+        "links": 1,
+        "images": 4,
+        "headings": [
+          {
+            "tag": "H3",
+            "text": "Customers"
+          },
+          {
+            "tag": "H3",
+            "text": "Inventory"
+          },
+          {
+            "tag": "H3",
+            "text": "Shipping"
+          },
+          {
+            "tag": "H3",
+            "text": "Finance"
+          },
+          {
+            "tag": "H3",
+            "text": "Suppliers"
+          }
+        ]
+      },
+      "button_labels": [
+        "Customers",
+        "Inventory",
+        "Shipping",
+        "Finance",
+        "Suppliers",
+        "Matt\nAdmin",
+        "Toggle Sidebar",
+        "New Customer",
+        "View",
+        "Orders",
+        "View",
+        "Orders",
+        "View",
+        "Orders",
+        "View",
+        "Orders",
+        "View",
+        "Orders",
+        "View",
+        "Orders",
+        "View",
+        "Orders",
+        "View",
+        "Orders",
+        "View",
+        "Orders",
+        "View",
+        "Orders",
+        "View",
+        "Orders"
+      ],
+      "sidebar_items": []
+    },
+    {
+      "name": "05-customer-detail",
+      "intended_path": "/customers/1",
+      "actual_url": "https://splitfin.co.uk/customers/1",
+      "screenshot": "./screenshots/05-customer-detail.png",
+      "title": "Splitfin",
+      "text_summary": "Dashboard\nOrders\nCustomers\nView Customers\nCustomer Map\nEnquiries\nInventory\nShipping\nFinance\nSuppliers\nTools\nImage Management\nCommunication\nTeam Messages\nMatt\nAdmin\nCustomers\n1\nToggle Sidebar\n&\n& halt\nACTIVE\nSouth East\n\u00b7\nElvang\nSPENT\n\u00a31,061.95\nOUTSTANDING\n\u00a30\nTERMS\nNet 30\nORDERS\n9\nAVG ORDER\n\u00a31,061.95\nSINCE\n17 Jan 2026\nSEGMENT\nMedium\nNew Order\nCOMPANY\nContact\n& halt\nEmail\ninfo@andhalt.com\nPhone\n01273 107028\nMobile\n-\nWebsite\n-\nPayment Terms\n30\nFINANCIAL\nTotal Spent\n\u00a31,061.95\nOutstanding\n\u00a30.00\nUnused Credits\n\u00a30.00\nCurrency\nGBP\nLast Order\n1 Feb 2026\nORDERS (9)\nView all\nORDER\tDATE\tSTATUS\tTOTAL\t\n#SO-05165\t1 Feb 2026\tDraft\t\u00a349.91\t\n#SO-05125\t28 Jan 2026\tDraft\t\u00a3145.00\t\n#SO-05124\t28 Jan 2026\tDraft\t\u00a31,974.83\t\n#SO-05126\t28 Jan 2026\tDraft\t\u00a352.95\t\n#SO-05103\t25 Jan 2026\tDraft\t\u00a3473.02\t\n#SO-05090\t24 Jan 2026\tDraft\t\u00a320.92\t\n#SO-05089\t24 Jan 2026\tDraft\t\u00a320.92\t\n#SO-05082\t22 Jan 2026\tDraft\t\u00a31,144.10\t\n#SO-01258\t28 Aug 2024\tInvoiced\t\u00a31,061.95\t\nCONTACTS (1)\nNick\nPRIMARY\ninfo@andhalt.com\n01273 107028\nADDRESSES\nBILLING\nAddress\n9 Hanningtons Lane\nAddress 2\n-\nCity\nBrighton\nState\n-\nPostcode\nBN1 1GS\nCountry\nUnited Kingdom\nSHIPPING\nAddress\n9 Hanningtons Lane\nAddress 2\n-\nCity\nBrighton\nState\n-\nPostcode\nBN1 1GS\nCountry\nUnited Kingdom\nINTEGRATION\nZoho ID\n310656000012612215\nSync Status\nSynced",
+      "elements": {
+        "forms": 0,
+        "tables": 1,
+        "buttons": 34,
+        "inputs": 0,
+        "cards": 6,
+        "modals": 0,
+        "links": 3,
+        "images": 4,
+        "headings": [
+          {
+            "tag": "H3",
+            "text": "Customers"
+          },
+          {
+            "tag": "H3",
+            "text": "Inventory"
+          },
+          {
+            "tag": "H3",
+            "text": "Shipping"
+          },
+          {
+            "tag": "H3",
+            "text": "Finance"
+          },
+          {
+            "tag": "H3",
+            "text": "Suppliers"
+          },
+          {
+            "tag": "H1",
+            "text": "& halt"
+          },
+          {
+            "tag": "H3",
+            "text": "COMPANY"
+          },
+          {
+            "tag": "H3",
+            "text": "FINANCIAL"
+          },
+          {
+            "tag": "H3",
+            "text": "ORDERS (9)"
+          },
+          {
+            "tag": "H3",
+            "text": "CONTACTS (1)"
+          },
+          {
+            "tag": "H3",
+            "text": "ADDRESSES"
+          },
+          {
+            "tag": "H3",
+            "text": "INTEGRATION"
+          }
+        ]
+      },
+      "button_labels": [
+        "Customers",
+        "Inventory",
+        "Shipping",
+        "Finance",
+        "Suppliers",
+        "Matt\nAdmin",
+        "Toggle Sidebar",
+        "New Order",
+        "& halt",
+        "info@andhalt.com",
+        "01273 107028",
+        "-",
+        "-",
+        "30",
+        "View all",
+        "9 Hanningtons Lane",
+        "-",
+        "Brighton",
+        "-",
+        "BN1 1GS",
+        "United Kingdom",
+        "9 Hanningtons Lane",
+        "-",
+        "Brighton",
+        "-",
+        "BN1 1GS",
+        "United Kingdom"
+      ],
+      "sidebar_items": [
+        {
+          "text": "Customers",
+          "href": "/customers"
+        },
+        {
+          "text": "info@andhalt.com",
+          "href": "mailto:info@andhalt.com"
+        }
+      ]
+    },
+    {
+      "name": "06-enquiries",
+      "intended_path": "/enquiries",
+      "actual_url": "https://splitfin.co.uk/enquiries",
+      "screenshot": "./screenshots/06-enquiries.png",
+      "title": "Splitfin",
+      "text_summary": "Dashboard\nOrders\nCustomers\nView Customers\nCustomer Map\nEnquiries\nInventory\nShipping\nFinance\nSuppliers\nTools\nImage Management\nCommunication\nTeam Messages\nMatt\nAdmin\nEnquiries\nToggle Sidebar\nEnquiries\nManage and track your sales pipeline\nExport\nNew Enquiry\nAll Status\nNew\nContacted\nQuoted\nNegotiating\nWon\nLost\nAll Priority\nUrgent\nHigh\nMedium\nLow\nSort by Date\nSort by Priority\nSort by Value\nSort by Status\nSort by Follow-up\nNo enquiries found\nThe enquiries feature is being migrated. Please check back later.\nCreate First Enquiry",
+      "elements": {
+        "forms": 0,
+        "tables": 0,
+        "buttons": 17,
+        "inputs": 4,
+        "cards": 0,
+        "modals": 0,
+        "links": 1,
+        "images": 4,
+        "headings": [
+          {
+            "tag": "H3",
+            "text": "Customers"
+          },
+          {
+            "tag": "H3",
+            "text": "Inventory"
+          },
+          {
+            "tag": "H3",
+            "text": "Shipping"
+          },
+          {
+            "tag": "H3",
+            "text": "Finance"
+          },
+          {
+            "tag": "H3",
+            "text": "Suppliers"
+          },
+          {
+            "tag": "H1",
+            "text": "Enquiries"
+          },
+          {
+            "tag": "H3",
+            "text": "No enquiries found"
+          }
+        ]
+      },
+      "button_labels": [
+        "Customers",
+        "Inventory",
+        "Shipping",
+        "Finance",
+        "Suppliers",
+        "Matt\nAdmin",
+        "Toggle Sidebar",
+        "Export",
+        "New Enquiry",
+        "Create First Enquiry"
+      ],
+      "sidebar_items": []
+    },
+    {
+      "name": "07-products",
+      "intended_path": "/inventory/products",
+      "actual_url": "https://splitfin.co.uk/inventory/products",
+      "screenshot": "./screenshots/07-products.png",
+      "title": "Splitfin",
+      "text_summary": "Dashboard\nOrders\nCustomers\nInventory\nInventory Management\nShipping\nFinance\nSuppliers\nTools\nImage Management\nCommunication\nTeam Messages\nMatt\nAdmin\nInventory\nProducts\nToggle Sidebar\nK\nAll Brands\nPricelists\nAI Enhance\nAdd Product\nIn Stock\n886\nLow\n731\nOut\n6,526\n8,190 products\nProduct\n\t\nBrand\n\t\nCategory\n\t\nStock\n\t\nCost\n\t\nRate\n\t\nMargin\n\t\n18 pieces - 6 designs\n92726\n\t\nR\u00e4der\n\t\u2014\t\n0\n\t\n\u00a31.30\n\t\n\u00a32.08\n\t\n60%\n\t\n24 pieces - 3 designs\n93006\n\t\nR\u00e4der\n\t\u2014\t\n0\n\t\n\u00a31.82\n\t\n\u00a32.91\n\t\n60%\n\t\n25er Dummyartikel\n1900029\n\t\nppd PAPERPRODUCTS DESIGN GmbH\n\t\u2014\t\n0\n\t\n\u00a30.90\n\t\n\u00a31.60\n\t\n78%\n\t\n33er Dummyartikel\n1900025\n\t\nppd PAPERPRODUCTS DESIGN GmbH\n\t\u2014\t\n0\n\t\n\u00a30.90\n\t\n\u00a31.60\n\t\n78%\n\t\n48 pieces - 4 designs Decal, high relief. Cotton ribbon.\n92954\n\t\nRader GmbH\n\t\u2014\t\n0\n\t\n\u00a31.30\n\t\n\u00a32.08\n\t\n60%\n\t\n51719\n51719\n\t\nR\u00e4der\n\t\u2014\t\n0\n\t\n\u00a33.91\n\t\n\u00a36.25\n\t\n60%\n\t\n51751\n51751\n\t\nR\u00e4der\n\t\u2014\t\n0\n\t\n\u00a323.44\n\t\n\u00a337.50\n\t\n60%\n\t\n9 pieces - 3 designs\n92961\n\t\nR\u00e4der\n\t\u2014\t\n0\n\t\n\u00a32.60\n\t\n\u00a34.16\n\t\n60%\n\t\nA walk on the wilde side Napkin 33x33\n333002831\n\t\nppd PAPERPRODUCTS DESIGN GmbH\n\t\u2014\t\n0\n\t\n\u00a30.90\n\t\n\u00a31.60\n\t\n78%\n\t\nA walk on the wilde side Trend Mug GB\n360302831\n\t\nppd PAPERPRODUCTS DESIGN GmbH\n\t\u2014\t\n0\n\t\n\u00a33.98\n\t\n\u00a38.25\n\t\n107%\n\t\nABC Love Geschenkdose\n580602071\n\t\nppd PAPERPRODUCTS DESIGN GmbH\n\t\u2014\t\n0\n\t\n\u00a30.98\n\t\n\u00a31.65\n\t\n68%\n\t\nABC Love Magnet\n580702071\n\t\nppd PAPERPRODUCTS DESIGN GmbH\n\t\u2014\t\n0\n\t\n\u00a30.88\n\t\n\u00a31.55\n\t\n76%\n\t\nABC Love Mug 2.0 D@H\n561102071\n\t\nppd PAPERPRODUCTS DESIGN GmbH\n\t\u2014\t\n0\n\t\n\u00a32.23\n\t\n\u00a34.50\n\t\n102%\n\t\nART-EGG\n51810\n\t\nR\u00e4der\n\t\nArt Supplies\n\t\n0\n\t\n\u00a32.34\n\t\n\u00a33.75\n\t\n60%\n\t\nAbeti Napkin 25x25\n125002813\n\t\nppd PAPERPRODUCTS DESIGN GmbH\n\t\u2014\t\n0\n\t\n\u00a30.78\n\t\n\u00a31.40\n\t\n79%\n\t\nAbeti Napkin 33x33\n133002813\n\t\nppd PAPERPRODUCTS DESIGN GmbH\n\t\u2014\t\n0\n\t\n\u00a30.90\n\t\n\u00a31.60\n\t\n78%\n\t\nAbstract Allure Napkin 33x33\n133002298\n\t\nppd PAPERPRODUCTS DESIGN GmbH\n\t\u2014\t\n0\n\t\n\u00a30.90\n\t\n\u00a31.60\n\t\n78%\n\t\nAccroch - Air du matin\n18598\n\t\nR\u00e4der\n\t\nFragrance\n\t\n0\n\t\n\u00a33.91\n\t\n\u00a36.25\n\t\n60%\n\t\nAdvent Napkin 33x33\n333002391\n\t\nppd PAPERPRODUCTS DESIGN GmbH\n\t\u2014\t\n0\n\t\n\u00a30.90\n\t\n\u00a31.60\n\t\n78%\n\t\nAdvent calendar House\nAD6\n\t\nReme",
+      "elements": {
+        "forms": 0,
+        "tables": 1,
+        "buttons": 42,
+        "inputs": 1,
+        "cards": 57,
+        "modals": 0,
+        "links": 2,
+        "images": 4,
+        "headings": [
+          {
+            "tag": "H3",
+            "text": "Customers"
+          },
+          {
+            "tag": "H3",
+            "text": "Inventory"
+          },
+          {
+            "tag": "H3",
+            "text": "Shipping"
+          },
+          {
+            "tag": "H3",
+            "text": "Finance"
+          },
+          {
+            "tag": "H3",
+            "text": "Suppliers"
+          }
+        ]
+      },
+      "button_labels": [
+        "Customers",
+        "Inventory",
+        "Shipping",
+        "Finance",
+        "Suppliers",
+        "Matt\nAdmin",
+        "Toggle Sidebar",
+        "K",
+        "All Brands",
+        "Pricelists",
+        "AI Enhance",
+        "Add Product",
+        "In Stock\n886",
+        "Low\n731",
+        "Out\n6,526",
+        "Product",
+        "Brand",
+        "Category",
+        "Stock",
+        "Cost",
+        "Rate",
+        "Margin",
+        "50/pg",
+        "\u00ab",
+        "\u2039",
+        "1",
+        "2",
+        "164",
+        "\u203a",
+        "\u00bb"
+      ],
+      "sidebar_items": [
+        {
+          "text": "Inventory",
+          "href": "/inventory"
+        }
+      ]
+    },
+    {
+      "name": "08-settings",
+      "intended_path": "/settings/general",
+      "actual_url": "https://splitfin.co.uk/settings/general",
+      "screenshot": "./screenshots/08-settings.png",
+      "title": "Splitfin",
+      "text_summary": "Dashboard\nOrders\nCustomers\nInventory\nShipping\nFinance\nSuppliers\nTools\nImage Management\nCommunication\nTeam Messages\nMatt\nAdmin\nSettings\nGeneral\nToggle Sidebar\nSettings - General\nAccount Information\nNAME\nMatt\nEMAIL\nROLE\nAdmin\nManagement Tools\n\ud83d\udd27\nFix Order\nEdit and re-submit orders to Zoho\nApplication Preferences\nTheme\nChoose your preferred color theme\nDark\nLight (Coming soon)\nLanguage\nSelect your preferred language\nEnglish\nSpanish (Coming soon)\nFrench (Coming soon)",
+      "elements": {
+        "forms": 0,
+        "tables": 0,
+        "buttons": 14,
+        "inputs": 2,
+        "cards": 2,
+        "modals": 0,
+        "links": 2,
+        "images": 4,
+        "headings": [
+          {
+            "tag": "H3",
+            "text": "Customers"
+          },
+          {
+            "tag": "H3",
+            "text": "Inventory"
+          },
+          {
+            "tag": "H3",
+            "text": "Shipping"
+          },
+          {
+            "tag": "H3",
+            "text": "Finance"
+          },
+          {
+            "tag": "H3",
+            "text": "Suppliers"
+          },
+          {
+            "tag": "H1",
+            "text": "Settings - General"
+          },
+          {
+            "tag": "H3",
+            "text": "Account Information"
+          },
+          {
+            "tag": "H3",
+            "text": "Management Tools"
+          },
+          {
+            "tag": "H3",
+            "text": "Application Preferences"
+          },
+          {
+            "tag": "H4",
+            "text": "Theme"
+          },
+          {
+            "tag": "H4",
+            "text": "Language"
+          }
+        ]
+      },
+      "button_labels": [
+        "Customers",
+        "Inventory",
+        "Shipping",
+        "Finance",
+        "Suppliers",
+        "Matt\nAdmin",
+        "Toggle Sidebar",
+        "\ud83d\udd27\nFix Order\nEdit and re-submit orders to Zoho"
+      ],
+      "sidebar_items": [
+        {
+          "text": "Settings",
+          "href": "/settings"
+        }
+      ]
+    }
+  ]
+}

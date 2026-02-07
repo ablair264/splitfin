@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { productService } from '../../services/productService';
 import { authService } from '../../services/authService';
 import { ProgressLoader } from '../ProgressLoader';
@@ -19,6 +20,7 @@ import { ImageItem, Brand } from './types';
 const IMAGES_PER_PAGE = 50;
 
 const ImageManagement: React.FC = () => {
+  usePageTitle('Image Management');
   const { brandId } = useParams<{ brandId?: string }>();
   const navigate = useNavigate();
   const [images, setImages] = useState<ImageItem[]>([]);

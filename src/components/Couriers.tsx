@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authService } from '../services/authService';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Truck, Edit2, Trash2, Plus, MapPin, TrendingUp, Clock } from 'lucide-react';
 
 interface Courier {
@@ -30,6 +31,7 @@ interface CourierStats {
 }
 
 const Couriers: React.FC = () => {
+  usePageTitle('Couriers');
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { authService } from '../../services/authService';
 import { ArrowLeft } from 'lucide-react';
 import { ProgressLoader } from '../ProgressLoader';
 import FixOrder from '../FixOrder';
 
 export default function Settings() {
+  usePageTitle('Settings');
   const [userRole, setUserRole] = useState<string>('');
   const [userName, setUserName] = useState<string>('');
   const [userEmail, setUserEmail] = useState<string>('');
@@ -106,6 +108,39 @@ export default function Settings() {
   );
 }
 
+// Admin Tools — Collapsible Section
+function AdminToolsSection({ onNavigate }: { onNavigate: (path: string) => void }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="mb-10 last:mb-0 border border-foreground/10 rounded-lg overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center justify-between w-full px-5 py-4 bg-foreground/[0.03] text-foreground hover:bg-foreground/5 transition-colors text-left"
+      >
+        <h3 className="m-0 text-base font-semibold">Admin Tools</h3>
+        <span className={`text-muted-foreground transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+          &#9660;
+        </span>
+      </button>
+      {open && (
+        <div className="p-4 border-t border-foreground/10">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 max-sm:grid-cols-1">
+            <button
+              className="flex flex-col items-center gap-2 py-6 px-4 bg-foreground/5 border border-foreground/10 rounded-lg text-foreground cursor-pointer transition-all duration-200 text-center hover:bg-foreground/[0.08] hover:border-foreground/20 hover:-translate-y-0.5"
+              onClick={() => onNavigate('/settings/fix-order')}
+            >
+              <span className="text-xl text-primary">&#128295;</span>
+              <span className="text-sm font-medium">Fix Order</span>
+              <small className="text-xs text-muted-foreground">Edit and re-submit orders to Zoho</small>
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // General Settings Component
 function GeneralSettings({ userName, userEmail, userRole }: { userName: string; userEmail: string; userRole: string }) {
   const navigate = useNavigate();
@@ -130,48 +165,52 @@ function GeneralSettings({ userName, userEmail, userRole }: { userName: string; 
         </div>
       </div>
 
-      {/* Admin Tools Section */}
-      {userRole === 'Admin' && (
-        <div className="mb-10 last:mb-0">
-          <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Management Tools</h3>
-          <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 max-sm:grid-cols-1">
-            <button
-              className="flex flex-col items-center gap-2 py-8 px-4 bg-foreground/5 border border-foreground/10 rounded-lg text-foreground cursor-pointer transition-all duration-200 text-center hover:bg-foreground/[0.08] hover:border-foreground/20 hover:-translate-y-0.5"
-              onClick={() => navigate('/settings/fix-order')}
-            >
-              <span className="text-2xl text-primary">&#128295;</span>
-              <span className="text-base font-medium">Fix Order</span>
-              <small className="text-xs text-muted-foreground">Edit and re-submit orders to Zoho</small>
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className="mb-10 last:mb-0">
         <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Application Preferences</h3>
         <div className="flex items-center justify-between py-4 border-b border-foreground/5 max-sm:flex-col max-sm:items-start max-sm:gap-4">
           <div>
             <h4 className="m-0 mb-1 text-base text-foreground">Theme</h4>
-            <p className="m-0 text-sm text-muted-foreground">Choose your preferred color theme</p>
+            <p className="m-0 text-sm text-muted-foreground">Current colour theme</p>
           </div>
-          <select className="px-4 py-2 bg-foreground/5 border border-foreground/10 rounded-md text-foreground text-[0.9rem] cursor-pointer" defaultValue="dark">
-            <option value="dark">Dark</option>
-            <option value="light">Light (Coming soon)</option>
-          </select>
+          <span className="px-3 py-1.5 bg-foreground/5 border border-foreground/10 rounded-md text-foreground text-sm">Dark</span>
+        </div>
+
+        <div className="flex items-center justify-between py-4 border-b border-foreground/5 max-sm:flex-col max-sm:items-start max-sm:gap-4">
+          <div>
+            <h4 className="m-0 mb-1 text-base text-foreground">Language</h4>
+            <p className="m-0 text-sm text-muted-foreground">Display language</p>
+          </div>
+          <span className="px-3 py-1.5 bg-foreground/5 border border-foreground/10 rounded-md text-foreground text-sm">English</span>
         </div>
 
         <div className="flex items-center justify-between py-4 border-b-0 pb-0 max-sm:flex-col max-sm:items-start max-sm:gap-4">
           <div>
-            <h4 className="m-0 mb-1 text-base text-foreground">Language</h4>
-            <p className="m-0 text-sm text-muted-foreground">Select your preferred language</p>
+            <h4 className="m-0 mb-1 text-base text-foreground">Currency</h4>
+            <p className="m-0 text-sm text-muted-foreground">Default currency for orders and invoices</p>
           </div>
-          <select className="px-4 py-2 bg-foreground/5 border border-foreground/10 rounded-md text-foreground text-[0.9rem] cursor-pointer" defaultValue="en">
-            <option value="en">English</option>
-            <option value="es">Spanish (Coming soon)</option>
-            <option value="fr">French (Coming soon)</option>
-          </select>
+          <span className="px-3 py-1.5 bg-foreground/5 border border-foreground/10 rounded-md text-foreground text-sm">GBP (£)</span>
         </div>
       </div>
+
+      {/* Integrations — Coming Soon */}
+      <div className="mb-10 last:mb-0">
+        <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Integrations</h3>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 max-sm:grid-cols-1">
+          <div className="flex flex-col items-center gap-2 py-6 px-4 bg-foreground/[0.03] border border-dashed border-foreground/10 rounded-lg text-center opacity-60">
+            <span className="text-lg">Zoho Inventory</span>
+            <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded text-xs font-medium">Connected</span>
+          </div>
+          <div className="flex flex-col items-center gap-2 py-6 px-4 bg-foreground/[0.03] border border-dashed border-foreground/10 rounded-lg text-center opacity-60">
+            <span className="text-lg">Tax Settings</span>
+            <span className="px-2 py-0.5 bg-muted-foreground/20 text-muted-foreground rounded text-xs font-medium">Coming soon</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Admin Tools Section — Collapsible */}
+      {userRole === 'Admin' && (
+        <AdminToolsSection onNavigate={navigate} />
+      )}
     </div>
   );
 }

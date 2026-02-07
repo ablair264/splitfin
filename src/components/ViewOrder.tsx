@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { orderService } from '../services/orderService';
 import { customerService } from '../services/customerService';
 import { invoiceService } from '../services/invoiceService';
@@ -68,6 +69,7 @@ interface DisplayLineItem extends OrderLineItem {
 }
 
 function ViewOrder() {
+  usePageTitle('Order');
   const { orderId } = useParams<{ orderId: string }>();
   const navigate = useNavigate();
   const { showLoader, hideLoader } = useLoader();
@@ -222,23 +224,32 @@ function ViewOrder() {
 
   const getStatusBadgeClass = (status: string) => {
     switch (status?.toLowerCase()) {
+      case 'draft':
+        return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
       case 'pending':
-        return 'bg-warning/20 text-warning border-warning/30';
+        return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
       case 'confirmed':
-      case 'delivered':
-        return 'bg-success/20 text-success border-success/30';
+        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
       case 'processing':
-        return 'bg-info/20 text-info border-info/30';
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
       case 'shipped':
-        return 'bg-info/20 text-info border-info/30';
-      case 'cancelled':
-        return 'bg-destructive/20 text-destructive border-destructive/30';
+      case 'partially_shipped':
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'invoiced':
+      case 'partially_invoiced':
+        return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+      case 'delivered':
+      case 'fulfilled':
+        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
       case 'paid':
-        return 'bg-success/20 text-success border-success/30';
+        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+      case 'cancelled':
+      case 'void':
+        return 'bg-destructive/20 text-destructive border-destructive/30';
       case 'overdue':
         return 'bg-destructive/20 text-destructive border-destructive/30';
       case 'partially_paid':
-        return 'bg-warning/20 text-warning border-warning/30';
+        return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
       default:
         return 'bg-muted-foreground/20 text-muted-foreground border-muted-foreground/30';
     }
@@ -578,7 +589,7 @@ function ViewOrder() {
           <h2 className="mt-4 mb-2 text-xl font-bold">Error Loading Order</h2>
           <p className="text-white/70 mb-8">{error}</p>
           <div className="flex gap-4 justify-center">
-            <button onClick={fetchOrderDetails} className="px-6 py-3 bg-gradient-to-r from-brand-300 to-primary text-background rounded-lg font-semibold hover:-translate-y-0.5 hover:shadow-lg hover:shadow-brand-300/30 transition-all">
+            <button onClick={fetchOrderDetails} className="px-6 py-3 bg-gradient-to-r from-primary to-primary text-background rounded-lg font-semibold hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/30 transition-all">
               Retry
             </button>
             <button onClick={handleBackToOrders} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/20 rounded-lg hover:bg-white/10 transition-all text-sm backdrop-blur-sm">
@@ -630,34 +641,38 @@ function ViewOrder() {
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-surface text-white p-6 relative overflow-hidden">
       {/* Animated gradient background */}
       <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle, var(--primary) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-      <div className="absolute inset-0 bg-gradient-to-br from-brand-300/[0.02] via-transparent to-info/[0.02] animate-pulse" style={{ animationDuration: '8s' }} />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] via-transparent to-info/[0.02] animate-pulse" style={{ animationDuration: '8s' }} />
 
       <div className="relative">
         {/* Header */}
         <div className="flex justify-between items-start mb-6 pb-5 border-b border-white/10 flex-wrap gap-4">
           <div className="flex flex-col gap-3">
-            <button onClick={handleBackToOrders} className="flex items-center gap-2 px-4 py-2.5 bg-white/5 border border-white/20 rounded-lg hover:bg-white/10 hover:-translate-x-0.5 transition-all text-sm backdrop-blur-sm w-fit">
-              <ArrowLeft size={16} /> Back to Orders
-            </button>
+            <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <button onClick={handleBackToOrders} className="hover:text-foreground transition-colors">
+                Orders
+              </button>
+              <span className="text-muted-foreground/50">/</span>
+              <span className="text-foreground font-medium">{order.salesorder_number || 'N/A'}</span>
+            </nav>
             <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold">Order {order.salesorder_number || 'N/A'}</h1>
+              <h1 className="text-2xl font-bold text-foreground">Order {order.salesorder_number || 'N/A'}</h1>
               <span className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wide border ${getStatusBadgeClass(order.status)}`}>
                 {order.status}
               </span>
             </div>
           </div>
           <div className="flex gap-3 flex-wrap">
-            <button onClick={handlePrintOrder} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-brand-300/30 text-brand-300 rounded-lg hover:bg-brand-300/10 hover:border-brand-300 transition-all text-sm backdrop-blur-sm">
+            <button onClick={handlePrintOrder} className="flex items-center gap-2 px-4 py-2.5 bg-transparent border border-border text-muted-foreground rounded-lg hover:bg-muted hover:text-foreground transition-all text-sm">
               <File size={16} /> Print
             </button>
-            <button onClick={handleCreateInvoice} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-brand-300/30 text-brand-300 rounded-lg hover:bg-brand-300/10 hover:border-brand-300 transition-all text-sm backdrop-blur-sm">
+            <button onClick={handleCreateInvoice} className="flex items-center gap-2 px-4 py-2.5 bg-transparent border border-border text-muted-foreground rounded-lg hover:bg-muted hover:text-foreground transition-all text-sm">
               <FileText size={16} /> Invoice
             </button>
-            <button onClick={handleSendToPacking} disabled={sendingToPacking} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-brand-300/30 text-brand-300 rounded-lg hover:bg-brand-300/10 hover:border-brand-300 transition-all text-sm backdrop-blur-sm disabled:opacity-50 disabled:cursor-not-allowed">
-              <Package size={16} /> {sendingToPacking ? 'Sending...' : 'Send to Packing'}
-            </button>
-            <button onClick={handleEditOrder} className="flex items-center gap-2 px-6 py-3 bg-brand-300 text-background rounded-lg font-semibold hover:bg-brand-300/90 transition-all text-sm">
+            <button onClick={handleEditOrder} className="flex items-center gap-2 px-4 py-2.5 bg-transparent border border-border text-muted-foreground rounded-lg hover:bg-muted hover:text-foreground transition-all text-sm">
               <Settings size={16} /> Edit Order
+            </button>
+            <button onClick={handleSendToPacking} disabled={sendingToPacking} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+              <Package size={16} /> {sendingToPacking ? 'Sending...' : 'Send to Packing'}
             </button>
           </div>
         </div>
@@ -685,7 +700,7 @@ function ViewOrder() {
           <div className="bg-card rounded-xl border border-white/10 p-4 mb-6 backdrop-blur-sm">
             <div className="flex items-center gap-4 flex-wrap">
               {/* Avatar */}
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-brand-300 to-primary flex items-center justify-center text-white font-bold text-lg shrink-0">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary flex items-center justify-center text-white font-bold text-lg shrink-0">
                 {getCustomerInitial()}
               </div>
 
@@ -700,14 +715,14 @@ function ViewOrder() {
               {/* Contact info inline */}
               <div className="flex items-center gap-5 flex-wrap text-sm text-white/70">
                 {customer.phone && (
-                  <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 hover:text-brand-300 transition-colors">
-                    <Phone size={14} className="text-brand-300" />
+                  <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 hover:text-primary transition-colors">
+                    <Phone size={14} className="text-primary" />
                     <span>{customer.phone}</span>
                   </a>
                 )}
                 {customer.email && (
-                  <a href={`mailto:${customer.email}`} className="flex items-center gap-1.5 hover:text-brand-300 transition-colors">
-                    <Mail size={14} className="text-brand-300" />
+                  <a href={`mailto:${customer.email}`} className="flex items-center gap-1.5 hover:text-primary transition-colors">
+                    <Mail size={14} className="text-primary" />
                     <span>{customer.email}</span>
                   </a>
                 )}
@@ -728,7 +743,7 @@ function ViewOrder() {
               {/* View Customer button */}
               <button
                 onClick={() => navigate(`/customer/${customer.zoho_contact_id}`)}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-brand-300/80 border border-brand-300/25 bg-brand-300/5 rounded-md hover:text-brand-300 hover:border-brand-300/40 hover:bg-brand-300/10 transition-all shrink-0"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-primary/80 border border-primary/25 bg-primary/5 rounded-md hover:text-primary hover:border-primary/40 hover:bg-primary/10 transition-all shrink-0"
               >
                 <ExternalLink size={12} />
                 View Customer
@@ -746,14 +761,14 @@ function ViewOrder() {
               <h3 className="text-sm font-semibold text-white mb-3">Order Details</h3>
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3">
-                  <FileText className="text-brand-300 w-5 shrink-0" size={20} />
+                  <FileText className="text-primary w-5 shrink-0" size={20} />
                   <div className="flex-1">
                     <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Order Number</label>
                     <span className="text-white font-semibold font-mono">{order.salesorder_number || 'N/A'}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Calendar className="text-brand-300 w-5 shrink-0" size={20} />
+                  <Calendar className="text-primary w-5 shrink-0" size={20} />
                   <div className="flex-1">
                     <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Order Date</label>
                     <span className="text-white font-medium">{formatDate(order.date || order.created_at)}</span>
@@ -761,7 +776,7 @@ function ViewOrder() {
                 </div>
                 {order.reference_number && (
                   <div className="flex items-center gap-3">
-                    <Hash className="text-brand-300 w-5 shrink-0" size={20} />
+                    <Hash className="text-primary w-5 shrink-0" size={20} />
                     <div className="flex-1">
                       <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Reference</label>
                       <span className="text-white font-medium">{order.reference_number}</span>
@@ -770,7 +785,7 @@ function ViewOrder() {
                 )}
                 {order.salesperson_name && (
                   <div className="flex items-center gap-3">
-                    <UserCheck className="text-brand-300 w-5 shrink-0" size={20} />
+                    <UserCheck className="text-primary w-5 shrink-0" size={20} />
                     <div className="flex-1">
                       <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Salesperson</label>
                       <span className="text-white font-medium">{order.salesperson_name}</span>
@@ -779,7 +794,7 @@ function ViewOrder() {
                 )}
                 {order.delivery_date && (
                   <div className="flex items-center gap-3">
-                    <CalendarCheck className="text-brand-300 w-5 shrink-0" size={20} />
+                    <CalendarCheck className="text-primary w-5 shrink-0" size={20} />
                     <div className="flex-1">
                       <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Delivery Date</label>
                       <span className="text-white font-medium">{formatDate(order.delivery_date)}</span>
@@ -802,11 +817,11 @@ function ViewOrder() {
                       <div key={step.key} className="flex items-start gap-3 relative">
                         {index < orderStatusSteps.length - 1 && (
                           <div className={`absolute left-[15px] top-[32px] w-0.5 h-[calc(100%-8px)] ${
-                            isCompleted ? 'bg-brand-300' : 'bg-white/10'
+                            isCompleted ? 'bg-primary' : 'bg-white/10'
                           }`} />
                         )}
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 transition-all ${
-                          isCompleted ? 'bg-brand-300 text-background' :
+                          isCompleted ? 'bg-primary text-background' :
                           isCurrent ? 'bg-success text-white shadow-[0_0_12px_color-mix(in_srgb,var(--success)_50%,transparent)]' :
                           'bg-white/10 text-white/40'
                         }`}>
@@ -851,23 +866,23 @@ function ViewOrder() {
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     {customer.email && (
-                      <a href={`mailto:${customer.email}`} className="flex items-center gap-3 text-sm text-white/80 hover:text-brand-300 transition-colors">
-                        <Mail size={16} className="text-brand-300" />
+                      <a href={`mailto:${customer.email}`} className="flex items-center gap-3 text-sm text-white/80 hover:text-primary transition-colors">
+                        <Mail size={16} className="text-primary" />
                         <span>{customer.email}</span>
                       </a>
                     )}
                     {customer.phone && (
-                      <a href={`tel:${customer.phone}`} className="flex items-center gap-3 text-sm text-white/80 hover:text-brand-300 transition-colors">
-                        <Phone size={16} className="text-brand-300" />
+                      <a href={`tel:${customer.phone}`} className="flex items-center gap-3 text-sm text-white/80 hover:text-primary transition-colors">
+                        <Phone size={16} className="text-primary" />
                         <span>{customer.phone}</span>
                       </a>
                     )}
                   </div>
 
                   <div className="mt-2">
-                    <h5 className="text-sm font-semibold text-brand-300 uppercase tracking-wide mb-2">Billing Address</h5>
+                    <h5 className="text-sm font-semibold text-primary uppercase tracking-wide mb-2">Billing Address</h5>
                     <div className="flex items-start gap-3 text-sm text-white/80 leading-relaxed">
-                      <Home size={16} className="text-brand-300 mt-0.5 shrink-0" />
+                      <Home size={16} className="text-primary mt-0.5 shrink-0" />
                       <div>
                         {customer.billing_address?.address}<br />
                         {customer.billing_address?.street2 && <>{customer.billing_address.street2}<br /></>}
@@ -878,9 +893,9 @@ function ViewOrder() {
                   </div>
 
                   <div className="mt-2">
-                    <h5 className="text-sm font-semibold text-brand-300 uppercase tracking-wide mb-2">Shipping Address</h5>
+                    <h5 className="text-sm font-semibold text-primary uppercase tracking-wide mb-2">Shipping Address</h5>
                     <div className="flex items-start gap-3 text-sm text-white/80 leading-relaxed">
-                      <MapPin size={16} className="text-brand-300 mt-0.5 shrink-0" />
+                      <MapPin size={16} className="text-primary mt-0.5 shrink-0" />
                       <div>
                         {customer.shipping_address?.address ? (
                           <>
@@ -922,7 +937,7 @@ function ViewOrder() {
                             onClick={() => setActivePackageTab(idx)}
                             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                               activePackageTab === idx
-                                ? 'bg-brand-300/20 text-brand-300 border border-brand-300/30'
+                                ? 'bg-primary/20 text-primary border border-primary/30'
                                 : 'text-white/60 border border-white/10 hover:bg-white/5 hover:text-white'
                             }`}
                           >
@@ -974,10 +989,10 @@ function ViewOrder() {
                         </div>
 
                         <div className="mt-2">
-                          <h4 className="text-sm font-semibold text-brand-300 mb-2">Ship To</h4>
+                          <h4 className="text-sm font-semibold text-primary mb-2">Ship To</h4>
                           {(order.shipping_address_json?.address || customer.shipping_address?.address) ? (
                             <div className="flex items-start gap-3 text-sm text-white/80 leading-relaxed">
-                              <MapPin size={16} className="text-brand-300 mt-0.5 shrink-0" />
+                              <MapPin size={16} className="text-primary mt-0.5 shrink-0" />
                               <div>
                                 <strong>{customer.company_name}</strong><br />
                                 {order.shipping_address_json?.address || customer.shipping_address?.address}<br />
@@ -1001,7 +1016,7 @@ function ViewOrder() {
             {order.notes && (
               <div className="bg-card rounded-xl border border-white/10 p-5 backdrop-blur-sm">
                 <h3 className="text-sm font-semibold text-white mb-3">Order Notes</h3>
-                <div className="bg-white/5 p-4 rounded-lg border-l-4 border-brand-300">
+                <div className="bg-white/5 p-4 rounded-lg border-l-4 border-primary">
                   <p className="text-white/90 leading-relaxed m-0 text-sm">{order.notes}</p>
                 </div>
               </div>
@@ -1014,7 +1029,7 @@ function ViewOrder() {
             <div className="bg-card rounded-xl border border-white/10 p-5 backdrop-blur-sm">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-sm font-semibold text-white">Order Items</h3>
-                <span className="text-lg font-semibold text-brand-300">Total: {formatCurrency(order.total || 0)}</span>
+                <span className="text-lg font-semibold text-primary">Total: {formatCurrency(order.total || 0)}</span>
               </div>
 
               {/* Tab Filters */}
@@ -1024,7 +1039,7 @@ function ViewOrder() {
                     key={tab}
                     className={`px-4 py-2 border rounded-md text-sm font-medium transition-all ${
                       activeTab === tab
-                        ? 'bg-brand-300/20 border-brand-300 text-brand-300'
+                        ? 'bg-primary/20 border-primary text-primary'
                         : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10 hover:text-white'
                     }`}
                     onClick={() => setActiveTab(tab)}
@@ -1062,7 +1077,7 @@ function ViewOrder() {
                           {item.brand_name && <span className="text-xs text-white/60">{item.brand_name}</span>}
                         </div>
                         <div>
-                          <code className="bg-white/10 px-2 py-1 rounded text-xs text-brand-300 border border-brand-300/20">
+                          <code className="bg-white/10 px-2 py-1 rounded text-xs text-primary border border-primary/20">
                             {item.sku || item.zoho_item_id?.substr(0, 8) || 'N/A'}
                           </code>
                         </div>
@@ -1120,7 +1135,7 @@ function ViewOrder() {
                     <span>{formatCurrency(order.adjustment || 0)}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center py-3 border-t border-white/10 mt-2 text-lg font-semibold text-brand-300">
+                <div className="flex justify-between items-center py-3 border-t border-white/10 mt-2 text-lg font-semibold text-primary">
                   <span>Total:</span>
                   <span>{formatCurrency(order.total || 0)}</span>
                 </div>
@@ -1129,13 +1144,21 @@ function ViewOrder() {
               {/* Invoice Section (below summary) */}
               <div className="mt-6 pt-6 border-t border-white/10">
                 <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
-                  <CreditCard size={16} className="text-brand-300" />
+                  <CreditCard size={16} className="text-primary" />
                   Invoices {invoices.length > 0 && <span className="text-xs text-white/50">({invoices.length})</span>}
                 </h3>
                 {invoices.length === 0 ? (
-                  <div className="flex items-center gap-3 px-4 py-4 bg-white/[0.02] rounded-lg border border-white/5 text-white/50 text-sm">
-                    <FileText size={18} className="text-white/30" />
-                    <span>No invoice generated yet</span>
+                  <div className="flex items-center justify-between gap-3 px-4 py-4 bg-white/[0.02] rounded-lg border border-white/5 text-sm">
+                    <div className="flex items-center gap-3 text-muted-foreground">
+                      <FileText size={18} className="text-muted-foreground/50" />
+                      <span>No invoice generated yet</span>
+                    </div>
+                    <button
+                      onClick={handleCreateInvoice}
+                      className="px-3 py-1.5 text-xs font-medium text-primary border border-primary/30 rounded-md hover:bg-primary/10 transition-colors whitespace-nowrap"
+                    >
+                      Generate Invoice
+                    </button>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-3">

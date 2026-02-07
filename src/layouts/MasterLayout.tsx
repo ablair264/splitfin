@@ -12,7 +12,7 @@ import { SidebarProvider, SidebarInset } from '../components/ui/sidebar';
 
 // Components
 import Dashboard from '../components/Dashboard';
-import CustomersManagement from '../components/CustomersManagement';
+import CustomersTable from '../components/customers/CustomersTable';
 import CustomerDetail from '../components/CustomerDetail';
 import CustomerMap from '../components/CustomerMap';
 import EnquiryList from '../components/EnquiryList';
@@ -21,10 +21,10 @@ import OfflineStatus from '../components/OfflineStatus';
 import { ProgressLoader } from '../components/ProgressLoader';
 import { useLoader } from '../contexts/LoaderContext';
 import OrderDetail from '../components/OrderDetail';
-import ViewOrders from '../components/ViewOrders';
+import OrdersTable from '../components/orders/OrdersTable';
 import OrderManagement from '../components/OrderManagement';
 import ViewOrder from '../components/ViewOrder';
-import InventoryProducts from '../components/InventoryManagement/InventoryProducts';
+import ProductsTable from '../components/inventory/ProductsTable';
 import ImageManagement from '../components/ImageManagement/ImageManagement';
 import Settings from '../components/Settings/Settings';
 import Messaging from '../components/Messaging/Messaging';
@@ -222,7 +222,7 @@ export default function MasterLayout() {
             <Route path="/dashboard" element={<Dashboard />} />
 
             {/* Customer Routes */}
-            <Route path="/customers" element={<CustomersManagement />} />
+            <Route path="/customers" element={<CustomersTable />} />
             <Route path="/customers/map" element={<CustomerMap />} />
             <Route path="/customers/:customerId" element={<CustomerDetail />} />
 
@@ -231,13 +231,13 @@ export default function MasterLayout() {
             <Route path="/enquiries/:enquiryId" element={<ViewEnquiry />} />
 
             {/* Order Management Routes */}
-            <Route path="/orders" element={<ViewOrders />} />
+            <Route path="/orders" element={<OrdersTable />} />
             <Route path="/orders/management" element={<OrderManagement />} />
             <Route path="/order/:orderId" element={<ViewOrder />} />
             <Route path="/order-detail/:orderId" element={<OrderDetail />} />
 
             {/* Inventory Management Routes */}
-            <Route path="/inventory/products" element={<InventoryProducts />} />
+            <Route path="/inventory/products" element={<ProductsTable />} />
 
             {/* Shipping Routes */}
             <Route path="/shipping/warehouse" element={<Warehouse />} />

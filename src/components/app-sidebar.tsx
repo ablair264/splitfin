@@ -81,16 +81,12 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
     }
   }
 
-  const handleNavigate = (path: string) => {
-    navigate(path)
-  }
-
   const isAdmin = user?.is_admin ?? false
 
   const getItemClass = (isActive: boolean) => {
     const base = "min-h-11"
     if (isActive) {
-      return `${base} bg-sidebar-primary text-sidebar-primary-foreground [&_[data-slot=icon]]:text-sidebar-primary-foreground`
+      return `${base} border-l-2 border-l-primary bg-sidebar-primary text-sidebar-primary-foreground [&_[data-slot=icon]]:text-sidebar-primary-foreground`
     }
     return base
   }
@@ -119,7 +115,7 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
             <SidebarItem
               tooltip="Dashboard"
               isCurrent={isPathActive('/dashboard')}
-              onPress={() => handleNavigate('/dashboard')}
+              href="/dashboard"
               className={getItemClass(isPathActive('/dashboard'))}
             >
               <Home data-slot="icon" />
@@ -129,7 +125,7 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
             <SidebarItem
               tooltip="Orders"
               isCurrent={isPathActive('/orders')}
-              onPress={() => handleNavigate('/orders')}
+              href="/orders"
               className={getItemClass(isPathActive('/orders'))}
             >
               <Cart data-slot="icon" />
@@ -159,7 +155,7 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
                 <SidebarItem
                   tooltip="View Customers"
                   isCurrent={location.pathname === '/customers'}
-                  onPress={() => handleNavigate('/customers')}
+                  href="/customers"
                   className={getItemClass(location.pathname === '/customers')}
                 >
                   <Users data-slot="icon" className="size-3.5" />
@@ -168,7 +164,7 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
                 <SidebarItem
                   tooltip="Customer Map"
                   isCurrent={isPathActive('/customers/map')}
-                  onPress={() => handleNavigate('/customers/map')}
+                  href="/customers/map"
                   className={getItemClass(isPathActive('/customers/map'))}
                 >
                   <MapPin data-slot="icon" className="size-3.5" />
@@ -177,7 +173,7 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
                 <SidebarItem
                   tooltip="Enquiries"
                   isCurrent={isPathActive('/enquiries')}
-                  onPress={() => handleNavigate('/enquiries')}
+                  href="/enquiries"
                   className={getItemClass(isPathActive('/enquiries'))}
                 >
                   <ChatDots data-slot="icon" className="size-3.5" />
@@ -197,7 +193,7 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
                   <SidebarItem
                     tooltip="Inventory Management"
                     isCurrent={isPathActive('/inventory/products')}
-                    onPress={() => handleNavigate('/inventory/products')}
+                    href="/inventory/products"
                     className={getItemClass(isPathActive('/inventory/products'))}
                   >
                     <Box data-slot="icon" className="size-3.5" />
@@ -218,7 +214,7 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
                   <SidebarItem
                     tooltip="Warehouse"
                     isCurrent={isPathActive('/shipping/warehouse')}
-                    onPress={() => handleNavigate('/shipping/warehouse')}
+                    href="/shipping/warehouse"
                     className={getItemClass(isPathActive('/shipping/warehouse'))}
                   >
                     <Building data-slot="icon" className="size-3.5" />
@@ -227,7 +223,7 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
                   <SidebarItem
                     tooltip="Couriers"
                     isCurrent={isPathActive('/shipping/couriers')}
-                    onPress={() => handleNavigate('/shipping/couriers')}
+                    href="/shipping/couriers"
                     className={getItemClass(isPathActive('/shipping/couriers'))}
                   >
                     <Send data-slot="icon" className="size-3.5" />
@@ -236,7 +232,7 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
                   <SidebarItem
                     tooltip="Deliveries"
                     isCurrent={isPathActive('/shipping/deliveries')}
-                    onPress={() => handleNavigate('/shipping/deliveries')}
+                    href="/shipping/deliveries"
                     className={getItemClass(isPathActive('/shipping/deliveries'))}
                   >
                     <Package data-slot="icon" className="size-3.5" />
@@ -257,7 +253,7 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
                   <SidebarItem
                     tooltip="Invoices"
                     isCurrent={isPathActive('/finance/invoices')}
-                    onPress={() => handleNavigate('/finance/invoices')}
+                    href="/finance/invoices"
                     className={getItemClass(isPathActive('/finance/invoices'))}
                   >
                     <FileText data-slot="icon" className="size-3.5" />
@@ -266,7 +262,7 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
                   <SidebarItem
                     tooltip="Purchase Orders"
                     isCurrent={isPathActive('/finance/purchase-orders')}
-                    onPress={() => handleNavigate('/finance/purchase-orders')}
+                    href="/finance/purchase-orders"
                     className={getItemClass(isPathActive('/finance/purchase-orders'))}
                   >
                     <Clipboard data-slot="icon" className="size-3.5" />
@@ -287,7 +283,7 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
                   <SidebarItem
                     tooltip="Supplier Management"
                     isCurrent={location.pathname === '/suppliers'}
-                    onPress={() => handleNavigate('/suppliers')}
+                    href="/suppliers"
                     className={getItemClass(location.pathname === '/suppliers')}
                   >
                     <Users data-slot="icon" className="size-3.5" />
@@ -296,7 +292,7 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
                   <SidebarItem
                     tooltip="Add Supplier"
                     isCurrent={isPathActive('/suppliers/new')}
-                    onPress={() => handleNavigate('/suppliers/new')}
+                    href="/suppliers/new"
                     className={getItemClass(isPathActive('/suppliers/new'))}
                   >
                     <UserPlus data-slot="icon" className="size-3.5" />
@@ -313,7 +309,7 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
               <SidebarItem
                 tooltip="Image Management"
                 isCurrent={isPathActive('/image-management')}
-                onPress={() => handleNavigate('/image-management')}
+                href="/image-management"
                 className={getItemClass(isPathActive('/image-management'))}
               >
                 <Image data-slot="icon" />
@@ -327,11 +323,24 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
             <SidebarItem
               tooltip="Messaging"
               isCurrent={isPathActive('/messaging')}
-              onPress={() => handleNavigate('/messaging')}
+              href="/messaging"
               className={getItemClass(isPathActive('/messaging'))}
             >
               <MessageDots data-slot="icon" />
               <SidebarLabel>Team Messages</SidebarLabel>
+            </SidebarItem>
+          </SidebarSection>
+
+          {/* Settings — Phase 1.6 */}
+          <SidebarSection className="pt-6 border-t border-sidebar-border/30">
+            <SidebarItem
+              tooltip="Settings"
+              isCurrent={isPathActive('/settings')}
+              href="/settings"
+              className={getItemClass(isPathActive('/settings'))}
+            >
+              <Cog data-slot="icon" />
+              <SidebarLabel>Settings</SidebarLabel>
             </SidebarItem>
           </SidebarSection>
         </SidebarSectionGroup>
@@ -373,16 +382,16 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
               </MenuHeader>
             </MenuSection>
 
-            <MenuItem onAction={() => handleNavigate('/dashboard')}>
+            <MenuItem href="/dashboard">
               <Home />
               Dashboard
             </MenuItem>
-            <MenuItem onAction={() => handleNavigate('/settings')}>
+            <MenuItem href="/settings">
               <Cog />
               Settings
             </MenuItem>
             <MenuSeparator />
-            <MenuItem onAction={() => handleNavigate('/settings/help')}>
+            <MenuItem href="/settings/help">
               <QuestionCircle />
               Help & Support
             </MenuItem>

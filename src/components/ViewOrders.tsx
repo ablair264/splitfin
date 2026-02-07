@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import PageHeader from '@/components/shared/PageHeader';
 import { orderService } from '../services/orderService';
 import { useLoader } from '../contexts/LoaderContext';
 import type { Order as DomainOrder } from '../types/domain';
@@ -33,6 +35,7 @@ function SkeletonRow() {
 }
 
 function ViewOrders() {
+  usePageTitle('Orders');
   const [orders, setOrders] = useState<DomainOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -188,18 +191,23 @@ function ViewOrders() {
 
   const getStatusColor = (status: string) => {
     switch (status?.toLowerCase()) {
-      case 'shipped':
-      case 'delivered':
-      case 'fulfilled':
-      case 'closed':
-        return 'bg-success/10 text-success border-success/20';
-      case 'pending':
-      case 'open':
       case 'draft':
-        return 'bg-warning/10 text-warning border-warning/20';
+        return 'bg-amber-500/20 text-amber-400 border-amber-500/30';
+      case 'confirmed':
+        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
+      case 'shipped':
+      case 'partially_shipped':
+        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+      case 'invoiced':
+      case 'partially_invoiced':
+        return 'bg-purple-500/20 text-purple-400 border-purple-500/30';
+      case 'fulfilled':
+      case 'delivered':
+      case 'closed':
+        return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
       case 'cancelled':
       case 'void':
-        return 'bg-destructive/10 text-destructive border-destructive/20';
+        return 'bg-destructive/20 text-destructive border-destructive/30';
       default:
         return 'bg-muted-foreground/10 text-muted-foreground border-muted-foreground/20';
     }
@@ -253,14 +261,14 @@ function ViewOrders() {
 
   if (error && orders.length === 0) {
     return (
-      <div className="min-h-screen text-white bg-gradient-to-br from-background via-card to-surface p-4 flex items-center justify-center">
+      <div className="min-h-screen text-foreground p-4 flex items-center justify-center">
         <div className="text-center">
           <div className="text-5xl mb-4 opacity-50">&#x26A0;&#xFE0F;</div>
           <h3 className="text-xl font-semibold text-foreground mb-2">Error loading orders</h3>
           <p className="text-muted-foreground mb-4">{error}</p>
           <button
             onClick={() => fetchOrders(true)}
-            className="px-4 py-2 bg-brand-300/20 text-brand-300 border border-brand-300/30 rounded-lg hover:bg-brand-300/30 transition-colors"
+            className="px-4 py-2 bg-primary/20 text-primary border border-primary/30 rounded-lg hover:bg-primary/30 transition-colors"
           >
             Retry
           </button>
@@ -270,9 +278,12 @@ function ViewOrders() {
   }
 
   return (
-    <div className="min-h-screen text-white bg-gradient-to-br from-background via-card to-surface p-4 relative overflow-hidden">
-      {/* Animated dot pattern background */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle, var(--primary) 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+    <div className="min-h-screen text-foreground p-4 relative overflow-hidden">
+      <PageHeader
+        title="Orders"
+        count={totalCount}
+        subtitle="orders"
+      />
 
       {/* Card */}
       <div className="bg-card rounded-xl border border-border overflow-hidden relative">
@@ -280,11 +291,11 @@ function ViewOrders() {
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border flex-wrap">
           {/* Customer filter indicator */}
           {customerFilter && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-brand-300/10 border border-brand-300/30 rounded-lg text-sm text-brand-300">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 border border-primary/30 rounded-lg text-sm text-primary">
               <span>Orders for: <strong>{customerFilterName}</strong></span>
               <button
                 onClick={clearCustomerFilter}
-                className="p-0.5 hover:bg-brand-300/20 rounded transition-colors"
+                className="p-0.5 hover:bg-primary/20 rounded transition-colors"
                 title="Show all orders"
               >
                 <X size={14} />
@@ -300,10 +311,10 @@ function ViewOrders() {
               placeholder="Search by order #, customer, or reference..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-20 py-2 bg-background border border-border rounded-lg text-white text-sm placeholder-muted-foreground transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30"
+              className="w-full pl-9 pr-20 py-2 bg-background border border-border rounded-lg text-foreground text-sm placeholder-muted-foreground transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
             />
             {isSearching && (
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-brand-300/70 animate-pulse">
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-primary/70 animate-pulse">
                 Searching...
               </span>
             )}
@@ -313,7 +324,7 @@ function ViewOrders() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-background border border-border rounded-lg text-white text-sm cursor-pointer transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30"
+            className="px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm cursor-pointer transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
@@ -362,17 +373,17 @@ function ViewOrders() {
                   onClick={() => handleViewOrder(order)}
                 >
                   {/* Order # */}
-                  <div className="font-mono text-sm font-medium text-brand-300">
+                  <div className="font-mono text-sm font-medium text-primary">
                     <span className="lg:hidden text-xs text-muted-foreground mr-2 font-sans">Order:</span>
                     {order.salesorder_number || 'N/A'}
                   </div>
 
                   {/* Customer */}
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-300 to-primary flex items-center justify-center text-white font-semibold text-xs shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary flex items-center justify-center text-white font-semibold text-xs shrink-0">
                       {getCustomerInitials(order.customer_name || 'Unknown')}
                     </div>
-                    <span className="text-sm font-medium text-white truncate">
+                    <span className="text-sm font-medium text-foreground truncate">
                       {order.customer_name || 'Unknown'}
                     </span>
                   </div>
@@ -385,7 +396,7 @@ function ViewOrders() {
 
                   {/* Status + fulfillment */}
                   <div className="flex flex-col gap-1">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border capitalize w-fit ${getStatusColor(order.status)}`}>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium border capitalize w-fit ${getStatusColor(order.status)}`}>
                       {order.status || 'unknown'}
                     </span>
                     <div className="flex items-center gap-2 text-[10px]">
@@ -442,7 +453,7 @@ function ViewOrders() {
                     disabled={loading}
                     className={`min-w-[32px] h-8 px-2 text-sm font-medium rounded-md transition-colors ${
                       page === currentPage
-                        ? 'bg-brand-300/20 text-brand-300 border border-brand-300/30'
+                        ? 'bg-primary/20 text-primary border border-primary/30'
                         : 'text-muted-foreground border border-border hover:bg-muted'
                     } disabled:cursor-not-allowed`}
                   >

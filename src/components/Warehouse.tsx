@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { authService } from '../services/authService';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { shippingService, OrderWithShipping } from '../services/shippingService';
 import { withLoader } from '../hoc/withLoader';
 import { 
@@ -144,6 +145,7 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onStatusUpdate, isUpdating
 };
 
 const Warehouse: React.FC = () => {
+  usePageTitle('Warehouse');
   const [userData, setUserData] = useState<{ company_id: string } | null>(null);
   const [orders, setOrders] = useState<{
     pending: OrderWithShipping[];

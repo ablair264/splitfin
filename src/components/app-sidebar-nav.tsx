@@ -1,11 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useLocation, useNavigate } from "react-router-dom"
+import { useLocation } from "react-router-dom"
 import { Cog, Bell, Mail, Sun, Moon } from "@mynaui/icons-react"
 import { Breadcrumbs, BreadcrumbsItem } from "@/components/ui/breadcrumbs"
 import { SidebarNav, SidebarTrigger } from "@/components/ui/sidebar"
 import { Button } from "@/components/ui/button"
+import { Link } from "@/components/ui/link"
+import { Tooltip, TooltipContent } from "@/components/ui/tooltip"
 import { Switch } from "@/components/animate-ui/components/radix/switch"
 
 interface AppSidebarNavProps {
@@ -20,7 +22,6 @@ export default function AppSidebarNav({
   onNotificationsClick,
 }: AppSidebarNavProps) {
   const location = useLocation()
-  const navigate = useNavigate()
   const [isDark, setIsDark] = useState(true)
 
   // Initialize theme from document
@@ -125,44 +126,48 @@ export default function AppSidebarNav({
       <div className="ml-auto flex items-center gap-3">
         <SidebarTrigger className="-mr-1" />
 
-        <Switch
-          checked={isDark}
-          onCheckedChange={handleThemeToggle}
-          startIcon={<Sun />}
-          endIcon={<Moon />}
-          aria-label="Toggle theme"
-        />
+        <Tooltip delay={0}>
+          <Switch
+            checked={isDark}
+            onCheckedChange={handleThemeToggle}
+            startIcon={<Sun />}
+            endIcon={<Moon />}
+            aria-label="Toggle theme"
+          />
+          <TooltipContent placement="bottom">{isDark ? 'Switch to light mode' : 'Switch to dark mode'}</TooltipContent>
+        </Tooltip>
 
-        <Button
-          intent="plain"
-          size="sq-sm"
-          aria-label="Notifications"
-          className="relative"
-          onPress={onNotificationsClick}
-        >
-          <Bell className="size-5" />
-          {unreadNotifications > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
-              {unreadNotifications > 9 ? '9+' : unreadNotifications}
-            </span>
-          )}
-        </Button>
-        <Button
-          intent="plain"
-          size="sq-sm"
-          aria-label="Messages"
-          onPress={() => navigate('/messaging')}
-        >
-          <Mail className="size-5" />
-        </Button>
-        <Button
-          intent="plain"
-          size="sq-sm"
-          aria-label="Settings"
-          onPress={() => navigate('/settings')}
-        >
-          <Cog className="size-5" />
-        </Button>
+        <Tooltip delay={0}>
+          <Button
+            intent="plain"
+            size="sq-sm"
+            aria-label="Notifications"
+            className="relative"
+            onPress={onNotificationsClick}
+          >
+            <Bell className="size-5" />
+            {unreadNotifications > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-white">
+                {unreadNotifications > 9 ? '9+' : unreadNotifications}
+              </span>
+            )}
+          </Button>
+          <TooltipContent placement="bottom">Notifications</TooltipContent>
+        </Tooltip>
+        <Tooltip delay={0}>
+          <Link href="/messaging" className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+            <Mail className="size-5" />
+            <span className="sr-only">Messages</span>
+          </Link>
+          <TooltipContent placement="bottom">Messages</TooltipContent>
+        </Tooltip>
+        <Tooltip delay={0}>
+          <Link href="/settings" className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+            <Cog className="size-5" />
+            <span className="sr-only">Settings</span>
+          </Link>
+          <TooltipContent placement="bottom">Settings</TooltipContent>
+        </Tooltip>
       </div>
     </SidebarNav>
   )

@@ -55,7 +55,7 @@ export const chatbotService = {
   // Business data queries
   async getCustomerCount(_companyId: string): Promise<number> {
     try {
-      return await customerService.count('active');
+      return await customerService.count({ status: 'active' });
     } catch (error) {
       console.error('Chatbot: Error in getCustomerCount:', error);
       throw error;

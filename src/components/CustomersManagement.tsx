@@ -1,5 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import PageHeader from '@/components/shared/PageHeader';
 import { Plus, Search, User, Eye, Grid3x3, List, ChevronLeft, ChevronRight } from 'lucide-react';
 import { customerService } from '../services/customerService';
 import type { Customer as DomainCustomer } from '../types/domain';
@@ -11,6 +13,7 @@ type SortBy = 'name' | 'date' | 'value' | 'last_order';
 type ViewMode = 'list' | 'grid';
 
 function CustomersManagement() {
+  usePageTitle('Customers');
   const [customers, setCustomers] = useState<DomainCustomer[]>([]);
   const [loading, setLoading] = useState(true);
   const [dataProcessing, setDataProcessing] = useState(false);
@@ -154,7 +157,7 @@ function CustomersManagement() {
                 {/* Customer */}
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="relative shrink-0">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-300 to-primary flex items-center justify-center text-white font-semibold text-xs">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary flex items-center justify-center text-white font-semibold text-xs">
                       {customer.company_name.charAt(0).toUpperCase()}
                     </div>
                     {hasLoggedIn && (
@@ -162,7 +165,7 @@ function CustomersManagement() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <div className="text-sm font-medium text-foreground truncate group-hover:text-brand-300 transition-colors">
+                    <div className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
                       {customer.company_name}
                     </div>
                     {customer.location_region && (
@@ -200,7 +203,7 @@ function CustomersManagement() {
                 {/* Payment Terms */}
                 <div className="hidden lg:block">
                   {customer.payment_terms_label ? (
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-brand-300/10 text-brand-300 border border-brand-300/20 leading-tight">
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary border border-primary/20 leading-tight">
                       {customer.payment_terms_label}
                     </span>
                   ) : (
@@ -212,7 +215,7 @@ function CustomersManagement() {
                 <div className="flex gap-1" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleViewCustomer(customer)}
-                    className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-brand-300/80 border border-brand-300/25 bg-brand-300/5 rounded-md hover:text-brand-300 hover:border-brand-300/40 hover:bg-brand-300/10 transition-all"
+                    className="inline-flex items-center gap-1 px-2 py-1.5 text-[11px] font-medium text-primary/80 border border-primary/25 bg-primary/5 rounded-md hover:text-primary hover:border-primary/40 hover:bg-primary/10 transition-all"
                     title="View Customer"
                   >
                     <User size={11} />
@@ -258,7 +261,7 @@ function CustomersManagement() {
               {/* Card Header */}
               <div className="flex items-center gap-3 mb-4">
                 <div className="relative shrink-0">
-                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-brand-300 to-primary flex items-center justify-center text-white font-semibold text-sm">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary flex items-center justify-center text-white font-semibold text-sm">
                     {customer.company_name.charAt(0).toUpperCase()}
                   </div>
                   {hasLoggedIn && (
@@ -266,7 +269,7 @@ function CustomersManagement() {
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-sm font-semibold text-foreground truncate group-hover:text-brand-300 transition-colors">
+                  <h3 className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                     {customer.company_name}
                   </h3>
                   <p className="text-xs text-muted-foreground truncate">
@@ -308,7 +311,7 @@ function CustomersManagement() {
                 <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => handleViewCustomer(customer)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-muted-foreground border border-border rounded-md hover:text-brand-300 hover:border-brand-300/40 transition-all"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs text-muted-foreground border border-border rounded-md hover:text-primary hover:border-primary/40 transition-all"
                   >
                     <User size={11} /> View
                   </button>
@@ -328,7 +331,22 @@ function CustomersManagement() {
   );
 
   return (
-    <div className="min-h-screen text-foreground bg-background p-6 relative overflow-hidden">
+    <div className="min-h-screen text-foreground p-6 relative overflow-hidden">
+      <PageHeader
+        title="Customers"
+        count={customers.length}
+        subtitle="customers"
+        actions={
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Plus size={16} />
+            New Customer
+          </button>
+        }
+      />
+
       {/* Table Card */}
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         {/* Integrated Toolbar */}
@@ -341,7 +359,7 @@ function CustomersManagement() {
               placeholder="Search customers..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
-              className="w-full pl-9 pr-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm placeholder-muted-foreground transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30"
+              className="w-full pl-9 pr-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm placeholder-muted-foreground transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
             />
           </div>
 
@@ -377,7 +395,7 @@ function CustomersManagement() {
           <select
             value={sortBy}
             onChange={(e) => { setSortBy(e.target.value as SortBy); setCurrentPage(1); }}
-            className="px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm cursor-pointer transition-colors focus:outline-none focus:border-brand-300 focus:ring-1 focus:ring-brand-300/30"
+            className="px-3 py-2 bg-background border border-border rounded-lg text-foreground text-sm cursor-pointer transition-colors focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30"
           >
             <option value="name">Sort by Name</option>
             <option value="date">Sort by Date Created</option>
@@ -385,14 +403,6 @@ function CustomersManagement() {
             <option value="last_order">Sort by Last Order</option>
           </select>
 
-          {/* New Customer */}
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-all shrink-0"
-          >
-            <Plus size={16} />
-            New Customer
-          </button>
         </div>
 
         {/* Results count */}

@@ -1,4 +1,5 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useHref } from 'react-router-dom';
+import { RouterProvider } from 'react-aria-components';
 import { authService } from './services/authService';
 import { LoaderProvider } from './contexts/LoaderContext';
 import Login from './components/Login';
@@ -12,19 +13,23 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const navigate = useNavigate();
+
   return (
-    <LoaderProvider>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route
-          path="/*"
-          element={
-            <ProtectedRoute>
-              <MasterLayout />
-            </ProtectedRoute>
-          }
-        />
-      </Routes>
-    </LoaderProvider>
+    <RouterProvider navigate={navigate} useHref={useHref}>
+      <LoaderProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/*"
+            element={
+              <ProtectedRoute>
+                <MasterLayout />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </LoaderProvider>
+    </RouterProvider>
   );
 }

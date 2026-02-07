@@ -1,11 +1,20 @@
 import { api } from './apiClient';
 import type { Order, ListResponse, SingleResponse, CountResponse } from '../types/domain';
 
-interface OrderFilters {
+export interface OrderFilters {
   status?: string;
   agent_id?: string;
   customer_id?: string;
+  salesperson_name?: string;
+  shipped_status?: string;
+  invoiced_status?: string;
   search?: string;
+  date_from?: string;
+  date_to?: string;
+  total_min?: number;
+  total_max?: number;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
 }
@@ -20,9 +29,19 @@ export const orderService = {
     return result.data;
   },
 
-  async count(filters: { status?: string; agent_id?: string } = {}): Promise<number> {
-    const result = await api.get<CountResponse>('/api/v1/orders/count', filters);
+  async count(filters: Partial<OrderFilters> = {}): Promise<number> {
+    const result = await api.get<CountResponse>('/api/v1/orders/count', filters as Record<string, string | number>);
     return result.count;
+  },
+
+  async getSalespersons(): Promise<{ salesperson_name: string; count: number }[]> {
+    const result = await api.get<{ data: { salesperson_name: string; count: number }[] }>('/api/v1/orders/salespersons');
+    return result.data;
+  },
+
+  async getStatuses(): Promise<{ status: string; count: number }[]> {
+    const result = await api.get<{ data: { status: string; count: number }[] }>('/api/v1/orders/statuses');
+    return result.data;
   },
 
   async create(data: Partial<Order>): Promise<Order> {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { authService } from '../services/authService';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { Truck, Search, Filter, Eye, CheckCircle, Clock, MapPin, Calendar } from 'lucide-react';
 
 interface Delivery {
@@ -42,6 +43,7 @@ type SortField = 'created_at' | 'shipped_date' | 'delivered_date' | 'customer_na
 type SortDirection = 'asc' | 'desc';
 
 const Deliveries: React.FC = () => {
+  usePageTitle('Deliveries');
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [filteredDeliveries, setFilteredDeliveries] = useState<Delivery[]>([]);
   const [loading, setLoading] = useState(true);

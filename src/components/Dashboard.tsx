@@ -1,13 +1,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, PoundSterling, Boxes, Trophy, Users, Package, Calendar } from 'lucide-react';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import { ShoppingCart, Users, Package } from 'lucide-react';
 import { motion } from 'motion/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { apiClient } from '../api/client';
-import { ColorProvider } from './analytics/shared/ColorProvider';
-import MetricCard from './analytics/shared/MetricCard';
 import SplitfinTable from './shared/SplitfinTable';
 import CompactAISummary from './CompactAISummary';
+import { RevenueChart, OrdersChart, StockChart, AgentChart } from './dashboard/DashboardCharts';
 
 interface TopAgent {
   id?: string;
@@ -90,24 +90,27 @@ const formatDate = (dateStr: string) =>
 
 const getStatusColor = (status: string) => {
   const colors: Record<string, string> = {
-    confirmed: 'bg-success/10 text-success',
-    pending: 'bg-warning/10 text-warning',
-    draft: 'bg-muted/30 text-muted-foreground',
-    shipped: 'bg-info/10 text-info',
-    delivered: 'bg-success/10 text-success',
-    active: 'bg-success/10 text-success',
-    inactive: 'bg-destructive/10 text-destructive',
+    draft: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
+    confirmed: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
+    pending: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
+    shipped: 'bg-blue-500/20 text-blue-400 border border-blue-500/30',
+    invoiced: 'bg-purple-500/20 text-purple-400 border border-purple-500/30',
+    delivered: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
+    fulfilled: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
+    active: 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30',
+    inactive: 'bg-destructive/20 text-destructive border border-destructive/30',
   };
-  return colors[status] || 'bg-muted/30 text-muted-foreground';
+  return colors[status] || 'bg-muted-foreground/10 text-muted-foreground border border-muted-foreground/20';
 };
 
 const StatusBadge: React.FC<{ status: string }> = ({ status }) => (
-  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+  <span className={`px-2.5 py-0.5 rounded-md text-xs font-medium capitalize ${getStatusColor(status)}`}>
     {status}
   </span>
 );
 
 const DashboardContent: React.FC = () => {
+  usePageTitle('Dashboard');
   const [dateRange, setDateRange] = useState<DateRange>('30_days');
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     ordersCount: 0,
@@ -260,9 +263,17 @@ const DashboardContent: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-10">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="ml-3 text-muted-foreground">Loading dashboard...</span>
+      <div className="p-6">
+        <div className="h-8 w-48 bg-muted/50 rounded-lg animate-pulse mb-6" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-32 bg-card border border-border rounded-xl animate-pulse" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="h-64 bg-card border border-border rounded-xl animate-pulse" />
+          <div className="h-64 bg-card border border-border rounded-xl animate-pulse" />
+        </div>
       </div>
     );
   }
@@ -278,21 +289,22 @@ const DashboardContent: React.FC = () => {
       >
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex items-center gap-4 mb-2 flex-wrap">
               <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
-              <div className="flex items-center gap-2">
-                <Calendar size={14} className="text-muted-foreground" />
-                <select
-                  value={dateRange}
-                  onChange={(e) => setDateRange(e.target.value as DateRange)}
-                  className="bg-muted border border-border rounded-md px-2 py-1 text-xs font-medium text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-transparent cursor-pointer hover:bg-accent transition-colors"
-                >
-                  {DATE_RANGE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+              <div className="flex items-center gap-1 bg-muted/50 border border-border rounded-lg p-0.5">
+                {DATE_RANGE_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => setDateRange(option.value)}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
+                      dateRange === option.value
+                        ? 'bg-primary text-primary-foreground shadow-sm'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
               </div>
             </div>
             <CompactAISummary companyId="dm-brands" />
@@ -300,79 +312,45 @@ const DashboardContent: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* Main Metrics Row */}
+      {/* Main Metrics Row — Evil Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0 }}>
-        <MetricCard
-          id="orders-count"
-          title="Orders"
-          value={metrics.ordersCount}
-          subtitle="Total orders"
-          format="number"
-          displayMode="medium"
-          design="variant1"
-          icon={<ShoppingCart size={16} />}
-          color="var(--primary)"
-          cardIndex={0}
-          chartData={metrics.orderCountChartData}
-          onClick={() => navigate('/orders')}
-        />
+          <RevenueChart
+            data={metrics.orderRevenueChartData}
+            total={metrics.ordersRevenue}
+            onClick={() => navigate('/orders')}
+          />
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}>
-        <MetricCard
-          id="orders-revenue"
-          title="Revenue"
-          value={metrics.ordersRevenue}
-          subtitle="Order value"
-          format="currency"
-          displayMode="medium"
-          design="variant2"
-          icon={<PoundSterling size={16} />}
-          color="var(--success)"
-          cardIndex={1}
-          chartData={metrics.orderRevenueChartData}
-          onClick={() => navigate('/orders')}
-        />
+          <OrdersChart
+            data={metrics.orderCountChartData}
+            total={metrics.ordersCount}
+            onClick={() => navigate('/orders')}
+          />
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.1 }}>
-        <MetricCard
-          id="stock-total"
-          title="Stock Total"
-          value={metrics.stockTotal}
-          subtitle="Units in stock"
-          format="number"
-          displayMode="medium"
-          design="variant3"
-          icon={<Boxes size={16} />}
-          color="var(--warning)"
-          cardIndex={2}
-          chartData={metrics.stockChartData}
-          onClick={() => navigate('/inventory')}
-        />
+          <StockChart
+            data={metrics.stockChartData}
+            total={metrics.stockTotal}
+            onClick={() => navigate('/inventory')}
+          />
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.15 }}>
-        <MetricCard
-          id="top-agent"
-          title="Top Agent"
-          value={metrics.topAgent.name}
-          subtitle={`${metrics.topAgent.orderCount} orders • ${formatCurrency(metrics.topAgent.revenue)}`}
-          format="number"
-          displayMode="medium"
-          design="variant1"
-          icon={<Trophy size={16} />}
-          color="var(--info)"
-          cardIndex={3}
-          chartData={metrics.topAgentChartData}
-          onClick={() => navigate('/analytics')}
-        />
+          <AgentChart
+            data={metrics.topAgentChartData}
+            agentName={metrics.topAgent.name}
+            orderCount={metrics.topAgent.orderCount}
+            revenue={metrics.topAgent.revenue}
+            onClick={() => navigate('/analytics')}
+          />
         </motion.div>
       </div>
 
       {/* Data Tables Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.2 }}>
         <SplitfinTable
           title="Latest Orders"
@@ -407,6 +385,7 @@ const DashboardContent: React.FC = () => {
       </div>
 
       {/* Recently Added Products - Full Width */}
+      <div className="border-t border-border/40 mb-6" />
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.3 }}>
       <SplitfinTable
         className="mb-6"
@@ -427,19 +406,4 @@ const DashboardContent: React.FC = () => {
   );
 };
 
-const Dashboard: React.FC = () => {
-  return (
-    <ColorProvider
-      barChartColors="multicolored"
-      graphColors={{
-        primary: 'var(--primary)',
-        secondary: 'var(--success)',
-        tertiary: 'var(--warning)'
-      }}
-    >
-      <DashboardContent />
-    </ColorProvider>
-  );
-};
-
-export default Dashboard;
+export default DashboardContent;

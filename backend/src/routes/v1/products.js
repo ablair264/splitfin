@@ -49,9 +49,20 @@ async function getUploadMiddleware() {
   return _upload;
 }
 
+// Allowed sort columns for products
+const PRODUCT_SORT_COLUMNS = {
+  name: 'name',
+  sku: 'sku',
+  brand: 'brand',
+  stock_on_hand: 'stock_on_hand',
+  rate: 'rate',
+  cost_price: 'cost_price',
+  category_name: 'category_name',
+};
+
 // Helper: build common WHERE clause for product queries
 function buildProductWhere(filters) {
-  const { status, brand, search, stock_filter } = filters;
+  const { status, brand, search, stock_filter, price_min, price_max, category } = filters;
   const conditions = ['1=1'];
   const params = [];
   let idx = 1;
@@ -62,8 +73,15 @@ function buildProductWhere(filters) {
   }
 
   if (brand) {
-    conditions.push(`brand = $${idx++}`);
-    params.push(brand);
+    // Support comma-separated multi-brand
+    const brands = brand.split(',').map(s => s.trim()).filter(Boolean);
+    if (brands.length === 1) {
+      conditions.push(`brand = $${idx++}`);
+      params.push(brands[0]);
+    } else if (brands.length > 1) {
+      conditions.push(`brand = ANY($${idx++}::text[])`);
+      params.push(brands);
+    }
   }
 
   if (search) {
@@ -80,21 +98,52 @@ function buildProductWhere(filters) {
     conditions.push('stock_on_hand = 0');
   }
 
+  if (price_min) {
+    conditions.push(`rate >= $${idx++}`);
+    params.push(parseFloat(price_min));
+  }
+
+  if (price_max) {
+    conditions.push(`rate <= $${idx++}`);
+    params.push(parseFloat(price_max));
+  }
+
+  if (category) {
+    conditions.push(`category_name = $${idx++}`);
+    params.push(category);
+  }
+
   return { where: conditions.join(' AND '), params, nextIdx: idx };
 }
 
 // GET /api/v1/products
 router.get('/', async (req, res) => {
   try {
-    const { limit = 100, offset = 0 } = req.query;
+    const { sort_by = 'name', sort_order = 'asc', limit = 50, offset = 0 } = req.query;
     const { where, params, nextIdx } = buildProductWhere(req.query);
     let idx = nextIdx;
 
-    const sql = `SELECT * FROM products WHERE ${where} ORDER BY name ASC LIMIT $${idx++} OFFSET $${idx++}`;
-    params.push(parseInt(limit), parseInt(offset));
+    const col = PRODUCT_SORT_COLUMNS[sort_by] || 'name';
+    const dir = sort_order === 'desc' ? 'DESC' : 'ASC';
+    const lim = parseInt(limit);
+    const off = parseInt(offset);
 
-    const { rows } = await query(sql, params);
-    res.json({ data: rows, count: rows.length });
+    const countSql = `SELECT COUNT(*) as total FROM products WHERE ${where}`;
+    const dataSql = `SELECT * FROM products WHERE ${where} ORDER BY ${col} ${dir} NULLS LAST LIMIT $${idx++} OFFSET $${idx++}`;
+    params.push(lim, off);
+
+    const countParams = params.slice(0, -2);
+    const [countResult, dataResult] = await Promise.all([
+      query(countSql, countParams),
+      query(dataSql, params),
+    ]);
+
+    const total = parseInt(countResult.rows[0].total);
+    res.json({
+      data: dataResult.rows,
+      count: dataResult.rows.length,
+      meta: { total, limit: lim, offset: off, has_more: off + lim < total },
+    });
   } catch (err) {
     logger.error('[Products] List error:', err);
     res.status(500).json({ error: 'Internal server error' });

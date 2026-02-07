@@ -127,3 +127,69 @@ Components must NOT import database clients directly. All data flows through typ
 - No Shopify code - this is a standalone platform
 - Backend uses ES modules (`"type": "module"` in package.json)
 - Error handling: return `{data, error}` tuples, don't throw in services
+- This is React 19 + Vite (NOT Next.js) — no next/font, no next/image, no server components
+- Uses `react-router-dom` v6 for routing
+- Uses `motion` (framer-motion v12+) — always import from `motion/react`, not `framer-motion`
+- Dark theme uses CSS custom properties in `src/index.css`
+
+---
+
+## UI Overhaul — Active Project
+
+**Full plan:** `docs/splitfin-ui-overhaul-prompt.md`
+**DB analysis results:** `docs/db-analysis.md` (created in Phase 0)
+**Current UI audit score:** 5.7/10
+
+### Progress Tracker
+
+- [x] **Phase 0** — Database analysis via Neon MCP. Run all discovery queries, save results to `docs/db-analysis.md`. These results inform every later decision.
+- [x] **Phase 1.1** — Semantic nav: all SidebarItem `onPress` → `href`, RouterProvider added to App.tsx, aria-current via isCurrent, tooltips on all header icons
+- [x] **Phase 1.2** — Dynamic page titles: `usePageTitle` hook in `src/hooks/usePageTitle.ts`, applied to all 13 page components
+- [x] **Phase 1.3** — PageHeader component: `src/components/shared/PageHeader.tsx` with title/subtitle/count/breadcrumbs/actions. Applied to Orders, Customers, Inventory pages.
+- [x] **Phase 1.4** — Contrast & typography: status badges use semantic colours (amber=draft, emerald=confirmed, blue=shipped, purple=invoiced) across ViewOrders, ViewOrder, Dashboard. Badge size bumped to `text-xs`.
+- [x] **Phase 1.5** — Teal accent hierarchy: nav active = teal left border + subtle bg, primary buttons = filled teal, secondary = ghost/outline. Replaced all `brand-300` refs with `primary` token. Fixed hardcoded `text-white` → `text-foreground`.
+- [x] **Phase 1.6** — Settings added as sidebar nav item above footer
+- [x] **Phase 4** — Backend API extensions: sort_by/sort_order, new filters (date range, shipped/invoiced status, region, payment_terms, segment, price range), pagination meta `{total, limit, offset, has_more}` on all list endpoints. Added `/orders/salespersons` and `/orders/statuses` endpoints for filter option population.
+- [x] **Phase 2.0** — DiceUI data table components verified. Full infrastructure already in place: `src/components/data-table/`, `use-data-table.ts` hook, nuqs URL state, filter variants (text, select, multiSelect, date, range).
+- [x] **Phase 2.2** — Orders table rebuild: `src/components/orders/OrdersTable.tsx` + `orders-columns.tsx`. Server-side pagination (50/page), URL state via nuqs, search/status(multi)/agent filters, sortable columns, status badges with semantic colours, customer avatars, row click navigation.
+- [x] **Phase 2.3** — Customers table rebuild: `src/components/customers/CustomersTable.tsx` + `customers-columns.tsx`. Server-side pagination (25/page), search/region(multi)/terms/segment filters, avatar+region display, spent/owed/last-order columns, payment terms badges.
+- [x] **Phase 2.4** — Products table rebuild: `src/components/inventory/ProductsTable.tsx` + `products-columns.tsx`. Server-side pagination (50/page), search/brand(multi)/stock/status filters, image thumbnails, stock colour badges, margin bar visualisation, stock summary pills in header.
+- [x] **Phase 3.1** — Login page: solid primary button (replaced gradient), focus rings with `ring-offset`, PIN `inputMode="numeric"` + show/hide toggle, `border-primary/20` card border, "Need help?" as `<a>` mailto link.
+- [x] **Phase 3.2** — Dashboard: date filter pill/tab buttons replacing dropdown, skeleton loading state, section divider between tables. Evil Charts integration: `src/components/dashboard/DashboardCharts.tsx` with 4 adapted chart cards (RevenueChart=ClippedArea, OrdersChart=ValueLineBar, StockChart=GlowingRadial, AgentChart=GlowingLine). All use CSS chart tokens, motion springs, props-driven data. Removed old ColorProvider/MetricCard wrapper.
+- [x] **Phase 3.3** — Order detail: breadcrumb nav (`Orders / SO-XXXXX`) replacing "Back to Orders" button, action button hierarchy (Send to Packing = primary filled, Print/Invoice/Edit = outline ghost), invoice empty state with "Generate Invoice" CTA, all `brand-300` refs replaced with `primary` token.
+- [x] **Phase 3.4** — Customer detail: breadcrumb nav (`Customers / {company_name}`), semantic order status badges (amber/emerald/blue/purple), financial card hides Outstanding/Credits when zero, empty address fields hidden, dynamic page title with company name.
+- [x] **Phase 3.5** — Enquiries: removed contradictory "being migrated" message, clean empty state ("No enquiries yet" + CTA), filters hidden when no data.
+- [x] **Phase 3.6** — Settings: collapsible Admin Tools section, Theme/Language/Currency as informational labels (not dropdowns), Integrations section with Zoho connected + Tax Settings coming soon.
+
+### Key Decisions
+
+- Server-side pagination for ALL data tables (Orders ~200+, Customers ~1580, Products ~8190)
+- Page sizes: Orders 50, Customers 25, Products 50
+- URL state via nuqs for filters/sort/pagination
+- All tables use DiceUI `DataTable` + `DataTableAdvancedToolbar` + `DataTableFilterList`
+
+### Evil Charts — Integrated
+
+Adapted Evil Charts live in `src/components/dashboard/DashboardCharts.tsx`. All use Recharts + shadcn/ui Card + motion/react springs. Data passed as props from Dashboard API.
+
+| Dashboard Card | Adapted Component | Based On | Chart Token |
+|---------------|-------------------|----------|-------------|
+| Revenue | `RevenueChart` | ClippedAreaChart | `--chart-1` |
+| Orders | `OrdersChart` | ValueLineBarChart | `--chart-2` |
+| Stock Total | `StockChart` | GlowingRadialChart | `--chart-1/4/5` |
+| Top Agent | `AgentChart` | GlowingLineChart | `--chart-3` |
+
+### File Locations Quick Reference
+
+| What | Where |
+|------|-------|
+| Frontend source | `src/` |
+| Backend API source | `backend/` |
+| Evil Charts | `src/components/charts/` |
+| DiceUI data table | `src/components/data-table/` |
+| Theme CSS variables | `src/index.css` |
+| Type definitions | `src/types/domain.ts`, `src/types/data-table.ts` |
+| API services | `src/services/orderService.ts`, `customerService.ts`, `productService.ts` |
+| API config | `src/config/api.ts` |
+| Overhaul plan | `docs/splitfin-ui-overhaul-prompt.md` |
+| DB analysis | `docs/db-analysis.md` |

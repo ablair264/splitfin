@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Users, Search, Phone, Video, MoreVertical, Paperclip } from 'lucide-react';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { authService } from '../../services/authService';
 import { messageService, type Conversation as APIConversation, type Message as APIMessage, type Contact } from '../../services/messageService';
 import styles from './Messaging.module.css';
@@ -35,6 +36,7 @@ interface DisplayConversation {
 }
 
 const Messaging: React.FC = () => {
+  usePageTitle('Messages');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [conversations, setConversations] = useState<DisplayConversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<DisplayConversation | null>(null);

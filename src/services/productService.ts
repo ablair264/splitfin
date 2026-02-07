@@ -2,11 +2,16 @@ import { api } from './apiClient';
 import { API_BASE_URL } from '../config/api';
 import type { Product, ListResponse, SingleResponse, CountResponse } from '../types/domain';
 
-interface ProductFilters {
+export interface ProductFilters {
   status?: string;
   brand?: string;
   search?: string;
   stock_filter?: string;
+  category?: string;
+  price_min?: number;
+  price_max?: number;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
 }

@@ -1,10 +1,18 @@
 import { api } from './apiClient';
 import type { Customer, ListResponse, SingleResponse, CountResponse } from '../types/domain';
 
-interface CustomerFilters {
+export interface CustomerFilters {
   status?: string;
   agent_id?: string;
   search?: string;
+  region?: string;
+  payment_terms?: string;
+  segment?: string;
+  has_transaction?: string;
+  spent_min?: number;
+  spent_max?: number;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
   limit?: number;
   offset?: number;
 }
@@ -19,9 +27,8 @@ export const customerService = {
     return result.data;
   },
 
-  async count(status?: string): Promise<number> {
-    const params = status ? { status } : {};
-    const result = await api.get<CountResponse>('/api/v1/customers/count', params);
+  async count(filters: Partial<CustomerFilters> = {}): Promise<number> {
+    const result = await api.get<CountResponse>('/api/v1/customers/count', filters as Record<string, string | number>);
     return result.count;
   },
 

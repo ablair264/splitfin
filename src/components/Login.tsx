@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { authService } from '../services/authService';
 
 export default function Login() {
@@ -8,6 +9,7 @@ export default function Login() {
   const [pin, setPin] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPin, setShowPin] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +39,7 @@ export default function Login() {
 
       {/* Login card */}
       <div className="relative z-10 w-full max-w-[400px] md:max-w-[440px] lg:max-w-[480px]">
-        <div className="bg-[rgba(26,31,42,0.95)] backdrop-blur-xl border-2 border-brand-300/30 rounded-2xl p-8 lg:p-10 shadow-[0_25px_50px_rgba(0,0,0,0.5),0_0_40px_rgba(121,213,233,0.1)] transition-shadow duration-300 hover:shadow-[0_25px_50px_rgba(0,0,0,0.5),0_0_60px_rgba(121,213,233,0.15)]">
+        <div className="bg-[rgba(26,31,42,0.95)] backdrop-blur-xl border-2 border-primary/20 rounded-2xl p-8 lg:p-10 shadow-[0_25px_50px_rgba(0,0,0,0.5),0_0_40px_rgba(121,213,233,0.1)] transition-shadow duration-300 hover:shadow-[0_25px_50px_rgba(0,0,0,0.5),0_0_60px_rgba(121,213,233,0.15)]">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center mb-4">
@@ -74,7 +76,7 @@ export default function Login() {
                 placeholder="Enter your agent ID"
                 value={agentId}
                 onChange={(e) => setAgentId(e.target.value)}
-                className="w-full px-5 py-3 border-2 border-transparent rounded-xl text-sm font-medium bg-input text-foreground placeholder-muted-foreground outline-none transition-all duration-300 shadow-md min-h-[48px] focus:border-primary focus:bg-muted focus:shadow-[0_0_0_3px_rgba(121,213,233,0.1),0_8px_25px_rgba(0,0,0,0.15)] focus:-translate-y-0.5 disabled:bg-muted/50 disabled:text-muted-foreground disabled:cursor-not-allowed md:text-base"
+                className="w-full px-5 py-3 border-2 border-transparent rounded-xl text-sm font-medium bg-input text-foreground placeholder-muted-foreground outline-none transition-all duration-300 shadow-md min-h-[48px] focus:border-primary focus:bg-muted focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-background disabled:bg-muted/50 disabled:text-muted-foreground disabled:cursor-not-allowed md:text-base"
                 required
                 disabled={loading}
                 autoComplete="username"
@@ -85,22 +87,33 @@ export default function Login() {
               <label htmlFor="pin" className="text-xs font-semibold text-white pl-1">
                 PIN
               </label>
-              <input
-                id="pin"
-                type="password"
-                placeholder="Enter your PIN"
-                value={pin}
-                onChange={(e) => setPin(e.target.value)}
-                className="w-full px-5 py-3 border-2 border-transparent rounded-xl text-sm font-medium bg-input text-foreground placeholder-muted-foreground outline-none transition-all duration-300 shadow-md min-h-[48px] focus:border-primary focus:bg-muted focus:shadow-[0_0_0_3px_rgba(121,213,233,0.1),0_8px_25px_rgba(0,0,0,0.15)] focus:-translate-y-0.5 disabled:bg-muted/50 disabled:text-muted-foreground disabled:cursor-not-allowed md:text-base"
-                required
-                disabled={loading}
-                autoComplete="current-password"
-              />
+              <div className="relative">
+                <input
+                  id="pin"
+                  type={showPin ? 'text' : 'password'}
+                  inputMode="numeric"
+                  placeholder="Enter your PIN"
+                  value={pin}
+                  onChange={(e) => setPin(e.target.value)}
+                  className="w-full px-5 py-3 pr-12 border-2 border-transparent rounded-xl text-sm font-medium bg-input text-foreground placeholder-muted-foreground outline-none transition-all duration-300 shadow-md min-h-[48px] focus:border-primary focus:bg-muted focus:ring-2 focus:ring-primary/30 focus:ring-offset-2 focus:ring-offset-background disabled:bg-muted/50 disabled:text-muted-foreground disabled:cursor-not-allowed md:text-base"
+                  required
+                  disabled={loading}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPin(!showPin)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                  tabIndex={-1}
+                >
+                  {showPin ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
 
             <button
               type="submit"
-              className="flex items-center justify-center gap-2 w-full px-6 py-3.5 mt-4 bg-gradient-to-br from-brand-300 to-brand-400 text-[#0f1419] border-none rounded-xl text-sm font-bold cursor-pointer transition-all duration-300 shadow-[0_8px_25px_rgba(121,213,233,0.15)] min-h-[48px] relative overflow-hidden hover:-translate-y-0.5 hover:shadow-[0_15px_35px_rgba(121,213,233,0.3)] hover:from-brand-400 hover:to-brand-300 active:-translate-y-px disabled:cursor-not-allowed disabled:opacity-80 disabled:hover:translate-y-0 focus-visible:outline-2 focus-visible:outline-brand-300 focus-visible:outline-offset-2"
+              className="flex items-center justify-center gap-2 w-full px-6 py-3.5 mt-4 bg-primary text-primary-foreground border-none rounded-xl text-sm font-bold cursor-pointer transition-all duration-200 shadow-[0_8px_25px_rgba(121,213,233,0.15)] min-h-[48px] relative overflow-hidden hover:bg-primary/90 hover:-translate-y-0.5 hover:shadow-[0_15px_35px_rgba(121,213,233,0.25)] active:-translate-y-px disabled:cursor-not-allowed disabled:opacity-80 disabled:hover:translate-y-0 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
               disabled={loading}
             >
               {loading ? (
@@ -125,7 +138,14 @@ export default function Login() {
           {/* Footer */}
           <div className="mt-6 text-center">
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Need help? Contact your administrator for assistance.
+              Need help?{' '}
+              <a
+                href="mailto:support@dmbrands.co.uk"
+                className="text-primary hover:underline transition-colors"
+              >
+                Contact your administrator
+              </a>{' '}
+              for assistance.
             </p>
           </div>
         </div>

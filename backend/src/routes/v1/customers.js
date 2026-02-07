@@ -6,38 +6,109 @@ import { logger } from '../../utils/logger.js';
 
 const router = express.Router();
 
+// Allowed sort columns for customers
+const CUSTOMER_SORT_COLUMNS = {
+  company_name: 'c.company_name',
+  email: 'c.email',
+  total_spent: 'c.total_spent',
+  outstanding_receivable: 'c.outstanding_receivable',
+  location_region: 'c.location_region',
+  payment_terms_label: 'c.payment_terms_label',
+  segment: 'c.segment',
+  last_order_date: 'last_order_date',
+};
+
 // GET /api/v1/customers
 router.get('/', async (req, res) => {
   try {
-    const { status, agent_id, search, limit = 100, offset = 0 } = req.query;
+    const {
+      status, agent_id, search,
+      region, payment_terms, segment, has_transaction,
+      spent_min, spent_max,
+      sort_by = 'company_name', sort_order = 'asc',
+      limit = 25, offset = 0,
+    } = req.query;
 
-    let sql = `SELECT c.*,
-      (SELECT MAX(o.date) FROM orders o WHERE o.zoho_customer_id = c.zoho_contact_id) as last_order_date
-      FROM customers c WHERE 1=1`;
+    let where = 'WHERE 1=1';
     const params = [];
-    let paramIdx = 1;
+    let idx = 1;
 
     if (status) {
-      sql += ` AND c.status = $${paramIdx++}`;
+      where += ` AND c.status = $${idx++}`;
       params.push(status);
     }
 
     if (agent_id) {
-      sql += ` AND c.agent_id = $${paramIdx++}`;
+      where += ` AND c.agent_id = $${idx++}`;
       params.push(agent_id);
     }
 
     if (search) {
-      sql += ` AND (c.company_name ILIKE $${paramIdx} OR c.contact_name ILIKE $${paramIdx} OR c.email ILIKE $${paramIdx})`;
+      where += ` AND (c.company_name ILIKE $${idx} OR c.contact_name ILIKE $${idx} OR c.email ILIKE $${idx} OR c.phone ILIKE $${idx})`;
       params.push(`%${search}%`);
-      paramIdx++;
+      idx++;
     }
 
-    sql += ` ORDER BY c.company_name ASC LIMIT $${paramIdx++} OFFSET $${paramIdx++}`;
-    params.push(parseInt(limit), parseInt(offset));
+    if (region) {
+      const regions = region.split(',').map(s => s.trim()).filter(Boolean);
+      if (regions.length === 1) {
+        where += ` AND c.location_region = $${idx++}`;
+        params.push(regions[0]);
+      } else if (regions.length > 1) {
+        where += ` AND c.location_region = ANY($${idx++}::text[])`;
+        params.push(regions);
+      }
+    }
 
-    const { rows } = await query(sql, params);
-    res.json({ data: rows, count: rows.length });
+    if (payment_terms) {
+      where += ` AND c.payment_terms_label ILIKE $${idx++}`;
+      params.push(payment_terms);
+    }
+
+    if (segment) {
+      where += ` AND c.segment = $${idx++}`;
+      params.push(segment);
+    }
+
+    if (has_transaction === 'true') {
+      where += ' AND c.has_transaction = true';
+    } else if (has_transaction === 'false') {
+      where += ' AND (c.has_transaction = false OR c.has_transaction IS NULL)';
+    }
+
+    if (spent_min) {
+      where += ` AND c.total_spent >= $${idx++}`;
+      params.push(parseFloat(spent_min));
+    }
+
+    if (spent_max) {
+      where += ` AND c.total_spent <= $${idx++}`;
+      params.push(parseFloat(spent_max));
+    }
+
+    const col = CUSTOMER_SORT_COLUMNS[sort_by] || 'c.company_name';
+    const dir = sort_order === 'desc' ? 'DESC' : 'ASC';
+    const lim = parseInt(limit);
+    const off = parseInt(offset);
+
+    const countSql = `SELECT COUNT(*) as total FROM customers c ${where}`;
+    const dataSql = `SELECT c.*,
+      (SELECT MAX(o.date) FROM orders o WHERE o.zoho_customer_id = c.zoho_contact_id) as last_order_date
+      FROM customers c ${where} ORDER BY ${col} ${dir} NULLS LAST LIMIT $${idx++} OFFSET $${idx++}`;
+    params.push(lim, off);
+
+    const countParams = params.slice(0, -2);
+    const [countResult, dataResult] = await Promise.all([
+      query(countSql, countParams),
+      query(dataSql, params),
+    ]);
+
+    const total = parseInt(countResult.rows[0].total);
+    res.json({
+      data: dataResult.rows,
+      count: dataResult.rows.length,
+      meta: { total, limit: lim, offset: off, has_more: off + lim < total },
+    });
   } catch (err) {
     logger.error('[Customers] List error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -47,14 +118,25 @@ router.get('/', async (req, res) => {
 // GET /api/v1/customers/count
 router.get('/count', async (req, res) => {
   try {
-    const { status } = req.query;
-    let sql = 'SELECT COUNT(*) as count FROM customers';
+    const { status, agent_id, search, region, payment_terms, segment, has_transaction, spent_min, spent_max } = req.query;
+    let sql = 'SELECT COUNT(*) as count FROM customers c WHERE 1=1';
     const params = [];
+    let idx = 1;
 
-    if (status) {
-      sql += ' WHERE status = $1';
-      params.push(status);
+    if (status) { sql += ` AND c.status = $${idx++}`; params.push(status); }
+    if (agent_id) { sql += ` AND c.agent_id = $${idx++}`; params.push(agent_id); }
+    if (search) { sql += ` AND (c.company_name ILIKE $${idx} OR c.contact_name ILIKE $${idx} OR c.email ILIKE $${idx} OR c.phone ILIKE $${idx})`; params.push(`%${search}%`); idx++; }
+    if (region) {
+      const regions = region.split(',').map(s => s.trim()).filter(Boolean);
+      if (regions.length === 1) { sql += ` AND c.location_region = $${idx++}`; params.push(regions[0]); }
+      else if (regions.length > 1) { sql += ` AND c.location_region = ANY($${idx++}::text[])`; params.push(regions); }
     }
+    if (payment_terms) { sql += ` AND c.payment_terms_label ILIKE $${idx++}`; params.push(payment_terms); }
+    if (segment) { sql += ` AND c.segment = $${idx++}`; params.push(segment); }
+    if (has_transaction === 'true') sql += ' AND c.has_transaction = true';
+    else if (has_transaction === 'false') sql += ' AND (c.has_transaction = false OR c.has_transaction IS NULL)';
+    if (spent_min) { sql += ` AND c.total_spent >= $${idx++}`; params.push(parseFloat(spent_min)); }
+    if (spent_max) { sql += ` AND c.total_spent <= $${idx++}`; params.push(parseFloat(spent_max)); }
 
     const { rows } = await query(sql, params);
     res.json({ count: parseInt(rows[0].count) });

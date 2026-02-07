@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import { authService } from '../services/authService';
 import { customerService } from '../services/customerService';
 import { Menu } from 'lucide-react';
@@ -129,6 +130,7 @@ const options = {
 };
 
 function CustomerMap() {
+  usePageTitle('Customer Map');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [mapReady, setMapReady] = useState(false);

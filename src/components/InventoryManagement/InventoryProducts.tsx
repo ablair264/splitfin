@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
+import PageHeader from '@/components/shared/PageHeader';
 import {
   useReactTable,
   getCoreRowModel,
@@ -298,6 +300,7 @@ function RowActions({
 
 
 const InventoryProducts: React.FC = () => {
+  usePageTitle('Inventory');
   const [searchParams, setSearchParams] = useSearchParams();
   const { showLoader, hideLoader } = useLoader();
   const [loading, setLoading] = useState(true);
@@ -785,6 +788,12 @@ const InventoryProducts: React.FC = () => {
 
   return (
     <div className="min-h-screen p-6 space-y-3">
+      <PageHeader
+        title="Inventory"
+        count={totalItems}
+        subtitle="products"
+      />
+
       {/* Toolbar */}
       <div className="flex items-center gap-3">
         {/* Left: Search + Filters */}

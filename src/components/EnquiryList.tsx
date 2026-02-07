@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   Plus,
   Search,
@@ -88,6 +89,7 @@ const priorityConfig = {
 };
 
 function EnquiryList() {
+  usePageTitle('Enquiries');
   const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [dataProcessing, setDataProcessing] = useState(false);
@@ -336,94 +338,96 @@ function EnquiryList() {
         </div>
       </div>
 
-      {/* Controls */}
-      <div className="flex gap-4 mb-6 flex-wrap">
-        <div className="flex-1 min-w-[200px]">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-4 h-4 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Search by name, company, email, or enquiry number..."
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full py-2.5 pl-10 pr-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
-            />
+      {/* Controls — only show when there's data */}
+      {enquiries.length > 0 && (
+        <div className="flex gap-4 mb-6 flex-wrap">
+          <div className="flex-1 min-w-[200px]">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 w-4 h-4 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Search by name, company, email, or enquiry number..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full py-2.5 pl-10 pr-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-3 items-center flex-wrap">
+            <div className="flex gap-2 items-center flex-wrap">
+              <Filter size={16} className="text-muted-foreground/50" />
+              <select
+                value={filterStatus}
+                onChange={(e) => { setFilterStatus(e.target.value as FilterStatus); setCurrentPage(1); }}
+                className="px-3 py-2.5 bg-muted/50 border border-border rounded-lg text-foreground text-sm cursor-pointer focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+              >
+                <option value="all">All Status</option>
+                <option value="new">New</option>
+                <option value="contacted">Contacted</option>
+                <option value="quoted">Quoted</option>
+                <option value="negotiating">Negotiating</option>
+                <option value="won">Won</option>
+                <option value="lost">Lost</option>
+              </select>
+
+              <select
+                value={filterPriority}
+                onChange={(e) => { setFilterPriority(e.target.value as FilterPriority); setCurrentPage(1); }}
+                className="px-3 py-2.5 bg-muted/50 border border-border rounded-lg text-foreground text-sm cursor-pointer focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+              >
+                <option value="all">All Priority</option>
+                <option value="urgent">Urgent</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as SortBy)}
+                className="px-3 py-2.5 bg-muted/50 border border-border rounded-lg text-foreground text-sm cursor-pointer focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+              >
+                <option value="date">Sort by Date</option>
+                <option value="priority">Sort by Priority</option>
+                <option value="value">Sort by Value</option>
+                <option value="status">Sort by Status</option>
+                <option value="followup">Sort by Follow-up</option>
+              </select>
+            </div>
+
+            <div className="flex bg-muted/50 border border-border rounded-lg p-0.5 gap-0.5">
+              <button
+                className={cn(
+                  'flex items-center justify-center p-2 rounded-md transition-all',
+                  viewMode === 'grid'
+                    ? 'bg-primary/20 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                )}
+                onClick={() => { setViewMode('grid'); setCurrentPage(1); }}
+                title="Grid view"
+              >
+                <Grid size={16} />
+              </button>
+              <button
+                className={cn(
+                  'flex items-center justify-center p-2 rounded-md transition-all',
+                  viewMode === 'list'
+                    ? 'bg-primary/20 text-primary'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                )}
+                onClick={() => { setViewMode('list'); setCurrentPage(1); }}
+                title="List view"
+              >
+                <List size={16} />
+              </button>
+            </div>
           </div>
         </div>
-
-        <div className="flex gap-3 items-center flex-wrap">
-          <div className="flex gap-2 items-center flex-wrap">
-            <Filter size={16} className="text-muted-foreground/50" />
-            <select
-              value={filterStatus}
-              onChange={(e) => { setFilterStatus(e.target.value as FilterStatus); setCurrentPage(1); }}
-              className="px-3 py-2.5 bg-muted/50 border border-border rounded-lg text-foreground text-sm cursor-pointer focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
-            >
-              <option value="all">All Status</option>
-              <option value="new">New</option>
-              <option value="contacted">Contacted</option>
-              <option value="quoted">Quoted</option>
-              <option value="negotiating">Negotiating</option>
-              <option value="won">Won</option>
-              <option value="lost">Lost</option>
-            </select>
-
-            <select
-              value={filterPriority}
-              onChange={(e) => { setFilterPriority(e.target.value as FilterPriority); setCurrentPage(1); }}
-              className="px-3 py-2.5 bg-muted/50 border border-border rounded-lg text-foreground text-sm cursor-pointer focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
-            >
-              <option value="all">All Priority</option>
-              <option value="urgent">Urgent</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as SortBy)}
-              className="px-3 py-2.5 bg-muted/50 border border-border rounded-lg text-foreground text-sm cursor-pointer focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
-            >
-              <option value="date">Sort by Date</option>
-              <option value="priority">Sort by Priority</option>
-              <option value="value">Sort by Value</option>
-              <option value="status">Sort by Status</option>
-              <option value="followup">Sort by Follow-up</option>
-            </select>
-          </div>
-
-          <div className="flex bg-muted/50 border border-border rounded-lg p-0.5 gap-0.5">
-            <button
-              className={cn(
-                'flex items-center justify-center p-2 rounded-md transition-all',
-                viewMode === 'grid'
-                  ? 'bg-primary/20 text-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              )}
-              onClick={() => { setViewMode('grid'); setCurrentPage(1); }}
-              title="Grid view"
-            >
-              <Grid size={16} />
-            </button>
-            <button
-              className={cn(
-                'flex items-center justify-center p-2 rounded-md transition-all',
-                viewMode === 'list'
-                  ? 'bg-primary/20 text-primary'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-              )}
-              onClick={() => { setViewMode('list'); setCurrentPage(1); }}
-              title="List view"
-            >
-              <List size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* Content */}
       {loading ? (
@@ -433,12 +437,14 @@ function EnquiryList() {
         </div>
       ) : filteredEnquiries.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
-          <MessageSquare size={32} className="text-muted-foreground/50 mb-4" />
-          <h3 className="text-lg font-semibold text-foreground mb-1">No enquiries found</h3>
-          <p className="text-sm text-muted-foreground mb-6">
+          <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
+            <MessageSquare size={28} className="text-muted-foreground/50" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-1">No enquiries yet</h3>
+          <p className="text-sm text-muted-foreground mb-6 max-w-sm">
             {search || filterStatus !== 'all' || filterPriority !== 'all'
-              ? 'Try adjusting your filters or search criteria'
-              : 'The enquiries feature is being migrated. Please check back later.'}
+              ? 'Try adjusting your filters or search criteria.'
+              : 'Create your first enquiry to start tracking your sales pipeline.'}
           </p>
           {!search && filterStatus === 'all' && filterPriority === 'all' && (
             <button
@@ -446,7 +452,7 @@ function EnquiryList() {
               className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-all"
             >
               <Plus size={16} />
-              Create First Enquiry
+              New Enquiry
             </button>
           )}
         </div>
