@@ -1064,4 +1064,58 @@ ${ctx.recentOrders.map(order => `- ${order.customer_name || 'Unknown'}: £${pars
 Write a straightforward summary in 3-4 sentences. State the numbers, note anything that needs attention (pending orders, low stock). No motivational language.`;
 }
 
+// GET /api/v1/analytics/debug/agents - Diagnose agent data linkage
+router.get('/debug/agents', async (req, res) => {
+  try {
+    const [totalOrders, spBreakdown, agentsList, sampleOrders, columnCheck] = await Promise.all([
+      query(`SELECT COUNT(*) as total FROM orders`),
+      query(`
+        SELECT
+          salesperson_id,
+          salesperson_name,
+          COUNT(*) as order_count,
+          COALESCE(SUM(total), 0) as revenue
+        FROM orders
+        GROUP BY salesperson_id, salesperson_name
+        ORDER BY order_count DESC
+      `),
+      query(`SELECT id, name, zoho_id, is_admin, active FROM agents ORDER BY name`),
+      query(`
+        SELECT id, salesorder_number, salesperson_id, salesperson_name, date, total
+        FROM orders ORDER BY date DESC LIMIT 5
+      `),
+      query(`
+        SELECT column_name, data_type
+        FROM information_schema.columns
+        WHERE table_name = 'orders'
+        ORDER BY ordinal_position
+      `),
+    ]);
+
+    // Check which salesperson_ids actually match agents
+    const agentZohoIds = new Set(agentsList.rows.map(a => a.zoho_id).filter(Boolean));
+    const matchedOrders = spBreakdown.rows.filter(r => agentZohoIds.has(r.salesperson_id));
+    const unmatchedOrders = spBreakdown.rows.filter(r => r.salesperson_id && !agentZohoIds.has(r.salesperson_id));
+    const nullSpOrders = spBreakdown.rows.filter(r => !r.salesperson_id);
+
+    res.json({
+      totalOrders: parseInt(totalOrders.rows[0].total),
+      ordersColumns: columnCheck.rows.map(r => `${r.column_name} (${r.data_type})`),
+      agents: agentsList.rows,
+      salespersonBreakdown: {
+        matched: matchedOrders,
+        unmatched: unmatchedOrders,
+        nullSalesperson: nullSpOrders,
+      },
+      matchedOrderCount: matchedOrders.reduce((sum, r) => sum + parseInt(r.order_count), 0),
+      unmatchedOrderCount: unmatchedOrders.reduce((sum, r) => sum + parseInt(r.order_count), 0),
+      nullOrderCount: nullSpOrders.reduce((sum, r) => sum + parseInt(r.order_count), 0),
+      sampleOrders: sampleOrders.rows,
+    });
+  } catch (error) {
+    logger.error('Debug agents query failed:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 export { router as analyticsRouter };
