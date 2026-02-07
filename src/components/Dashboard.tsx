@@ -287,34 +287,32 @@ const DashboardContent: React.FC = () => {
         transition={{ duration: 0.35, ease: 'easeOut' }}
         className="mb-6"
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-4 mb-2 flex-wrap">
-              <h1 className="text-xl font-semibold text-foreground">Dashboard</h1>
-              <div className="flex items-center gap-1 bg-muted/50 border border-border rounded-lg p-0.5">
-                {DATE_RANGE_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() => setDateRange(option.value)}
-                    className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
-                      dateRange === option.value
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
+            <div className="flex items-center gap-0.5 bg-muted/40 border border-border/60 rounded-lg p-0.5">
+              {DATE_RANGE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setDateRange(option.value)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 whitespace-nowrap ${
+                    dateRange === option.value
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
-            <CompactAISummary companyId="dm-brands" />
           </div>
         </div>
+        <CompactAISummary companyId="dm-brands" />
       </motion.div>
 
       {/* Main Metrics Row — Evil Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0 }}>
+        <motion.div className="h-full" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0 }}>
           <RevenueChart
             data={metrics.orderRevenueChartData}
             total={metrics.ordersRevenue}
@@ -322,7 +320,7 @@ const DashboardContent: React.FC = () => {
           />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}>
+        <motion.div className="h-full" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.05 }}>
           <OrdersChart
             data={metrics.orderCountChartData}
             total={metrics.ordersCount}
@@ -330,7 +328,7 @@ const DashboardContent: React.FC = () => {
           />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.1 }}>
+        <motion.div className="h-full" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.1 }}>
           <StockChart
             data={metrics.stockChartData}
             total={metrics.stockTotal}
@@ -338,7 +336,7 @@ const DashboardContent: React.FC = () => {
           />
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.15 }}>
+        <motion.div className="h-full" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.15 }}>
           <AgentChart
             data={metrics.topAgentChartData}
             agentName={metrics.topAgent.name}

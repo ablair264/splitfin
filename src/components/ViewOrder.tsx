@@ -647,13 +647,6 @@ function ViewOrder() {
         {/* Header */}
         <div className="flex justify-between items-start mb-6 pb-5 border-b border-white/10 flex-wrap gap-4">
           <div className="flex flex-col gap-3">
-            <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <button onClick={handleBackToOrders} className="hover:text-foreground transition-colors">
-                Orders
-              </button>
-              <span className="text-muted-foreground/50">/</span>
-              <span className="text-foreground font-medium">{order.salesorder_number || 'N/A'}</span>
-            </nav>
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-foreground">Order {order.salesorder_number || 'N/A'}</h1>
               <span className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold uppercase tracking-wide border ${getStatusBadgeClass(order.status)}`}>
@@ -760,13 +753,6 @@ function ViewOrder() {
             <div className="bg-card rounded-xl border border-white/10 p-5 backdrop-blur-sm">
               <h3 className="text-sm font-semibold text-white mb-3">Order Details</h3>
               <div className="flex flex-col gap-3">
-                <div className="flex items-center gap-3">
-                  <FileText className="text-primary w-5 shrink-0" size={20} />
-                  <div className="flex-1">
-                    <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Order Number</label>
-                    <span className="text-white font-semibold font-mono">{order.salesorder_number || 'N/A'}</span>
-                  </div>
-                </div>
                 <div className="flex items-center gap-3">
                   <Calendar className="text-primary w-5 shrink-0" size={20} />
                   <div className="flex-1">

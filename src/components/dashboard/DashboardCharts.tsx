@@ -64,7 +64,7 @@ export function RevenueChart({ data, total, onClick }: RevenueChartProps) {
 
   return (
     <Card
-      className="cursor-pointer hover:border-primary/30 transition-colors py-4 gap-3"
+      className="cursor-pointer hover:border-primary/30 transition-colors py-4 gap-3 h-full"
       onClick={onClick}
     >
       <CardHeader className="px-4 pb-0 gap-1">
@@ -73,7 +73,7 @@ export function RevenueChart({ data, total, onClick }: RevenueChartProps) {
           {formatGBP(total)}
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-0 pb-0">
+      <CardContent className="px-2 pb-0 mt-auto">
         <ChartContainer ref={chartRef} className="h-28 w-full" config={revenueConfig}>
           <AreaChart
             className="overflow-visible"
@@ -207,7 +207,7 @@ export function OrdersChart({ data, total, onClick }: OrdersChartProps) {
 
   return (
     <Card
-      className="cursor-pointer hover:border-primary/30 transition-colors py-4 gap-3"
+      className="cursor-pointer hover:border-primary/30 transition-colors py-4 gap-3 h-full"
       onClick={onClick}
     >
       <CardHeader className="px-4 pb-0 gap-1">
@@ -216,7 +216,7 @@ export function OrdersChart({ data, total, onClick }: OrdersChartProps) {
           {total.toLocaleString('en-GB')}
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-0 pb-0">
+      <CardContent className="px-2 pb-0 mt-auto">
         <ChartContainer config={ordersConfig} className="h-28 w-full">
           <BarChart
             accessibilityLayer
@@ -292,7 +292,7 @@ export function StockChart({ data, total, onClick }: StockChartProps) {
 
   return (
     <Card
-      className="cursor-pointer hover:border-primary/30 transition-colors py-4 gap-3"
+      className="cursor-pointer hover:border-primary/30 transition-colors py-4 gap-3 h-full"
       onClick={onClick}
     >
       <CardHeader className="px-4 pb-0 gap-1">
@@ -302,7 +302,7 @@ export function StockChart({ data, total, onClick }: StockChartProps) {
           <span className="text-sm font-normal text-muted-foreground ml-1.5">units</span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="px-0 pb-0 flex items-center justify-center">
+      <CardContent className="px-2 pb-0 mt-auto flex items-center justify-center">
         <ChartContainer config={stockConfig} className="h-28 w-full max-w-[200px]">
           <RadialBarChart
             data={chartData}
@@ -373,7 +373,7 @@ export function AgentChart({ data, agentName, orderCount, revenue, onClick }: Ag
 
   return (
     <Card
-      className="cursor-pointer hover:border-primary/30 transition-colors py-4 gap-3"
+      className="cursor-pointer hover:border-primary/30 transition-colors py-4 gap-3 h-full"
       onClick={onClick}
     >
       <CardHeader className="px-4 pb-0 gap-1">
@@ -383,8 +383,8 @@ export function AgentChart({ data, agentName, orderCount, revenue, onClick }: Ag
           {orderCount} orders &middot; {formatGBPShort(revenue)}
         </CardDescription>
       </CardHeader>
-      <CardContent className="px-0 pb-0">
-        <ChartContainer config={agentConfig} className="h-20 w-full">
+      <CardContent className="px-2 pb-0 mt-auto">
+        <ChartContainer config={agentConfig} className="h-28 w-full">
           <LineChart
             accessibilityLayer
             data={data}

@@ -557,8 +557,8 @@ export default function AppSidebar({ user, ...props }: AppSidebarProps) {
         </SidebarContent>
 
         {/* Footer: User */}
-        <SidebarFooter>
-          <div className={`relative pt-3 border-t border-zinc-800/50 ${isCollapsed ? "px-1 pb-2" : "px-1 pb-1"}`}>
+        <SidebarFooter className={isCollapsed ? "p-2" : "px-3 py-3"}>
+          <div className={`relative pt-3 border-t border-zinc-800/50 ${isCollapsed ? "px-0 pb-0" : "px-0 pb-0"}`}>
             {isCollapsed ? (
               <CollapsedTooltip label={userName}>
                 <div className="flex items-center justify-center">

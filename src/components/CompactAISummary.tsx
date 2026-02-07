@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Sparkles } from 'lucide-react';
 import { apiClient } from '../api/client';
 
 interface CompactAISummaryProps {
@@ -87,25 +88,22 @@ const CompactAISummary: React.FC<CompactAISummaryProps> = ({ companyId }) => {
     };
   }, []);
 
+  const content = loading && !summary
+    ? 'Generating summary...'
+    : error
+      ? null
+      : summary?.content ?? null;
+
+  if (!content) return null;
+
   return (
-    <div className="flex items-center gap-2 p-0 transition-all duration-200 max-w-full min-h-0 relative bg-transparent border-none rounded-none">
-      <div className="flex-1 min-w-0 flex items-center">
-        {loading && !summary && (
-          <span className="text-muted-foreground text-[13px] leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis max-w-full">Loading...</span>
-        )}
-
-        {error && (
-          <span className="text-muted-foreground text-[13px] leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis max-w-full">&mdash;</span>
-        )}
-
-        {summary && !loading && !error && (
-          <span className="text-muted-foreground text-[13px] leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis max-w-full">{summary.content}</span>
-        )}
-
-        {!summary && !loading && !error && (
-          <span className="text-muted-foreground text-[13px] leading-[1.4] whitespace-nowrap overflow-hidden text-ellipsis max-w-full">&mdash;</span>
-        )}
+    <div className="flex items-center gap-2.5 mt-2">
+      <div className="flex items-center justify-center w-5 h-5 rounded-md bg-primary/10 shrink-0">
+        <Sparkles size={11} className={`text-primary ${loading && !summary ? 'animate-pulse' : ''}`} />
       </div>
+      <p className="text-[13px] leading-relaxed text-muted-foreground truncate">
+        {content}
+      </p>
     </div>
   );
 };
