@@ -201,6 +201,157 @@ async function getAgentPerformance(startDate) {
   return rows.map(r => ({ name: r.name, value: Math.round(parseFloat(r.value)) }));
 }
 
+// GET /api/v1/analytics/agents - Agent performance page data
+router.get('/agents', async (req, res) => {
+  try {
+    const { date_range = '30_days' } = req.query;
+    const startDate = getStartDate(date_range);
+
+    const [agentSummary, activityData, brandSpreadData] = await Promise.all([
+      getAgentSummary(startDate),
+      getAgentActivityTimeSeries(startDate, date_range),
+      getAgentBrandSpread(startDate),
+    ]);
+
+    // Derive chart data from summary
+    const ordersByAgentChart = agentSummary.map(a => ({ name: a.name, value: a.orderCount }));
+    const revenueByAgentChart = agentSummary.map(a => ({ name: a.name, value: a.revenue }));
+
+    res.json({
+      agents: agentSummary,
+      ordersByAgentChart,
+      revenueByAgentChart,
+      activityChart: activityData,
+      brandSpreadChart: brandSpreadData,
+    });
+  } catch (error) {
+    logger.error('Agent analytics query failed:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+async function getAgentSummary(startDate) {
+  const { rows } = await query(`
+    SELECT
+      a.id,
+      a.name,
+      COALESCE(a.commission_rate, 0) as commission_rate,
+      COUNT(o.id) as order_count,
+      COALESCE(SUM(o.total), 0) as total_revenue,
+      (SELECT COUNT(*) FROM customers c WHERE c.agent_id = a.id AND c.created_at >= $1) as new_customers
+    FROM agents a
+    LEFT JOIN orders o ON o.agent_id = a.id AND o.date >= $1
+    WHERE a.is_admin = false OR a.is_admin IS NULL
+    GROUP BY a.id, a.name, a.commission_rate
+    ORDER BY total_revenue DESC
+  `, [startDate.toISOString()]);
+
+  return rows.map(r => ({
+    id: r.id,
+    name: r.name || 'Unknown',
+    orderCount: parseInt(r.order_count) || 0,
+    revenue: Math.round(parseFloat(r.total_revenue)) || 0,
+    newCustomers: parseInt(r.new_customers) || 0,
+    commissionRate: parseFloat(r.commission_rate) || 0,
+    commission: Math.round((parseFloat(r.commission_rate) || 0) * (parseFloat(r.total_revenue) || 0)),
+  }));
+}
+
+async function getAgentActivityTimeSeries(startDate, dateRange) {
+  // Pick granularity (same logic as getOrderTimeSeries)
+  let sqlLabel, sqlGroup, sqlOrder;
+
+  switch (dateRange) {
+    case '7_days':
+      sqlLabel = `TO_CHAR(o.date, 'Dy DD')`;
+      sqlGroup = `DATE(o.date)`;
+      sqlOrder = `DATE(o.date)`;
+      break;
+    case '30_days':
+      sqlLabel = `TO_CHAR(o.date, 'DD Mon')`;
+      sqlGroup = `DATE(o.date)`;
+      sqlOrder = `DATE(o.date)`;
+      break;
+    case '90_days':
+    case 'quarter':
+      sqlLabel = `'W' || EXTRACT(WEEK FROM o.date)::int || ' ' || TO_CHAR(date_trunc('week', o.date), 'Mon')`;
+      sqlGroup = `date_trunc('week', o.date)`;
+      sqlOrder = `date_trunc('week', o.date)`;
+      break;
+    case 'all_time': {
+      const yearsSpan = (new Date().getFullYear() - startDate.getFullYear());
+      if (yearsSpan > 3) {
+        sqlLabel = `EXTRACT(YEAR FROM o.date)::int::text`;
+        sqlGroup = `date_trunc('year', o.date)`;
+        sqlOrder = `date_trunc('year', o.date)`;
+      } else {
+        sqlLabel = `TO_CHAR(o.date, 'Mon YY')`;
+        sqlGroup = `date_trunc('month', o.date)`;
+        sqlOrder = `date_trunc('month', o.date)`;
+      }
+      break;
+    }
+    default: // this_year, 12_months, etc.
+      sqlLabel = `TO_CHAR(o.date, 'Mon')`;
+      sqlGroup = `date_trunc('month', o.date)`;
+      sqlOrder = `date_trunc('month', o.date)`;
+      break;
+  }
+
+  const { rows } = await query(`
+    SELECT
+      ${sqlLabel} as period_label,
+      ${sqlGroup} as period_group,
+      a.name as agent_name,
+      COUNT(o.id) as order_count
+    FROM orders o
+    JOIN agents a ON o.agent_id = a.id AND (a.is_admin = false OR a.is_admin IS NULL)
+    WHERE o.date >= $1
+    GROUP BY ${sqlGroup}, ${sqlLabel}, a.name
+    ORDER BY ${sqlOrder}
+  `, [startDate.toISOString()]);
+
+  // Pivot: group by period, each agent becomes a key
+  const periodMap = new Map();
+  for (const r of rows) {
+    const key = r.period_label;
+    if (!periodMap.has(key)) {
+      periodMap.set(key, { name: key });
+    }
+    periodMap.get(key)[r.agent_name || 'Unknown'] = parseInt(r.order_count) || 0;
+  }
+
+  return Array.from(periodMap.values());
+}
+
+async function getAgentBrandSpread(startDate) {
+  const { rows } = await query(`
+    SELECT
+      a.name as agent_name,
+      p.brand,
+      COALESCE(SUM(oli.amount), 0) as brand_revenue
+    FROM orders o
+    JOIN agents a ON o.agent_id = a.id AND (a.is_admin = false OR a.is_admin IS NULL)
+    JOIN order_line_items oli ON oli.order_id = o.id
+    JOIN products p ON p.zoho_item_id = oli.item_id
+    WHERE o.date >= $1 AND p.brand IS NOT NULL AND p.brand != ''
+    GROUP BY a.name, p.brand
+    ORDER BY brand_revenue DESC
+  `, [startDate.toISOString()]);
+
+  // Pivot: group by brand, each agent becomes a key
+  const brandMap = new Map();
+  for (const r of rows) {
+    const brand = r.brand;
+    if (!brandMap.has(brand)) {
+      brandMap.set(brand, { brand });
+    }
+    brandMap.get(brand)[r.agent_name || 'Unknown'] = Math.round(parseFloat(r.brand_revenue)) || 0;
+  }
+
+  return Array.from(brandMap.values());
+}
+
 // GET /api/v1/analytics/recent-orders - Latest orders for dashboard
 router.get('/recent-orders', async (req, res) => {
   try {

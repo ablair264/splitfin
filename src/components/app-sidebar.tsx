@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { motion, AnimatePresence, useReducedMotion } from "motion/react"
 import {
   ShoppingCart, Users, MapPin, MessageSquare, Settings, ChevronDown,
-  Pin, UserPlus, Bell, Mail, Sun, Moon,
+  Pin, UserPlus,
 } from "lucide-react"
 
 // Animated icons
@@ -44,8 +44,6 @@ const HOVER_COLLAPSE_DELAY = 400
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: Agent | null
-  unreadNotifications?: number
-  onNotificationsClick?: () => void
 }
 
 // ---------- Nav item definition ----------
@@ -260,6 +258,7 @@ const ALL_NAV_ITEMS: Record<string, NavItemDef> = {
   supplierMgmt: { id: "supplierMgmt", label: "Supplier Management", icon: <UsersIcon size={18} />, path: "/suppliers" },
   supplierAdd: { id: "supplierAdd", label: "Add New Supplier", icon: <UserPlus size={18} />, path: "/suppliers/new" },
   images: { id: "images", label: "Image Management", icon: <GalleryThumbnailsIcon size={18} />, path: "/image-management" },
+  agents: { id: "agents", label: "Agent Performance", icon: <ClipboardCheckIcon size={18} />, path: "/agents" },
   messages: { id: "messages", label: "Team Messages", icon: <MessageCircleMoreIcon size={18} />, path: "/messaging" },
   settings: { id: "settings", label: "Settings", icon: <Settings size={18} />, path: "/settings" },
 }
@@ -268,6 +267,7 @@ const ALL_NAV_ITEMS: Record<string, NavItemDef> = {
 const COLLAPSED_ITEMS: { id: string; item: NavItemDef; divider?: boolean }[] = [
   { id: "dashboard", item: ALL_NAV_ITEMS.dashboard },
   { id: "orders", item: ALL_NAV_ITEMS.orders },
+  { id: "agents", item: ALL_NAV_ITEMS.agents },
   { id: "customers", item: ALL_NAV_ITEMS.customers },
   { id: "d0", item: ALL_NAV_ITEMS.customers, divider: true },
   { id: "inventory", item: ALL_NAV_ITEMS.inventory },
@@ -282,7 +282,7 @@ const COLLAPSED_ITEMS: { id: string; item: NavItemDef; divider?: boolean }[] = [
 
 // ---------- Main Sidebar ----------
 
-export default function AppSidebar({ user, unreadNotifications = 0, onNotificationsClick, ...props }: AppSidebarProps) {
+export default function AppSidebar({ user, ...props }: AppSidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const { state, setOpen } = useSidebar()
@@ -372,28 +372,6 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
     }
   }
 
-  // Dark mode state
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof document !== 'undefined') {
-      return document.documentElement.classList.contains('dark')
-    }
-    return true
-  })
-
-  const handleThemeToggle = useCallback(() => {
-    setIsDark((prev) => {
-      const next = !prev
-      if (next) {
-        document.documentElement.classList.add('dark')
-        localStorage.setItem('theme', 'dark')
-      } else {
-        document.documentElement.classList.remove('dark')
-        localStorage.setItem('theme', 'light')
-      }
-      return next
-    })
-  }, [])
-
   const isAdmin = user?.is_admin ?? false
   const userName = user?.name || user?.id || "User"
   const userRole = user?.is_admin ? "Admin" : "Sales Agent"
@@ -439,6 +417,7 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
                   if (entry.id === "shipping" && !isAdmin) return null
                   if (entry.id === "finance" && !isAdmin) return null
                   if (entry.id === "suppliers" && !isAdmin) return null
+                  if (entry.id === "agents" && !isAdmin) return null
                   if (entry.id === "images" && !isAdmin) return null
                   return (
                     <NavItem
@@ -463,6 +442,11 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
 
                 {/* Orders */}
                 <NavItem item={ALL_NAV_ITEMS.orders} isActive={isPathActive("/orders")} isCollapsed={false} />
+
+                {/* Agent Performance — Admin only */}
+                {isAdmin && (
+                  <NavItem item={ALL_NAV_ITEMS.agents} isActive={isPathActive("/agents")} isCollapsed={false} />
+                )}
 
                 {/* Pinned Favourites */}
                 {pinnedIds.length > 0 && (
@@ -582,53 +566,6 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
 
         {/* Footer: Utility icons + User */}
         <SidebarFooter className={isCollapsed ? "p-2" : "px-3 py-3"}>
-          {/* Utility actions — visible when expanded, hidden when collapsed */}
-          <AnimatePresence>
-            {!isCollapsed && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="flex items-center justify-center gap-1 pb-3 mb-1 border-b border-zinc-800/50 overflow-hidden"
-              >
-                <button
-                  onClick={handleThemeToggle}
-                  className="flex items-center justify-center size-8 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
-                  aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
-                >
-                  {isDark ? <Sun size={16} /> : <Moon size={16} />}
-                </button>
-                <button
-                  onClick={onNotificationsClick}
-                  className="relative flex items-center justify-center size-8 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
-                  aria-label="Notifications"
-                >
-                  <Bell size={16} />
-                  {unreadNotifications > 0 && (
-                    <span className="absolute -top-0.5 -right-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive text-[9px] font-medium text-white">
-                      {unreadNotifications > 9 ? '9+' : unreadNotifications}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => navigate('/messaging')}
-                  className="flex items-center justify-center size-8 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
-                  aria-label="Messages"
-                >
-                  <Mail size={16} />
-                </button>
-                <button
-                  onClick={() => navigate('/settings')}
-                  className="flex items-center justify-center size-8 rounded-lg text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/40 transition-colors"
-                  aria-label="Settings"
-                >
-                  <Settings size={16} />
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           <div className={`relative ${!isCollapsed ? 'pt-0' : 'pt-3 border-t border-zinc-800/50'}`}>
             {isCollapsed ? (
               <CollapsedTooltip label={userName}>

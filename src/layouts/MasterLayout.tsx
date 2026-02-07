@@ -6,6 +6,7 @@ import type { Agent, Notification } from '../types/domain';
 
 // New Intent UI Sidebar
 import AppSidebar from '../components/app-sidebar';
+import SidebarIconRail from '../components/sidebar-icon-rail';
 import { SidebarProvider, SidebarInset } from '../components/ui/sidebar';
 
 // Components
@@ -25,6 +26,7 @@ import ViewOrder from '../components/ViewOrder';
 import ProductsTable from '../components/inventory/ProductsTable';
 import ImageManagement from '../components/ImageManagement/ImageManagement';
 import Settings from '../components/Settings/Settings';
+import AgentManagement from '../components/agents/AgentManagement';
 import Messaging from '../components/Messaging/Messaging';
 import Warehouse from '../components/Warehouse';
 import Couriers from '../components/Couriers';
@@ -172,12 +174,14 @@ export default function MasterLayout() {
 
   return (
     <SidebarProvider defaultOpen={false}>
+      <SidebarIconRail
+        unreadNotifications={unreadCount}
+        onNotificationsClick={handleNotificationsClick}
+      />
       <AppSidebar
         user={user}
         collapsible="dock"
         intent="inset"
-        unreadNotifications={unreadCount}
-        onNotificationsClick={handleNotificationsClick}
       />
       <SidebarInset className="dark:bg-gradient-to-br dark:from-[#0f1419] dark:via-[#1a1f2a] dark:to-[#2c3e50]">
 
@@ -209,6 +213,9 @@ export default function MasterLayout() {
             <Route path="/orders/management" element={<OrderManagement />} />
             <Route path="/order/:orderId" element={<ViewOrder />} />
             <Route path="/order-detail/:orderId" element={<OrderDetail />} />
+
+            {/* Agent Performance */}
+            <Route path="/agents" element={<AgentManagement />} />
 
             {/* Inventory Management Routes */}
             <Route path="/inventory/products" element={<ProductsTable />} />

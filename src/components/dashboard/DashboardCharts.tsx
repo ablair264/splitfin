@@ -104,7 +104,6 @@ export function RevenueChart({ data, total, onClick }: RevenueChartProps) {
               axisLine={false}
               tickMargin={6}
               tick={{ fontSize: 10 }}
-              tickFormatter={(v) => (typeof v === 'string' ? v.slice(0, 3) : v)}
             />
             <Area
               dataKey="value"
@@ -230,7 +229,6 @@ export function OrdersChart({ data, total, onClick }: OrdersChartProps) {
               axisLine={false}
               tickMargin={6}
               tick={{ fontSize: 10 }}
-              tickFormatter={(v) => (typeof v === 'string' ? v.slice(0, 3) : v)}
             />
             <Bar dataKey="value" fill="var(--color-value)" radius={3}>
               {data.map((_, i) => (
