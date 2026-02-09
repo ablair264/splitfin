@@ -12,6 +12,7 @@ import {
   Heading2, Heading3, List, ListOrdered, Quote, Link as LinkIcon,
   ImagePlus, AlignLeft, AlignCenter, AlignRight, Undo2, Redo2,
   Save, Send, Upload, X, Star, Eye, Loader2, Sparkles, Wand2,
+  ChevronDown,
 } from "lucide-react";
 import { journalPostService } from "@/services/journalPostService";
 import { websiteProductService } from "@/services/websiteProductService";
@@ -47,8 +48,10 @@ export default function JournalPostEditor() {
 
   // AI state
   const [aiTopic, setAiTopic] = useState("");
+  const [aiBrief, setAiBrief] = useState("");
   const [aiGenerating, setAiGenerating] = useState(false);
   const [aiHelperLoading, setAiHelperLoading] = useState<string | null>(null);
+  const [aiPanelOpen, setAiPanelOpen] = useState(true);
 
   const coverInputRef = useRef<HTMLInputElement>(null);
   const inlineImageRef = useRef<HTMLInputElement>(null);
@@ -194,7 +197,7 @@ export default function JournalPostEditor() {
     if (!aiTopic.trim() || aiGenerating) return;
     setAiGenerating(true);
     try {
-      const draft = await journalAIService.generateDraft(aiTopic);
+      const draft = await journalAIService.generateDraft(aiTopic, aiBrief || undefined);
       setTitle(draft.title);
       setExcerpt(draft.excerpt);
       if (editor) editor.commands.setContent(draft.body);
@@ -207,12 +210,13 @@ export default function JournalPostEditor() {
         .replace(/(^-|-$)/g, "");
       setSlug(generated);
       setAiTopic("");
+      setAiBrief("");
     } catch (err) {
       console.error("AI draft generation failed:", err);
     } finally {
       setAiGenerating(false);
     }
-  }, [aiTopic, aiGenerating, editor]);
+  }, [aiTopic, aiBrief, aiGenerating, editor]);
 
   const handleInlineHelper = useCallback(async (action: 'expand' | 'rewrite' | 'suggest_headings' | 'generate_seo') => {
     if (!editor || aiHelperLoading) return;
@@ -292,6 +296,79 @@ export default function JournalPostEditor() {
             {status === "published" ? "Update" : "Publish"}
           </button>
         </div>
+      </div>
+
+      {/* AI Assistant Panel — top of page */}
+      <div className="border-b border-border bg-muted/30">
+        <button
+          onClick={() => setAiPanelOpen(!aiPanelOpen)}
+          className="flex w-full items-center justify-between px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Sparkles size={15} className="text-primary" />
+            <span>AI Assistant</span>
+            <span className="text-[10px] text-muted-foreground font-normal">— generate drafts with real products, rewrite, expand</span>
+          </div>
+          <ChevronDown size={14} className={`text-muted-foreground transition-transform ${aiPanelOpen ? "rotate-180" : ""}`} />
+        </button>
+
+        {aiPanelOpen && (
+          <div className="px-4 pb-3 space-y-3">
+            {/* Generate draft row */}
+            <div className="flex gap-3">
+              <div className="flex-1 space-y-2">
+                <input
+                  type="text"
+                  value={aiTopic}
+                  onChange={(e) => setAiTopic(e.target.value)}
+                  placeholder="Topic — e.g. 'Spring home refresh ideas', 'Gift guide for candle lovers'..."
+                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleGenerateDraft()}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                <textarea
+                  value={aiBrief}
+                  onChange={(e) => setAiBrief(e.target.value)}
+                  placeholder="Optional brief — specific angle, products to feature, key points to cover..."
+                  rows={2}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                />
+              </div>
+              <button
+                onClick={handleGenerateDraft}
+                disabled={aiGenerating || !aiTopic.trim()}
+                className="inline-flex items-center gap-1.5 self-start rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 shrink-0"
+              >
+                {aiGenerating ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                Generate Draft
+              </button>
+            </div>
+
+            {/* Inline helper buttons */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-muted-foreground mr-1">Quick tools:</span>
+              {([
+                { action: 'expand' as const, label: 'Expand selection' },
+                { action: 'rewrite' as const, label: 'Rewrite selection' },
+                { action: 'suggest_headings' as const, label: 'Suggest headings' },
+                { action: 'generate_seo' as const, label: 'Generate SEO' },
+              ]).map(({ action, label }) => (
+                <button
+                  key={action}
+                  onClick={() => handleInlineHelper(action)}
+                  disabled={aiHelperLoading !== null}
+                  className="inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 hover:bg-accent disabled:opacity-50 transition-colors"
+                >
+                  {aiHelperLoading === action ? <Loader2 size={11} className="animate-spin" /> : <Wand2 size={11} />}
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {aiGenerating && (
+              <p className="text-xs text-muted-foreground animate-pulse">Generating draft with real product recommendations...</p>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Main content */}
@@ -458,48 +535,6 @@ export default function JournalPostEditor() {
                 rows={2}
                 className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none"
               />
-            </SidebarSection>
-
-            {/* AI Assistant */}
-            <SidebarSection title="AI Assistant">
-              <div className="space-y-3">
-                <div className="flex gap-1.5">
-                  <input
-                    type="text"
-                    value={aiTopic}
-                    onChange={(e) => setAiTopic(e.target.value)}
-                    placeholder="Enter topic..."
-                    onKeyDown={(e) => e.key === "Enter" && handleGenerateDraft()}
-                    className="flex-1 rounded-md border border-border bg-transparent px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-                  />
-                  <button
-                    onClick={handleGenerateDraft}
-                    disabled={aiGenerating || !aiTopic.trim()}
-                    className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 shrink-0"
-                  >
-                    {aiGenerating ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} />}
-                    Draft
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {([
-                    { action: 'expand' as const, label: 'Expand' },
-                    { action: 'rewrite' as const, label: 'Rewrite' },
-                    { action: 'suggest_headings' as const, label: 'Headings' },
-                    { action: 'generate_seo' as const, label: 'Gen SEO' },
-                  ]).map(({ action, label }) => (
-                    <button
-                      key={action}
-                      onClick={() => handleInlineHelper(action)}
-                      disabled={aiHelperLoading !== null}
-                      className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:border-primary/30 disabled:opacity-50"
-                    >
-                      {aiHelperLoading === action ? <Loader2 size={10} className="animate-spin" /> : <Wand2 size={10} />}
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </SidebarSection>
 
             {/* Status */}

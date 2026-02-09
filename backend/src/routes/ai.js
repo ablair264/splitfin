@@ -407,28 +407,65 @@ aiRouter.post('/generate-journal-draft', async (req, res) => {
     const { topic, brief = '', tone = 'friendly', wordCount = 600 } = req.body || {};
     if (!topic || typeof topic !== 'string') return res.status(400).json({ error: 'topic is required' });
 
+    // Fetch real products from the database for AI context
+    let productContext = '';
+    try {
+      const { query: dbQuery } = await import('../../config/database.js');
+      const { rows: products } = await dbQuery(`
+        SELECT wp.slug, wp.display_name, wp.retail_price, wp.short_description, p.brand,
+               wc.name AS category_name
+        FROM website_products wp
+        JOIN products p ON p.id = wp.product_id
+        LEFT JOIN website_categories wc ON wc.id = wp.category_id
+        WHERE wp.is_active = true AND p.stock_on_hand > 0
+        ORDER BY wp.is_featured DESC, wp.display_order ASC
+        LIMIT 40
+      `);
+
+      if (products.length > 0) {
+        const productList = products.map((p) =>
+          `- ${p.display_name} by ${p.brand} — £${parseFloat(p.retail_price).toFixed(2)}${p.category_name ? ` (${p.category_name})` : ''}${p.short_description ? ` — ${p.short_description}` : ''} [link: /products/${p.slug}]`
+        ).join('\n');
+        productContext = `\n\nHere are real products currently available on Pop! Home. Naturally weave 3-6 relevant products into the article as recommendations. Use their real names, prices, and link to them using <a href="/products/SLUG">Product Name</a>. Do NOT invent products — only use the ones listed below:\n\n${productList}`;
+      }
+    } catch (dbErr) {
+      console.warn('Could not fetch products for journal AI:', dbErr.message);
+    }
+
     const system = {
       role: 'system',
-      content: `You are a content writer for Pop! Home, an online homeware store in the UK selling brands like Relaxound, Remember, Ideas 4 Seasons, and My Flame Lifestyle. Write warm, approachable blog content that connects products to real life — home styling, gifting, wellness, seasonal living. Tone: ${tone}. Always return valid JSON.`
+      content: `You are a talented lifestyle content writer for Pop! Home, an online homeware store in the UK selling brands like Relaxound, Remember, Ideas 4 Seasons, and My Flame Lifestyle. Write warm, approachable blog content that connects products to real life — home styling, gifting, wellness, seasonal living. Tone: ${tone}. Always return valid JSON.`
     };
     const user = {
       role: 'user',
       content: `Write a journal blog post about: ${topic}
 ${brief ? `Additional brief: ${brief}` : ''}
 Target word count for body: ~${wordCount} words.
+${productContext}
+
+HTML formatting rules:
+- Use <h2> for main sections (2-4 sections)
+- Use <h3> for subsections where appropriate
+- Use <p> for paragraphs — write in short, punchy paragraphs (2-4 sentences each)
+- Use <blockquote> for pull quotes or key takeaways (1-2 per article)
+- Use <ul>/<li> for curated lists or tips
+- Use <strong> to emphasise key phrases within paragraphs
+- Use <a href="/products/SLUG"> to link to products naturally within sentences (don't just list them)
+- Do NOT use <h1> or inline styles
+- Make the content feel editorial and magazine-quality, not like a product catalogue
 
 Return ONLY JSON:
 {
   "title": "...",
   "excerpt": "1-2 sentence summary, max 40 words",
-  "body": "Full HTML content using <h2>, <h3>, <p>, <ul>/<li>, <blockquote> tags. No <h1>. No inline styles.",
+  "body": "Full HTML content as described above",
   "tags": ["lowercase-hyphenated-tag", ...],
   "meta_title": "SEO title, max 60 chars",
   "meta_description": "SEO description, max 155 chars"
 }`
     };
 
-    const out = await callOpenAI([system, user], 'gpt-4o', { max_tokens: 3000, temperature: 0.7 });
+    const out = await callOpenAI([system, user], 'gpt-4o', { max_tokens: 4000, temperature: 0.7 });
 
     res.json({
       title: out.title || topic,
