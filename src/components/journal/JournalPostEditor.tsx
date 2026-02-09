@@ -58,7 +58,11 @@ export default function JournalPostEditor() {
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Disable built-in versions — using standalone extensions with custom config
+        link: false,
+        underline: false,
+      }),
       Underline,
       Image.configure({ inline: false, allowBase64: false }),
       Link.configure({ openOnClick: false }),
@@ -178,14 +182,21 @@ export default function JournalPostEditor() {
 
   const handleInlineImage = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !editor || isNew) return;
+    if (!file || !editor) return;
     try {
-      const result = await journalPostService.uploadImage(Number(id), file);
+      let postId = Number(id);
+      if (isNew) {
+        // Create the post as draft first so we have an ID for the image upload
+        const created = await journalPostService.create({ title: title || "Untitled", status: "draft" });
+        postId = created.id;
+        navigate(`/website/journal/${created.id}`, { replace: true });
+      }
+      const result = await journalPostService.uploadImage(postId, file);
       editor.chain().focus().setImage({ src: result.image_url }).run();
     } catch (err) {
       console.error("Image upload failed:", err);
     }
-  }, [editor, id, isNew]);
+  }, [editor, id, isNew, title, navigate]);
 
   const toggleTag = useCallback((tagId: number) => {
     setSelectedTagIds((prev) =>
