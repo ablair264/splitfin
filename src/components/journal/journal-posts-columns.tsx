@@ -1,4 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
+import { Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import type { JournalPost } from "@/types/domain";
@@ -23,7 +24,7 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
-export function getJournalPostColumns(): ColumnDef<JournalPost>[] {
+export function getJournalPostColumns(onDelete?: (post: JournalPost) => void): ColumnDef<JournalPost>[] {
   return [
     {
       id: "select",
@@ -204,5 +205,28 @@ export function getJournalPostColumns(): ColumnDef<JournalPost>[] {
       enableColumnFilter: false,
       meta: { label: "Published" },
     },
+    ...(onDelete
+      ? [
+          {
+            id: "actions",
+            header: () => null,
+            cell: ({ row }: { row: { original: JournalPost } }) => (
+              <button
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  onDelete(row.original);
+                }}
+                className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                title="Delete post"
+              >
+                <Trash2 size={14} />
+              </button>
+            ),
+            size: 50,
+            enableSorting: false,
+            enableColumnFilter: false,
+          } as ColumnDef<JournalPost>,
+        ]
+      : []),
   ];
 }

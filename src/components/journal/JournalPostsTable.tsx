@@ -21,8 +21,28 @@ export default function JournalPostsTable() {
   const [posts, setPosts] = useState<JournalPost[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [deleteTarget, setDeleteTarget] = useState<JournalPost | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const columns = useMemo(() => getJournalPostColumns(), []);
+  const handleDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await journalPostService.remove(deleteTarget.id);
+      setDeleteTarget(null);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      console.error("Failed to delete post:", err);
+    } finally {
+      setDeleting(false);
+    }
+  }, [deleteTarget]);
+
+  const columns = useMemo(
+    () => getJournalPostColumns((post) => setDeleteTarget(post)),
+    []
+  );
 
   const pageCount = Math.ceil(totalCount / PAGE_SIZE);
 
@@ -93,7 +113,7 @@ export default function JournalPostsTable() {
 
     fetchPosts();
     return () => { cancelled = true; };
-  }, [apiFilters]);
+  }, [apiFilters, refreshKey]);
 
   const handleRowClick = useCallback((row: JournalPost) => {
     navigate(`/website/journal/${row.id}`);
@@ -127,6 +147,35 @@ export default function JournalPostsTable() {
       <DataTable table={table} onRowClick={handleRowClick}>
         <DataTableToolbar table={table} />
       </DataTable>
+
+      {/* Delete confirmation dialog */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={() => !deleting && setDeleteTarget(null)} />
+          <div className="relative z-50 w-full max-w-sm rounded-lg border border-border bg-background p-6 shadow-lg">
+            <h3 className="text-base font-semibold text-foreground">Delete post?</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This will permanently delete <strong>{deleteTarget.title}</strong> and all its images. This cannot be undone.
+            </p>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteTarget(null)}
+                disabled={deleting}
+                className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-foreground hover:bg-accent disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="rounded-md bg-destructive px-3 py-1.5 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

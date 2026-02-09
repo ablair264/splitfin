@@ -164,19 +164,19 @@ export default function JournalPostEditor() {
   const handleCoverUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (isNew) {
-      // For new posts, need to create first
-      const created = await journalPostService.create({ title: title || "Untitled", status: "draft" });
-      const result = await journalPostService.uploadImage(created.id, file, "cover");
-      setCoverImage(result.image_url);
-      navigate(`/website/journal/${created.id}`, { replace: true });
-      return;
-    }
     try {
-      const result = await journalPostService.uploadImage(Number(id), file, "cover");
+      let postId = Number(id);
+      if (isNew) {
+        const created = await journalPostService.create({ title: title || "Untitled", status: "draft" });
+        postId = created.id;
+        navigate(`/website/journal/${created.id}`, { replace: true });
+      }
+      const result = await journalPostService.uploadImage(postId, file, "cover");
       setCoverImage(result.image_url);
-    } catch (err) {
-      console.error("Cover upload failed:", err);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Upload failed";
+      console.error("Cover upload failed:", msg);
+      alert(`Cover upload failed: ${msg}`);
     }
   }, [isNew, id, title, navigate]);
 
@@ -193,8 +193,10 @@ export default function JournalPostEditor() {
       }
       const result = await journalPostService.uploadImage(postId, file);
       editor.chain().focus().setImage({ src: result.image_url }).run();
-    } catch (err) {
-      console.error("Image upload failed:", err);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Upload failed";
+      console.error("Image upload failed:", msg);
+      alert(`Image upload failed: ${msg}`);
     }
   }, [editor, id, isNew, title, navigate]);
 

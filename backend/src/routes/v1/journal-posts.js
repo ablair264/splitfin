@@ -351,7 +351,13 @@ router.post('/:id/images', async (req, res) => {
       return res.status(400).json({ error: 'No image file provided' });
     }
 
-    const r2 = await getR2Client();
+    let r2;
+    try {
+      r2 = await getR2Client();
+    } catch (configErr) {
+      logger.error('[JournalPosts] R2 not configured:', configErr.message);
+      return res.status(500).json({ error: 'Image storage (R2) is not configured. Check R2_ENDPOINT, R2_ACCESS_KEY_ID, and R2_SECRET_ACCESS_KEY environment variables.' });
+    }
     if (!_s3Sdk) _s3Sdk = await import('@aws-sdk/client-s3');
 
     const ext = req.file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
