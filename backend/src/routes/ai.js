@@ -1,4 +1,5 @@
 import express from 'express';
+import { query as dbQuery } from '../config/database.js';
 
 export const aiRouter = express.Router();
 
@@ -410,7 +411,6 @@ aiRouter.post('/generate-journal-draft', async (req, res) => {
     // Fetch real products from the database for AI context
     let productContext = '';
     try {
-      const { query: dbQuery } = await import('../../config/database.js');
       const { rows: products } = await dbQuery(`
         SELECT wp.slug, wp.display_name, wp.retail_price, wp.short_description, p.brand,
                wc.name AS category_name
@@ -422,19 +422,23 @@ aiRouter.post('/generate-journal-draft', async (req, res) => {
         LIMIT 40
       `);
 
+      console.log(`[Journal AI] Fetched ${products.length} products for context`);
+
       if (products.length > 0) {
         const productList = products.map((p) =>
-          `- ${p.display_name} by ${p.brand} — £${parseFloat(p.retail_price).toFixed(2)}${p.category_name ? ` (${p.category_name})` : ''}${p.short_description ? ` — ${p.short_description}` : ''} [link: /products/${p.slug}]`
+          `- "${p.display_name}" by ${p.brand} — £${parseFloat(p.retail_price).toFixed(2)}${p.category_name ? ` (${p.category_name})` : ''}${p.short_description ? ` — ${p.short_description}` : ''} [link: /products/${p.slug}]`
         ).join('\n');
-        productContext = `\n\nHere are real products currently available on Pop! Home. Naturally weave 3-6 relevant products into the article as recommendations. Use their real names, prices, and link to them using <a href="/products/SLUG">Product Name</a>. Do NOT invent products — only use the ones listed below:\n\n${productList}`;
+        productContext = `\n\nIMPORTANT — REAL PRODUCT CATALOGUE:\nBelow is the COMPLETE list of products available on Pop! Home. You MUST ONLY reference products from this list. Do NOT invent, fabricate, or hallucinate any product names, prices, or brands that are not listed below. If no products are relevant to the topic, do not mention any products.\n\nWhen referencing a product, use its EXACT name and price, and link using <a href="/products/SLUG">Exact Product Name</a>.\n\nAvailable products:\n${productList}`;
       }
     } catch (dbErr) {
-      console.warn('Could not fetch products for journal AI:', dbErr.message);
+      console.error('[Journal AI] Failed to fetch products:', dbErr.message);
+      // If products can't be fetched, tell the AI not to reference any
+      productContext = '\n\nIMPORTANT: Do NOT mention or reference any specific products by name. Focus only on general lifestyle content.';
     }
 
     const system = {
       role: 'system',
-      content: `You are a talented lifestyle content writer for Pop! Home, an online homeware store in the UK selling brands like Relaxound, Remember, Ideas 4 Seasons, and My Flame Lifestyle. Write warm, approachable blog content that connects products to real life — home styling, gifting, wellness, seasonal living. Tone: ${tone}. Always return valid JSON.`
+      content: `You are a talented lifestyle content writer for Pop! Home, an online homeware store in the UK. Write warm, approachable blog content that connects products to real life — home styling, gifting, wellness, seasonal living. Tone: ${tone}. CRITICAL RULE: You must NEVER invent or fabricate product names, brands, or prices. Only reference products explicitly provided in the product catalogue. If no catalogue is provided, write general lifestyle content without mentioning specific products. Always return valid JSON.`
     };
     const user = {
       role: 'user',
