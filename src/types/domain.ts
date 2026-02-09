@@ -366,6 +366,53 @@ export interface PriceCheckResult {
   notes: string;
 }
 
+// Purchase Orders
+export interface ReorderIntelligenceItem {
+  product_id: number;
+  name: string;
+  sku: string;
+  brand: string;
+  image_url: string | null;
+  stock_on_hand: number;
+  cost_price: number;
+  sold_last_30d: number;
+  daily_velocity: number;
+  days_remaining: number | null;
+  priority: 'critical' | 'warning' | 'monitor';
+  suggested_qty: number;
+  on_website: boolean;
+}
+
+export interface PurchaseOrder {
+  id: number;
+  po_number: string;
+  brand: string;
+  status: 'draft' | 'sent' | 'received' | 'cancelled';
+  recipient_email: string | null;
+  notes: string | null;
+  subtotal: number;
+  item_count?: number;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  sent_at: string | null;
+  items?: PurchaseOrderItem[];
+}
+
+export interface PurchaseOrderItem {
+  id: number;
+  purchase_order_id: number;
+  product_id: number;
+  sku: string;
+  product_name: string;
+  quantity: number;
+  unit_cost: number;
+  total_cost: number;
+  stock_on_hand: number;
+  daily_velocity: number;
+  days_remaining: number | null;
+}
+
 // Journal
 export interface JournalPost {
   id: number;
