@@ -44,6 +44,10 @@ export const websiteProductService = {
     return api.get<ListResponse<Product>>('/api/v1/website-products/available', filters as Record<string, string | number>);
   },
 
+  async batchCreate(data: { product_ids: number[]; defaults?: { category_id?: number; badge?: string; is_active?: boolean; markup?: number } }): Promise<{ created: number; skipped: number; data: WebsiteProduct[] }> {
+    return api.post<{ created: number; skipped: number; data: WebsiteProduct[] }>('/api/v1/website-products/batch', data);
+  },
+
   async create(data: Partial<WebsiteProduct>): Promise<WebsiteProduct> {
     const result = await api.post<SingleResponse<WebsiteProduct>>('/api/v1/website-products', data);
     return result.data;

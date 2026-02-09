@@ -285,6 +285,118 @@ router.get('/available', async (req, res) => {
   }
 });
 
+// POST /api/v1/website-products/batch
+router.post('/batch', async (req, res) => {
+  try {
+    const { product_ids, defaults = {} } = req.body;
+
+    if (!Array.isArray(product_ids) || product_ids.length === 0) {
+      return res.status(400).json({ error: 'product_ids array is required' });
+    }
+    if (product_ids.length > 200) {
+      return res.status(400).json({ error: 'Maximum 200 products per batch' });
+    }
+
+    const markup = defaults.markup || 2.0;
+    const categoryId = defaults.category_id || null;
+    const badge = defaults.badge || null;
+    const isActive = defaults.is_active !== false;
+
+    const result = await withTransaction(async (client) => {
+      // Fetch base product data for all requested IDs
+      const { rows: baseProducts } = await client.query(
+        `SELECT id, name, rate, ai_short_description, image_url, image_urls
+         FROM products WHERE id = ANY($1::int[])`,
+        [product_ids]
+      );
+
+      // Get existing product_ids already on website to skip
+      const { rows: existingRows } = await client.query(
+        `SELECT product_id FROM website_products WHERE product_id = ANY($1::int[])`,
+        [product_ids]
+      );
+      const existingIds = new Set(existingRows.map(r => r.product_id));
+
+      // Get existing slugs to avoid collisions
+      const { rows: slugRows } = await client.query(
+        `SELECT slug FROM website_products`
+      );
+      const existingSlugs = new Set(slugRows.map(r => r.slug));
+
+      const created = [];
+      let skipped = 0;
+
+      for (const base of baseProducts) {
+        if (existingIds.has(base.id)) {
+          skipped++;
+          continue;
+        }
+
+        // Generate unique slug
+        let baseSlug = base.name
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+          .trim();
+        let slug = baseSlug;
+        let counter = 2;
+        while (existingSlugs.has(slug)) {
+          slug = `${baseSlug}-${counter}`;
+          counter++;
+        }
+        existingSlugs.add(slug);
+
+        const retailPrice = base.rate ? parseFloat((base.rate * markup).toFixed(2)) : 0;
+
+        const { rows } = await client.query(
+          `INSERT INTO website_products (
+            product_id, slug, display_name, short_description, retail_price,
+            category_id, badge, is_active, display_order, placeholder_class, published_at
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 0, 'bg-cream-200', $9)
+          RETURNING *`,
+          [
+            base.id, slug, base.name, base.ai_short_description || null, retailPrice,
+            categoryId, badge, isActive, isActive ? new Date().toISOString() : null,
+          ]
+        );
+
+        const wp = rows[0];
+
+        // Import images from base product
+        const imageUrls = [];
+        if (base.image_url) imageUrls.push(base.image_url);
+        if (base.image_urls && Array.isArray(base.image_urls)) {
+          for (const url of base.image_urls) {
+            if (url && !imageUrls.includes(url)) imageUrls.push(url);
+          }
+        }
+        for (let i = 0; i < imageUrls.length; i++) {
+          await client.query(
+            `INSERT INTO website_product_images (website_product_id, image_url, display_order, is_primary)
+             VALUES ($1, $2, $3, $4)`,
+            [wp.id, imageUrls[i], i, i === 0]
+          );
+        }
+
+        created.push(wp);
+      }
+
+      return { created, skipped };
+    });
+
+    logger.info(`[WebsiteProducts] Batch created ${result.created.length}, skipped ${result.skipped}`);
+    res.status(201).json({
+      created: result.created.length,
+      skipped: result.skipped,
+      data: result.created,
+    });
+  } catch (err) {
+    logger.error('[WebsiteProducts] Batch create error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // GET /api/v1/website-products/:id
 router.get('/:id', async (req, res) => {
   try {

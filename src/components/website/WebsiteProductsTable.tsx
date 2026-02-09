@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Layers } from "lucide-react";
 import { websiteProductService } from "@/services/websiteProductService";
 import type { WebsiteProduct, WebsiteCategory } from "@/types/domain";
 import { useDataTable } from "@/hooks/use-data-table";
@@ -11,6 +11,7 @@ import PageHeader from "@/components/shared/PageHeader";
 import { usePageTitle } from "@/hooks/usePageTitle";
 import { WebsiteProductDetailSheet } from "./WebsiteProductDetailSheet";
 import { AddWebsiteProductSheet } from "./AddWebsiteProductSheet";
+import { BatchAddWebsiteProductSheet } from "./BatchAddWebsiteProductSheet";
 import { Button } from "@/components/ui/button";
 
 const PAGE_SIZE = 50;
@@ -24,6 +25,7 @@ export default function WebsiteProductsTable() {
   const [selectedProduct, setSelectedProduct] = useState<WebsiteProduct | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
+  const [batchSheetOpen, setBatchSheetOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [brandOptions, setBrandOptions] = useState<{ label: string; value: string; count?: number }[]>([]);
@@ -170,9 +172,14 @@ export default function WebsiteProductsTable() {
         title="Website Products"
         subtitle={`${totalCount} products on Pop Home`}
         actions={
-          <Button intent="primary" size="sm" onPress={() => setAddSheetOpen(true)}>
-            <Plus size={14} className="mr-1.5" /> Add Product
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button intent="outline" size="sm" onPress={() => setBatchSheetOpen(true)}>
+              <Layers size={14} className="mr-1.5" /> Batch Add
+            </Button>
+            <Button intent="primary" size="sm" onPress={() => setAddSheetOpen(true)}>
+              <Plus size={14} className="mr-1.5" /> Add Product
+            </Button>
+          </div>
         }
       />
       <DataTable table={table} onRowClick={handleRowClick}>
@@ -194,6 +201,13 @@ export default function WebsiteProductsTable() {
         categories={categories}
         open={addSheetOpen}
         onOpenChange={setAddSheetOpen}
+        onCreated={handleProductUpdated}
+      />
+
+      <BatchAddWebsiteProductSheet
+        categories={categories}
+        open={batchSheetOpen}
+        onOpenChange={setBatchSheetOpen}
         onCreated={handleProductUpdated}
       />
     </div>
