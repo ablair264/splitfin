@@ -231,6 +231,7 @@ router.get('/available', async (req, res) => {
       "p.status = 'active'",
       `p.brand = ANY($1::text[])`,
       'p.id NOT IN (SELECT product_id FROM website_products)',
+      'p.stock_on_hand > 0',
     ];
     const params = [POP_HOME_BRANDS];
     let idx = 2;
