@@ -150,7 +150,7 @@ router.get('/', async (req, res) => {
     const dataSql = `
       ${BASE_SELECT}
       WHERE ${where}
-      ORDER BY ${col} ${dir} NULLS LAST
+      ORDER BY ${col} ${dir} NULLS LAST, wp.id ASC
       LIMIT $${idx++} OFFSET $${idx++}
     `;
     params.push(lim, off);
@@ -391,6 +391,7 @@ router.post('/batch', async (req, res) => {
     // Auto-enhance newly created products if requested (fire-and-forget)
     if (defaults.enhance && result.created.length > 0) {
       const ids = result.created.map(wp => wp.id);
+      const authToken = req.headers.authorization;
       // Fetch categories for AI
       const { rows: catRows } = await query('SELECT id, name FROM website_categories WHERE is_active = true ORDER BY name');
       const categoryNames = catRows.map(c => c.name);
@@ -416,7 +417,7 @@ router.post('/batch', async (req, res) => {
               description: existingDesc,
               dimensions: wp.dimensions_formatted || '',
               categories: categoryNames,
-            });
+            }, authToken);
             const updates = {};
             if (ai.display_name) updates.display_name = ai.display_name;
             if (ai.short_description) updates.short_description = ai.short_description;
@@ -500,11 +501,13 @@ router.post('/tags', async (req, res) => {
 // ── Batch Enhance ───────────────────────────────────────────
 
 // Helper: call the AI enhance-product endpoint internally
-async function callEnhanceProduct({ name, brand, description, dimensions, categories }) {
+async function callEnhanceProduct({ name, brand, description, dimensions, categories }, token) {
   const port = process.env.PORT || 3001;
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = token;
   const resp = await fetch(`http://localhost:${port}/api/ai/enhance-product`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ name, brand, description, dimensions, categories }),
   });
   if (!resp.ok) {
@@ -546,6 +549,7 @@ router.post('/batch-enhance', async (req, res) => {
       WHERE wp.id = ANY($1::int[])
     `, [website_product_ids]);
 
+    const authToken = req.headers.authorization;
     const results = [];
 
     for (const wp of wpRows) {
@@ -558,7 +562,7 @@ router.post('/batch-enhance', async (req, res) => {
           description: (!overwriteDescriptions && wp.short_description) ? wp.short_description : existingDesc,
           dimensions: wp.dimensions_formatted || '',
           categories: categoryNames,
-        });
+        }, authToken);
 
         // Build update payload
         const updates = {};

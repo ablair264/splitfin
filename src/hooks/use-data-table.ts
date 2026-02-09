@@ -231,7 +231,11 @@ export function useDataTable<TData>(props: UseDataTableProps<TData>) {
   }, [filterValues, enableAdvancedFilter]);
 
   const [columnFilters, setColumnFilters] =
-    React.useState<ColumnFiltersState>(initialColumnFilters);
+    React.useState<ColumnFiltersState>(
+      initialColumnFilters.length > 0
+        ? initialColumnFilters
+        : ((initialState?.columnFilters ?? []) as ColumnFiltersState),
+    );
 
   const onColumnFiltersChange = React.useCallback(
     (updaterOrValue: Updater<ColumnFiltersState>) => {

@@ -258,6 +258,7 @@ export function WebsiteProductDetailSheet({
   const effectiveIsActive = dirtyFields.is_active !== undefined ? dirtyFields.is_active as boolean : p?.is_active;
   const effectiveIsFeatured = dirtyFields.is_featured !== undefined ? dirtyFields.is_featured as boolean : p?.is_featured;
   const effectiveCategoryId = dirtyFields.category_id !== undefined ? dirtyFields.category_id as number | null : p?.category_id;
+  const effectiveFeaturedSpan = dirtyFields.featured_span !== undefined ? dirtyFields.featured_span as string | null : p?.featured_span;
 
   return (
     <>
@@ -406,6 +407,24 @@ export function WebsiteProductDetailSheet({
                     </button>
                   ) : (
                     <span className="text-sm text-foreground">{p.is_featured ? 'Yes' : 'No'}</span>
+                  )}
+                </DetailRow>
+
+                <DetailRow label="Carousel" editing={isEditing}>
+                  {isEditing ? (
+                    <select
+                      value={effectiveFeaturedSpan ?? ''}
+                      onChange={(e) => handleSelectChange('featured_span', e.target.value || null)}
+                      className="text-sm bg-transparent border border-border/50 rounded px-2 py-0.5 text-foreground"
+                    >
+                      <option value="">None</option>
+                      <option value="hot">Hot Products</option>
+                      <option value="new">New Products</option>
+                    </select>
+                  ) : (
+                    <span className="text-sm text-foreground">
+                      {p.featured_span === 'hot' ? 'Hot Products' : p.featured_span === 'new' ? 'New Products' : '—'}
+                    </span>
                   )}
                 </DetailRow>
 

@@ -81,12 +81,12 @@ export default function WebsiteProductsTable() {
   const columnFilters = table.getState().columnFilters;
 
   const sortColumnMap: Record<string, string> = {
-    search: "display_name",
+    search: "name",
     brand: "brand",
     retail_price: "retail_price",
     stock_on_hand: "stock_on_hand",
-    is_active: "display_name",
-    category: "category_name",
+    is_active: "name",
+    category: "category",
   };
 
   const apiFilters = useMemo(() => {
