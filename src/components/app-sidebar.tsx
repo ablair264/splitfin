@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { motion, AnimatePresence, useReducedMotion } from "motion/react"
 import {
   ShoppingCart, Users, Settings, ChevronDown,
-  Pin, Bell, Mail, Sun, Moon, ChevronsLeft, ChevronsRight,
+  Pin, Bell, Mail, Sun, Moon, ChevronsLeft, ChevronsRight, Globe,
 } from "lucide-react"
 
 // Animated icons
@@ -253,6 +253,8 @@ const ALL_NAV_ITEMS: Record<string, NavItemDef> = {
   products: { id: "products", label: "Products", icon: <BoxesIcon size={18} />, path: "/inventory/products" },
   purchaseOrders: { id: "purchaseOrders", label: "Purchase Orders", icon: <HandCoinsIcon size={18} />, path: "/finance/purchase-orders" },
   imageBank: { id: "imageBank", label: "Image Bank", icon: <GalleryThumbnailsIcon size={18} />, path: "/image-management" },
+  // Website
+  websiteProducts: { id: "websiteProducts", label: "Products", icon: <BoxesIcon size={18} />, path: "/website/products" },
   // Warehouse
   pipeline: { id: "pipeline", label: "Pipeline", icon: <BoxIcon size={18} />, path: "/shipping/warehouse" },
   couriers: { id: "couriers", label: "Couriers", icon: <MailCheckIcon size={18} />, path: "/shipping/couriers" },
@@ -278,6 +280,9 @@ const COLLAPSED_ITEMS: { id: string; item: NavItemDef; divider?: boolean; adminO
   { id: "products", item: ALL_NAV_ITEMS.products, adminOnly: true },
   { id: "purchaseOrders", item: ALL_NAV_ITEMS.purchaseOrders, adminOnly: true },
   { id: "imageBank", item: ALL_NAV_ITEMS.imageBank, adminOnly: true },
+  { id: "d1b", item: ALL_NAV_ITEMS.dashboard, divider: true },
+  // Website
+  { id: "websiteProducts", item: ALL_NAV_ITEMS.websiteProducts, adminOnly: true },
   { id: "d2", item: ALL_NAV_ITEMS.dashboard, divider: true },
   // Warehouse
   { id: "pipeline", item: ALL_NAV_ITEMS.pipeline, adminOnly: true },
@@ -312,6 +317,7 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
     const p = location.pathname
     if (p.startsWith("/customers") || p.startsWith("/orders") || p.startsWith("/enquiries") || p.startsWith("/finance/invoices")) return "sales"
     if (p.startsWith("/inventory") || p.startsWith("/finance/purchase-orders") || p.startsWith("/image-management")) return "inventory"
+    if (p.startsWith("/website")) return "website"
     if (p.startsWith("/shipping")) return "warehouse"
     if (p.startsWith("/agents") || p.startsWith("/reports") || p.startsWith("/suppliers") || p.startsWith("/settings/users")) return "management"
     return null
@@ -539,6 +545,18 @@ export default function AppSidebar({ user, unreadNotifications = 0, onNotificati
                       <NavItem indent item={ALL_NAV_ITEMS.products} isActive={isPathActive("/inventory/products")} isCollapsed={false} onPin={() => togglePin("products")} pinned={pinnedIds.includes("products")} />
                       <NavItem indent item={ALL_NAV_ITEMS.purchaseOrders} isActive={isPathActive("/finance/purchase-orders")} isCollapsed={false} onPin={() => togglePin("purchaseOrders")} pinned={pinnedIds.includes("purchaseOrders")} />
                       <NavItem indent item={ALL_NAV_ITEMS.imageBank} isActive={isPathActive("/image-management")} isCollapsed={false} onPin={() => togglePin("imageBank")} pinned={pinnedIds.includes("imageBank")} />
+                    </AccordionSection>
+                  )}
+
+                  {/* Website - Admin only */}
+                  {isAdmin && (
+                    <AccordionSection
+                      icon={<Globe size={18} />}
+                      title="Website"
+                      isOpen={openSection === "website"}
+                      onToggle={() => toggleSection("website")}
+                    >
+                      <NavItem indent item={ALL_NAV_ITEMS.websiteProducts} isActive={isPathActive("/website/products")} isCollapsed={false} onPin={() => togglePin("websiteProducts")} pinned={pinnedIds.includes("websiteProducts")} />
                     </AccordionSection>
                   )}
 

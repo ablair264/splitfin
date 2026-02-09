@@ -206,6 +206,68 @@ export interface Notification {
 
 export type SyncStatus = 'synced' | 'pending_push' | 'conflict';
 
+// Website product types (Pop Home)
+
+export interface WebsiteCategory {
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  hero_image_url: string | null;
+  hero_placeholder: string | null;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WebsiteProductImage {
+  id: number;
+  website_product_id: number;
+  image_url: string;
+  alt_text: string | null;
+  display_order: number;
+  is_primary: boolean;
+  created_at: string;
+}
+
+export interface WebsiteProduct {
+  id: number;
+  product_id: number;
+  slug: string;
+  display_name: string | null;
+  short_description: string | null;
+  long_description: string | null;
+  retail_price: number;
+  compare_at_price: number | null;
+  category_id: number | null;
+  badge: 'new' | 'sale' | null;
+  is_featured: boolean;
+  featured_span: string | null;
+  colours: { name: string; hex: string }[] | null;
+  features: string[] | null;
+  specs: { label: string; value: string }[] | null;
+  is_active: boolean;
+  display_order: number;
+  placeholder_class: string | null;
+  meta_title: string | null;
+  meta_description: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined fields from products table
+  base_name?: string;
+  sku?: string;
+  brand?: string;
+  stock_on_hand?: number;
+  wholesale_price?: number;
+  // Joined fields from website_categories
+  category_name?: string;
+  category_slug?: string;
+  // Aggregated images
+  images?: WebsiteProductImage[];
+}
+
 // API response wrappers
 export interface ListResponse<T> {
   data: T[];

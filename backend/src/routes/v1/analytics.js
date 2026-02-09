@@ -81,8 +81,11 @@ async function getTopAgent(startDate) {
       COUNT(o.id) as order_count,
       COALESCE(SUM(o.total), 0) as total_revenue
     FROM agents a
-    LEFT JOIN orders o ON o.salesperson_id = a.zoho_id AND o.date >= $1
-    WHERE (a.is_admin = false OR a.is_admin IS NULL) AND a.zoho_id IS NOT NULL
+    LEFT JOIN orders o ON (
+      o.salesperson_id = a.zoho_id
+      OR (o.salesperson_id IS NULL AND LOWER(o.salesperson_name) = LOWER(a.name))
+    ) AND o.date >= $1
+    WHERE (a.is_admin = false OR a.is_admin IS NULL)
     GROUP BY a.id, a.name
     ORDER BY total_revenue DESC
     LIMIT 1
@@ -192,7 +195,10 @@ async function getAgentPerformance(startDate) {
       COALESCE(a.name, 'Unassigned') as name,
       COALESCE(SUM(o.total), 0) as value
     FROM orders o
-    LEFT JOIN agents a ON o.salesperson_id = a.zoho_id
+    LEFT JOIN agents a ON (
+      o.salesperson_id = a.zoho_id
+      OR (o.salesperson_id IS NULL AND LOWER(o.salesperson_name) = LOWER(a.name))
+    )
     WHERE o.date >= $1
     GROUP BY a.name
     ORDER BY value DESC
@@ -240,8 +246,11 @@ async function getAgentSummary(startDate) {
       COALESCE(SUM(o.total), 0) as total_revenue,
       (SELECT COUNT(*) FROM customers c WHERE c.agent_id = a.id AND c.created_at >= $1) as new_customers
     FROM agents a
-    LEFT JOIN orders o ON o.salesperson_id = a.zoho_id AND o.date >= $1
-    WHERE (a.is_admin = false OR a.is_admin IS NULL) AND a.zoho_id IS NOT NULL
+    LEFT JOIN orders o ON (
+      o.salesperson_id = a.zoho_id
+      OR (o.salesperson_id IS NULL AND LOWER(o.salesperson_name) = LOWER(a.name))
+    ) AND o.date >= $1
+    WHERE (a.is_admin = false OR a.is_admin IS NULL)
     GROUP BY a.id, a.name, a.commission_rate
     ORDER BY total_revenue DESC
   `, [startDate.toISOString()]);
@@ -305,8 +314,11 @@ async function getAgentActivityTimeSeries(startDate, dateRange) {
       a.name as agent_name,
       COUNT(o.id) as order_count
     FROM orders o
-    JOIN agents a ON o.salesperson_id = a.zoho_id AND (a.is_admin = false OR a.is_admin IS NULL)
-    WHERE o.date >= $1 AND a.zoho_id IS NOT NULL
+    JOIN agents a ON (
+      o.salesperson_id = a.zoho_id
+      OR (o.salesperson_id IS NULL AND LOWER(o.salesperson_name) = LOWER(a.name))
+    ) AND (a.is_admin = false OR a.is_admin IS NULL)
+    WHERE o.date >= $1
     GROUP BY ${sqlGroup}, ${sqlLabel}, a.name
     ORDER BY ${sqlOrder}
   `, [startDate.toISOString()]);
@@ -331,10 +343,13 @@ async function getAgentBrandSpread(startDate) {
       p.brand,
       COALESCE(SUM(oli.amount), 0) as brand_revenue
     FROM orders o
-    JOIN agents a ON o.salesperson_id = a.zoho_id AND (a.is_admin = false OR a.is_admin IS NULL)
+    JOIN agents a ON (
+      o.salesperson_id = a.zoho_id
+      OR (o.salesperson_id IS NULL AND LOWER(o.salesperson_name) = LOWER(a.name))
+    ) AND (a.is_admin = false OR a.is_admin IS NULL)
     JOIN order_line_items oli ON oli.order_id = o.id
     JOIN products p ON p.zoho_item_id = oli.zoho_item_id
-    WHERE o.date >= $1 AND a.zoho_id IS NOT NULL AND p.brand IS NOT NULL AND p.brand != ''
+    WHERE o.date >= $1 AND p.brand IS NOT NULL AND p.brand != ''
     GROUP BY a.name, p.brand
     ORDER BY brand_revenue DESC
   `, [startDate.toISOString()]);
@@ -945,8 +960,11 @@ async function getTopAgentToday(today) {
       COUNT(o.id) as order_count,
       COALESCE(SUM(o.total), 0) as revenue
     FROM agents a
-    LEFT JOIN orders o ON o.salesperson_id = a.zoho_id AND o.date >= $1
-    WHERE (a.is_admin = false OR a.is_admin IS NULL) AND a.zoho_id IS NOT NULL
+    LEFT JOIN orders o ON (
+      o.salesperson_id = a.zoho_id
+      OR (o.salesperson_id IS NULL AND LOWER(o.salesperson_name) = LOWER(a.name))
+    ) AND o.date >= $1
+    WHERE (a.is_admin = false OR a.is_admin IS NULL)
     GROUP BY a.id, a.name
     ORDER BY revenue DESC
     LIMIT 1

@@ -23,6 +23,7 @@ import OrdersTable from '../components/orders/OrdersTable';
 import OrderManagement from '../components/OrderManagement';
 import ViewOrder from '../components/ViewOrder';
 import ProductsTable from '../components/inventory/ProductsTable';
+import WebsiteProductsTable from '../components/website/WebsiteProductsTable';
 import ImageManagement from '../components/ImageManagement/ImageManagement';
 import Settings from '../components/Settings/Settings';
 import AgentManagement from '../components/agents/AgentManagement';
@@ -216,6 +217,9 @@ export default function MasterLayout() {
 
             {/* Inventory Management Routes */}
             <Route path="/inventory/products" element={<ProductsTable />} />
+
+            {/* Website Management Routes */}
+            <Route path="/website/products" element={<WebsiteProductsTable />} />
 
             {/* Shipping Routes */}
             <Route path="/shipping/warehouse" element={<Warehouse />} />
