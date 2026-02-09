@@ -24,6 +24,9 @@ import OrderManagement from '../components/OrderManagement';
 import ViewOrder from '../components/ViewOrder';
 import ProductsTable from '../components/inventory/ProductsTable';
 import WebsiteProductsTable from '../components/website/WebsiteProductsTable';
+import JournalPostsTable from '../components/journal/JournalPostsTable';
+import JournalPostEditor from '../components/journal/JournalPostEditor';
+import ProductIntelligence from '../components/website/ProductIntelligence';
 import ImageManagement from '../components/ImageManagement/ImageManagement';
 import Settings from '../components/Settings/Settings';
 import AgentManagement from '../components/agents/AgentManagement';
@@ -220,6 +223,10 @@ export default function MasterLayout() {
 
             {/* Website Management Routes */}
             <Route path="/website/products" element={<WebsiteProductsTable />} />
+            <Route path="/website/journal" element={<JournalPostsTable />} />
+            <Route path="/website/journal/new" element={<JournalPostEditor />} />
+            <Route path="/website/journal/:id" element={<JournalPostEditor />} />
+            <Route path="/website/intelligence" element={<ProductIntelligence />} />
 
             {/* Shipping Routes */}
             <Route path="/shipping/warehouse" element={<Warehouse />} />

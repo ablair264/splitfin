@@ -14,7 +14,7 @@ aiRouter.options('*', (req, res) => {
 // Simple OpenAI category classifier and description enricher proxies
 // Requires process.env.OPENAI_API_KEY. No keys sent to client.
 
-async function callOpenAI(messages, model = process.env.OPENAI_MODEL || 'gpt-4o-mini', { max_tokens = 200, temperature = 0 } = {}) {
+export async function callOpenAI(messages, model = process.env.OPENAI_MODEL || 'gpt-4o-mini', { max_tokens = 200, temperature = 0 } = {}) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY not configured');
   const resp = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -397,6 +397,105 @@ aiRouter.post('/generate-insight', async (req, res) => {
 
   } catch (e) {
     res.status(500).json({ error: 'insight_generation_failed', message: e.message });
+  }
+});
+
+// ---- Journal AI endpoints ----
+
+aiRouter.post('/generate-journal-draft', async (req, res) => {
+  try {
+    const { topic, brief = '', tone = 'friendly', wordCount = 600 } = req.body || {};
+    if (!topic || typeof topic !== 'string') return res.status(400).json({ error: 'topic is required' });
+
+    const system = {
+      role: 'system',
+      content: `You are a content writer for Pop! Home, an online homeware store in the UK selling brands like Relaxound, Remember, Ideas 4 Seasons, and My Flame Lifestyle. Write warm, approachable blog content that connects products to real life — home styling, gifting, wellness, seasonal living. Tone: ${tone}. Always return valid JSON.`
+    };
+    const user = {
+      role: 'user',
+      content: `Write a journal blog post about: ${topic}
+${brief ? `Additional brief: ${brief}` : ''}
+Target word count for body: ~${wordCount} words.
+
+Return ONLY JSON:
+{
+  "title": "...",
+  "excerpt": "1-2 sentence summary, max 40 words",
+  "body": "Full HTML content using <h2>, <h3>, <p>, <ul>/<li>, <blockquote> tags. No <h1>. No inline styles.",
+  "tags": ["lowercase-hyphenated-tag", ...],
+  "meta_title": "SEO title, max 60 chars",
+  "meta_description": "SEO description, max 155 chars"
+}`
+    };
+
+    const out = await callOpenAI([system, user], 'gpt-4o', { max_tokens: 3000, temperature: 0.7 });
+
+    res.json({
+      title: out.title || topic,
+      excerpt: out.excerpt || '',
+      body: out.body || '',
+      tags: Array.isArray(out.tags) ? out.tags : [],
+      meta_title: out.meta_title || '',
+      meta_description: out.meta_description || '',
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'draft_generation_failed', message: e.message });
+  }
+});
+
+aiRouter.post('/journal-inline-helper', async (req, res) => {
+  try {
+    const { action, text, context = '' } = req.body || {};
+    if (!action || !text) return res.status(400).json({ error: 'action and text are required' });
+
+    const actions = {
+      expand: `Expand this short text into 2-3 well-written paragraphs. Maintain the same voice and topic. Return HTML (<p> tags).\n\nText: ${text}`,
+      rewrite: `Rewrite and polish this text for a lifestyle blog. Make it more engaging and readable. Keep the same meaning. Return HTML.\n\nText: ${text}`,
+      suggest_headings: `Suggest 3-5 H2 section headings for a blog post with this content. Return JSON: { "headings": ["...", ...] }\n\nContent: ${text}`,
+      generate_seo: `Generate SEO metadata for this blog post content. Return JSON: { "meta_title": "max 60 chars", "meta_description": "max 155 chars" }\n\nContent: ${text}`,
+    };
+
+    const prompt = actions[action];
+    if (!prompt) return res.status(400).json({ error: `Unknown action: ${action}` });
+
+    const isJson = action === 'suggest_headings' || action === 'generate_seo';
+    const system = {
+      role: 'system',
+      content: `You are a writing assistant for Pop! Home, a UK homeware lifestyle brand. ${isJson ? 'Always return valid JSON.' : 'Return only the HTML content, no markdown.'}`
+    };
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error('OPENAI_API_KEY not configured');
+
+    const requestBody = {
+      model: 'gpt-4o',
+      messages: [system, { role: 'user', content: prompt }],
+      max_tokens: 1500,
+      temperature: 0.7,
+    };
+    if (isJson) requestBody.response_format = { type: 'json_object' };
+
+    const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+      body: JSON.stringify(requestBody),
+    });
+
+    if (!resp.ok) {
+      const t = await resp.text();
+      throw new Error(`OpenAI error ${resp.status}: ${t}`);
+    }
+
+    const data = await resp.json();
+    const content = data.choices[0].message.content;
+
+    if (isJson) {
+      res.json(JSON.parse(content));
+    } else {
+      res.json({ html: content });
+    }
+  } catch (e) {
+    res.status(500).json({ error: 'inline_helper_failed', message: e.message });
   }
 });
 

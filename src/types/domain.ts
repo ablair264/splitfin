@@ -309,6 +309,92 @@ export interface BatchEnhanceResult {
   summary: { total: number; success: number; errors: number };
 }
 
+// Product Intelligence
+export interface ProductPopularity {
+  product_id: number;
+  name: string;
+  sku: string;
+  brand: string;
+  image_url: string | null;
+  stock_on_hand: number;
+  wholesale_price: number;
+  unique_customers: number;
+  total_orders: number;
+  total_quantity: number;
+  total_revenue: number;
+  avg_qty_per_order: number;
+  max_customer_share: number;
+  top_customer_name: string;
+  is_skewed: boolean;
+  recent_qty: number;
+  previous_qty: number;
+  trend: 'up' | 'down' | 'stable' | 'new';
+  on_website: boolean;
+  website_product_id: number | null;
+  badge: string | null;
+  retail_price: number | null;
+}
+
+export interface ReorderAlert {
+  product_id: number;
+  name: string;
+  sku: string;
+  brand: string;
+  image_url: string | null;
+  stock_on_hand: number;
+  retail_price: number;
+  sold_last_30d: number;
+  daily_velocity: number;
+  days_remaining: number | null;
+  priority: 'critical' | 'warning' | 'monitor';
+  website_product_id: number;
+  badge: string | null;
+  is_active: boolean;
+}
+
+export interface PriceCheckResult {
+  product_id: number;
+  name: string;
+  brand: string;
+  our_price: number;
+  market_avg: number | null;
+  market_low: number | null;
+  market_high: number | null;
+  our_position: 'cheaper' | 'competitive' | 'expensive' | 'unknown';
+  confidence: 'high' | 'medium' | 'low';
+  sources: string[];
+  notes: string;
+}
+
+// Journal
+export interface JournalPost {
+  id: number;
+  slug: string;
+  title: string;
+  excerpt: string | null;
+  body: string | null;
+  cover_image: string | null;
+  cover_alt: string | null;
+  author: string;
+  status: 'draft' | 'published' | 'archived';
+  is_featured: boolean;
+  display_order: number;
+  meta_title: string | null;
+  meta_description: string | null;
+  published_at: string | null;
+  created_at: string;
+  updated_at: string;
+  tags?: WebsiteTag[];
+}
+
+export interface JournalPostImage {
+  id: number;
+  journal_post_id: number;
+  image_url: string;
+  alt_text: string | null;
+  created_at: string;
+}
+
 // API response wrappers
 export interface ListResponse<T> {
   data: T[];
