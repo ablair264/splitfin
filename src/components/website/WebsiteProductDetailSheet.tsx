@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import {
   Copy, Check, Loader2, Trash2, Pencil, X, AlertTriangle,
-  ImagePlus, Upload, Eye, EyeOff, Star, GripVertical,
+  ImagePlus, Upload, Eye, EyeOff, Star, GripVertical, Tag, Plus,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import {
@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { websiteProductService } from '@/services/websiteProductService';
-import type { WebsiteProduct, WebsiteCategory } from '@/types/domain';
+import type { WebsiteProduct, WebsiteCategory, WebsiteTag } from '@/types/domain';
 
 interface WebsiteProductDetailSheetProps {
   product: WebsiteProduct | null;
@@ -49,7 +49,13 @@ export function WebsiteProductDetailSheet({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [productTags, setProductTags] = useState<WebsiteTag[]>([]);
+  const [allTags, setAllTags] = useState<WebsiteTag[]>([]);
+  const [tagsLoading, setTagsLoading] = useState(false);
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const tagDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (product) setStaleProduct(product);
@@ -128,13 +134,89 @@ export function WebsiteProductDetailSheet({
     setTimeout(() => setCopiedSlug(false), 1500);
   }, [p]);
 
+  // Load tags when product changes
+  useEffect(() => {
+    if (product?.id) {
+      setTagsLoading(true);
+      Promise.all([
+        websiteProductService.getProductTags(product.id),
+        websiteProductService.getTags(),
+      ]).then(([pTags, aTags]) => {
+        setProductTags(pTags);
+        setAllTags(aTags);
+      }).catch((err) => console.error('Failed to load tags:', err))
+        .finally(() => setTagsLoading(false));
+    } else {
+      setProductTags([]);
+    }
+  }, [product?.id]);
+
+  // Close tag dropdown on outside click
+  useEffect(() => {
+    if (!tagDropdownOpen) return;
+    function handleClick(e: MouseEvent) {
+      if (tagDropdownRef.current && !tagDropdownRef.current.contains(e.target as Node)) {
+        setTagDropdownOpen(false);
+        setNewTagName('');
+      }
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [tagDropdownOpen]);
+
   useEffect(() => {
     setDirtyFields({});
     setSaveError(null);
     setIsEditing(false);
     setShowDeleteConfirm(false);
     setImageError(null);
+    setTagDropdownOpen(false);
+    setNewTagName('');
   }, [product?.id]);
+
+  const handleAddTag = useCallback(async (tag: WebsiteTag) => {
+    if (!p) return;
+    const newTagIds = [...productTags.map((t) => t.id), tag.id];
+    try {
+      const updated = await websiteProductService.setProductTags(p.id, newTagIds);
+      setProductTags(updated);
+      setTagDropdownOpen(false);
+      setNewTagName('');
+    } catch (err) {
+      console.error('Failed to add tag:', err);
+    }
+  }, [p, productTags]);
+
+  const handleRemoveTag = useCallback(async (tagId: number) => {
+    if (!p) return;
+    const newTagIds = productTags.filter((t) => t.id !== tagId).map((t) => t.id);
+    try {
+      const updated = await websiteProductService.setProductTags(p.id, newTagIds);
+      setProductTags(updated);
+    } catch (err) {
+      console.error('Failed to remove tag:', err);
+    }
+  }, [p, productTags]);
+
+  const handleCreateTag = useCallback(async () => {
+    if (!p || !newTagName.trim()) return;
+    try {
+      const tag = await websiteProductService.createTag(newTagName.trim());
+      setAllTags((prev) => [...prev, tag]);
+      const newTagIds = [...productTags.map((t) => t.id), tag.id];
+      const updated = await websiteProductService.setProductTags(p.id, newTagIds);
+      setProductTags(updated);
+      setNewTagName('');
+      setTagDropdownOpen(false);
+    } catch (err) {
+      console.error('Failed to create tag:', err);
+    }
+  }, [p, productTags, newTagName]);
+
+  const availableTags = allTags.filter(
+    (t) => !productTags.some((pt) => pt.id === t.id) &&
+      (!newTagName || t.name.toLowerCase().includes(newTagName.toLowerCase()))
+  );
 
   const handleImageUpload = useCallback(async (file: File) => {
     if (!p) return;
@@ -407,6 +489,84 @@ export function WebsiteProductDetailSheet({
                   </div>
                 </motion.div>
               )}
+
+              {/* Tags */}
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32 }}>
+                <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-2">Tags</h3>
+                {tagsLoading ? (
+                  <Loader2 size={14} className="animate-spin text-muted-foreground" />
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {productTags.map((tag) => (
+                      <span key={tag.id} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-xs text-amber-500">
+                        <Tag size={10} />
+                        {tag.name}
+                        {isEditing && (
+                          <button onClick={() => handleRemoveTag(tag.id)} className="ml-0.5 hover:text-destructive transition-colors">
+                            <X size={10} />
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                    {productTags.length === 0 && !isEditing && (
+                      <span className="text-sm text-muted-foreground">—</span>
+                    )}
+                    {isEditing && (
+                      <div className="relative" ref={tagDropdownRef}>
+                        <button
+                          onClick={() => setTagDropdownOpen(!tagDropdownOpen)}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md border border-dashed border-border/60 text-xs text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all"
+                        >
+                          <Plus size={10} /> Add tag
+                        </button>
+                        {tagDropdownOpen && (
+                          <div className="absolute top-full left-0 mt-1 w-52 bg-card border border-border rounded-lg shadow-xl z-50 overflow-hidden">
+                            <div className="p-2 border-b border-border/40">
+                              <input
+                                type="text"
+                                value={newTagName}
+                                onChange={(e) => setNewTagName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && newTagName.trim()) {
+                                    const existing = availableTags.find((t) => t.name.toLowerCase() === newTagName.trim().toLowerCase());
+                                    if (existing) handleAddTag(existing);
+                                    else handleCreateTag();
+                                  }
+                                }}
+                                placeholder="Search or create..."
+                                className="w-full px-2 py-1 bg-background border border-border/50 rounded text-xs text-foreground focus:outline-none focus:border-primary"
+                                autoFocus
+                              />
+                            </div>
+                            <div className="max-h-32 overflow-y-auto">
+                              {availableTags.slice(0, 10).map((tag) => (
+                                <button
+                                  key={tag.id}
+                                  onClick={() => handleAddTag(tag)}
+                                  className="w-full text-left px-3 py-1.5 text-xs text-foreground/80 hover:bg-muted/50 transition-colors"
+                                >
+                                  {tag.name}
+                                </button>
+                              ))}
+                              {newTagName.trim() && !allTags.some((t) => t.name.toLowerCase() === newTagName.trim().toLowerCase()) && (
+                                <button
+                                  onClick={handleCreateTag}
+                                  className="w-full text-left px-3 py-1.5 text-xs text-primary hover:bg-primary/5 transition-colors border-t border-border/30"
+                                >
+                                  Create &ldquo;{newTagName.trim()}&rdquo;
+                                </button>
+                              )}
+                              {availableTags.length === 0 && !newTagName.trim() && (
+                                <div className="px-3 py-2 text-xs text-muted-foreground">No more tags available</div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </motion.div>
 
               {/* SEO */}
               {isEditing && (

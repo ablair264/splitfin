@@ -387,6 +387,71 @@ router.post('/batch', async (req, res) => {
     });
 
     logger.info(`[WebsiteProducts] Batch created ${result.created.length}, skipped ${result.skipped}`);
+
+    // Auto-enhance newly created products if requested (fire-and-forget)
+    if (defaults.enhance && result.created.length > 0) {
+      const ids = result.created.map(wp => wp.id);
+      // Fetch categories for AI
+      const { rows: catRows } = await query('SELECT id, name FROM website_categories WHERE is_active = true ORDER BY name');
+      const categoryNames = catRows.map(c => c.name);
+      const categoryMap = Object.fromEntries(catRows.map(c => [c.name, c.id]));
+
+      // Run enhance in background (don't block response)
+      (async () => {
+        for (const wpId of ids) {
+          try {
+            const { rows } = await query(`
+              SELECT wp.id, wp.display_name, wp.short_description, wp.long_description, wp.category_id, wp.colours,
+                     p.name AS base_name, p.brand, p.description AS base_description,
+                     p.ai_description, p.ai_short_description, p.dimensions_formatted
+              FROM website_products wp JOIN products p ON p.id = wp.product_id
+              WHERE wp.id = $1
+            `, [wpId]);
+            if (rows.length === 0) continue;
+            const wp = rows[0];
+            const existingDesc = wp.ai_description || wp.ai_short_description || wp.base_description || '';
+            const ai = await callEnhanceProduct({
+              name: wp.base_name,
+              brand: wp.brand,
+              description: existingDesc,
+              dimensions: wp.dimensions_formatted || '',
+              categories: categoryNames,
+            });
+            const updates = {};
+            if (ai.display_name) updates.display_name = ai.display_name;
+            if (ai.short_description) updates.short_description = ai.short_description;
+            if (ai.long_description) updates.long_description = ai.long_description;
+            if (ai.colour) updates.colours = JSON.stringify([{ name: ai.colour, hex: ai.colour_hex || '#000000' }]);
+            if (ai.category && categoryMap[ai.category]) updates.category_id = categoryMap[ai.category];
+            if (Object.keys(updates).length > 0) {
+              const setClauses = [];
+              const vals = [];
+              let idx = 1;
+              for (const [key, val] of Object.entries(updates)) {
+                setClauses.push(`${key} = $${idx++}`);
+                vals.push(val);
+              }
+              vals.push(wpId);
+              await query(`UPDATE website_products SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${idx}`, vals);
+            }
+            if (ai.tags && ai.tags.length > 0) {
+              for (const tagName of ai.tags) {
+                const slug = tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+                const { rows: tagRows } = await query(
+                  `INSERT INTO website_tags (name, slug) VALUES ($1, $2) ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name RETURNING id`,
+                  [tagName, slug]
+                );
+                await query(`INSERT INTO website_product_tags (website_product_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`, [wpId, tagRows[0].id]);
+              }
+            }
+          } catch (err) {
+            logger.warn(`[WebsiteProducts] Auto-enhance failed for wp ${wpId}: ${err.message}`);
+          }
+        }
+        logger.info(`[WebsiteProducts] Auto-enhance completed for ${ids.length} products`);
+      })();
+    }
+
     res.status(201).json({
       created: result.created.length,
       skipped: result.skipped,
@@ -394,6 +459,237 @@ router.post('/batch', async (req, res) => {
     });
   } catch (err) {
     logger.error('[WebsiteProducts] Batch create error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Tags ────────────────────────────────────────────────────
+
+// GET /api/v1/website-products/tags — list all tags with product counts
+router.get('/tags', async (_req, res) => {
+  try {
+    const { rows } = await query(`
+      SELECT t.*, COUNT(pt.website_product_id)::int AS product_count
+      FROM website_tags t
+      LEFT JOIN website_product_tags pt ON pt.tag_id = t.id
+      GROUP BY t.id
+      ORDER BY t.name
+    `);
+    res.json({ data: rows });
+  } catch (err) {
+    logger.error('[WebsiteProducts] Tags list error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/v1/website-products/tags — create a tag
+router.post('/tags', async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name) return res.status(400).json({ error: 'name is required' });
+    const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+    const result = await insert('website_tags', { name, slug });
+    res.status(201).json({ data: result });
+  } catch (err) {
+    if (err.code === '23505') return res.status(409).json({ error: 'Tag already exists' });
+    logger.error('[WebsiteProducts] Tag create error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── Batch Enhance ───────────────────────────────────────────
+
+// Helper: call the AI enhance-product endpoint internally
+async function callEnhanceProduct({ name, brand, description, dimensions, categories }) {
+  const port = process.env.PORT || 3001;
+  const resp = await fetch(`http://localhost:${port}/api/ai/enhance-product`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, brand, description, dimensions, categories }),
+  });
+  if (!resp.ok) {
+    const t = await resp.text();
+    throw new Error(`AI enhance failed: ${t}`);
+  }
+  return resp.json();
+}
+
+// POST /api/v1/website-products/batch-enhance
+router.post('/batch-enhance', async (req, res) => {
+  try {
+    const { website_product_ids, options = {} } = req.body;
+
+    if (!Array.isArray(website_product_ids) || website_product_ids.length === 0) {
+      return res.status(400).json({ error: 'website_product_ids array is required' });
+    }
+    if (website_product_ids.length > 50) {
+      return res.status(400).json({ error: 'Maximum 50 products per batch enhance' });
+    }
+
+    const overwriteNames = options.overwrite_names !== false;
+    const overwriteDescriptions = options.overwrite_descriptions !== false;
+    const assignCategories = options.assign_categories !== false;
+    const assignTags = options.assign_tags !== false;
+
+    // Fetch website categories for AI to pick from
+    const { rows: catRows } = await query('SELECT id, name FROM website_categories WHERE is_active = true ORDER BY name');
+    const categoryNames = catRows.map(c => c.name);
+    const categoryMap = Object.fromEntries(catRows.map(c => [c.name, c.id]));
+
+    // Fetch all website products with base product data
+    const { rows: wpRows } = await query(`
+      SELECT wp.id, wp.display_name, wp.short_description, wp.long_description, wp.category_id, wp.colours,
+             p.name AS base_name, p.brand, p.description AS base_description,
+             p.ai_description, p.ai_short_description, p.dimensions_formatted
+      FROM website_products wp
+      JOIN products p ON p.id = wp.product_id
+      WHERE wp.id = ANY($1::int[])
+    `, [website_product_ids]);
+
+    const results = [];
+
+    for (const wp of wpRows) {
+      try {
+        const existingDesc = wp.ai_description || wp.ai_short_description || wp.base_description || '';
+
+        const ai = await callEnhanceProduct({
+          name: wp.base_name,
+          brand: wp.brand,
+          description: (!overwriteDescriptions && wp.short_description) ? wp.short_description : existingDesc,
+          dimensions: wp.dimensions_formatted || '',
+          categories: categoryNames,
+        });
+
+        // Build update payload
+        const updates = {};
+
+        if (overwriteNames || !wp.display_name || wp.display_name === wp.base_name) {
+          updates.display_name = ai.display_name;
+        }
+
+        if (overwriteDescriptions || !wp.short_description) {
+          updates.short_description = ai.short_description;
+        }
+        if (overwriteDescriptions || !wp.long_description) {
+          updates.long_description = ai.long_description;
+        }
+
+        // Colours
+        if (ai.colour) {
+          updates.colours = JSON.stringify([{ name: ai.colour, hex: ai.colour_hex || '#000000' }]);
+        }
+
+        // Category
+        if (assignCategories && ai.category && categoryMap[ai.category]) {
+          if (!wp.category_id || overwriteNames) {
+            updates.category_id = categoryMap[ai.category];
+          }
+        }
+
+        // Apply updates
+        if (Object.keys(updates).length > 0) {
+          const setClauses = [];
+          const vals = [];
+          let idx = 1;
+          for (const [key, val] of Object.entries(updates)) {
+            setClauses.push(`${key} = $${idx++}`);
+            vals.push(val);
+          }
+          vals.push(wp.id);
+          await query(
+            `UPDATE website_products SET ${setClauses.join(', ')}, updated_at = NOW() WHERE id = $${idx}`,
+            vals
+          );
+        }
+
+        // Tags
+        let assignedTags = [];
+        if (assignTags && ai.tags && ai.tags.length > 0) {
+          for (const tagName of ai.tags) {
+            const slug = tagName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+            // Upsert tag
+            const { rows: tagRows } = await query(
+              `INSERT INTO website_tags (name, slug) VALUES ($1, $2)
+               ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name
+               RETURNING id, name, slug`,
+              [tagName, slug]
+            );
+            const tagId = tagRows[0].id;
+            // Link to product (ignore if already linked)
+            await query(
+              `INSERT INTO website_product_tags (website_product_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+              [wp.id, tagId]
+            );
+            assignedTags.push(tagRows[0]);
+          }
+        }
+
+        results.push({
+          id: wp.id,
+          status: 'done',
+          original_name: wp.base_name,
+          display_name: updates.display_name || wp.display_name,
+          colour: ai.colour || null,
+          category: ai.category || null,
+          tags: assignedTags.map(t => t.name),
+        });
+      } catch (err) {
+        results.push({ id: wp.id, status: 'error', original_name: wp.base_name, error: err.message });
+      }
+    }
+
+    const success = results.filter(r => r.status === 'done').length;
+    const errors = results.filter(r => r.status === 'error').length;
+    logger.info(`[WebsiteProducts] Batch enhance: ${success} done, ${errors} errors`);
+    res.json({ results, summary: { total: results.length, success, errors } });
+  } catch (err) {
+    logger.error('[WebsiteProducts] Batch enhance error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/v1/website-products/:id/tags
+router.get('/:id/tags', async (req, res) => {
+  try {
+    const { rows } = await query(`
+      SELECT t.* FROM website_tags t
+      JOIN website_product_tags pt ON pt.tag_id = t.id
+      WHERE pt.website_product_id = $1
+      ORDER BY t.name
+    `, [req.params.id]);
+    res.json({ data: rows });
+  } catch (err) {
+    logger.error('[WebsiteProducts] Get product tags error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/v1/website-products/:id/tags — replace all tags for a product
+router.put('/:id/tags', async (req, res) => {
+  try {
+    const { tag_ids } = req.body;
+    if (!Array.isArray(tag_ids)) return res.status(400).json({ error: 'tag_ids array is required' });
+
+    await withTransaction(async (client) => {
+      await client.query('DELETE FROM website_product_tags WHERE website_product_id = $1', [req.params.id]);
+      for (const tagId of tag_ids) {
+        await client.query(
+          'INSERT INTO website_product_tags (website_product_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+          [req.params.id, tagId]
+        );
+      }
+    });
+
+    // Return updated tags
+    const { rows } = await query(`
+      SELECT t.* FROM website_tags t
+      JOIN website_product_tags pt ON pt.tag_id = t.id
+      WHERE pt.website_product_id = $1
+      ORDER BY t.name
+    `, [req.params.id]);
+    res.json({ data: rows });
+  } catch (err) {
+    logger.error('[WebsiteProducts] Set product tags error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

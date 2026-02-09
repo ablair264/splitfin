@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { Search, Loader2, Layers, Check } from 'lucide-react';
+import { Search, Loader2, Layers, Check, Sparkles } from 'lucide-react';
 import {
   SheetContent, SheetHeader, SheetBody, SheetFooter, SheetClose,
 } from '@/components/ui/sheet';
@@ -33,6 +33,7 @@ export function BatchAddWebsiteProductSheet({
   const [markup, setMarkup] = useState('2.0');
   const [badge, setBadge] = useState('');
   const [isActive, setIsActive] = useState(true);
+  const [autoEnhance, setAutoEnhance] = useState(true);
 
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<{ created: number; skipped: number } | null>(null);
@@ -52,6 +53,7 @@ export function BatchAddWebsiteProductSheet({
       setMarkup('2.0');
       setBadge('');
       setIsActive(true);
+      setAutoEnhance(true);
       setResult(null);
       setError(null);
     }
@@ -149,6 +151,7 @@ export function BatchAddWebsiteProductSheet({
           badge: badge || undefined,
           is_active: isActive,
           markup: parseFloat(markup) || 2.0,
+          enhance: autoEnhance,
         },
       });
       setResult({ created: res.created, skipped: res.skipped });
@@ -366,6 +369,22 @@ export function BatchAddWebsiteProductSheet({
               </button>
             </div>
           </div>
+
+          <label className="flex items-center gap-2 cursor-pointer mt-2">
+            <input
+              type="checkbox"
+              checked={autoEnhance}
+              onChange={(e) => setAutoEnhance(e.target.checked)}
+              className="rounded border-border bg-background text-primary focus:ring-primary/30"
+            />
+            <div className="flex items-center gap-1.5">
+              <Sparkles size={12} className="text-amber-500" />
+              <span className="text-sm text-foreground/80">Auto-enhance after adding</span>
+            </div>
+          </label>
+          <p className="text-[11px] text-muted-foreground ml-6">
+            Clean names, generate descriptions, assign categories & tags
+          </p>
         </div>
       </SheetBody>
 

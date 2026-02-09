@@ -268,6 +268,47 @@ export interface WebsiteProduct {
   images?: WebsiteProductImage[];
 }
 
+export interface WebsiteTag {
+  id: number;
+  name: string;
+  slug: string;
+  product_count?: number;
+  created_at: string;
+}
+
+export interface EnhanceProductResult {
+  display_name: string;
+  colour: string | null;
+  colour_hex: string | null;
+  short_description: string | null;
+  long_description: string | null;
+  category: string | null;
+  tags: string[];
+}
+
+export interface BatchEnhanceOptions {
+  overwrite_names?: boolean;
+  overwrite_descriptions?: boolean;
+  assign_categories?: boolean;
+  assign_tags?: boolean;
+}
+
+export interface BatchEnhanceResultItem {
+  id: number;
+  status: 'done' | 'error';
+  original_name: string;
+  display_name?: string;
+  colour?: string | null;
+  category?: string | null;
+  tags?: string[];
+  error?: string;
+}
+
+export interface BatchEnhanceResult {
+  results: BatchEnhanceResultItem[];
+  summary: { total: number; success: number; errors: number };
+}
+
 // API response wrappers
 export interface ListResponse<T> {
   data: T[];

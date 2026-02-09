@@ -14,7 +14,7 @@ aiRouter.options('*', (req, res) => {
 // Simple OpenAI category classifier and description enricher proxies
 // Requires process.env.OPENAI_API_KEY. No keys sent to client.
 
-async function callOpenAI(messages, model = process.env.OPENAI_MODEL || 'gpt-4o-mini') {
+async function callOpenAI(messages, model = process.env.OPENAI_MODEL || 'gpt-4o-mini', { max_tokens = 200, temperature = 0 } = {}) {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) throw new Error('OPENAI_API_KEY not configured');
   const resp = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -26,8 +26,8 @@ async function callOpenAI(messages, model = process.env.OPENAI_MODEL || 'gpt-4o-
     body: JSON.stringify({
       model,
       messages,
-      temperature: 0,
-      max_tokens: 200,
+      temperature,
+      max_tokens,
       response_format: { type: 'json_object' }
     })
   });
@@ -79,6 +79,75 @@ Return ONLY JSON: { "enhanced_description": "..." }`
     res.json({ description: out.enhanced_description || description });
   } catch (e) {
     res.status(500).json({ error: 'enrichment_failed', message: e.message });
+  }
+});
+
+// Product enhancement endpoint — cleans name, extracts colour, generates descriptions, assigns category & tags
+aiRouter.post('/enhance-product', async (req, res) => {
+  try {
+    const { name, brand = '', description = '', dimensions = '', categories = [] } = req.body || {};
+    if (!name) return res.status(400).json({ error: 'name is required' });
+
+    const categoryList = categories.length > 0
+      ? `Available categories (pick the best match or null): ${categories.join(', ')}`
+      : 'No categories available — return null for category.';
+
+    const system = {
+      role: 'system',
+      content: 'You are a product data specialist for an online homeware store. Always return valid JSON.'
+    };
+    const user = {
+      role: 'user',
+      content: `Clean up this wholesale product name and enrich the product data for a customer-facing website.
+
+Raw product name: ${name}
+Brand: ${brand}
+Existing description: ${description || 'None'}
+Dimensions: ${dimensions || 'None'}
+
+Rules for display_name:
+- Remove the brand name prefix if present (Relaxound, Remember, Ideas 4 Seasons, My Flame Lifestyle)
+- Remove any promotional tags like *SALE*, **LAST CHANCE**, *NEW*, **NEW**, (SALE), etc.
+- Remove dimension info (e.g. "l.5,5 x w.4 x h.10cm", "Ø10cm", "H:15cm", "20x30cm") — these belong in specs, not the title
+- Extract any colour mentioned in the name (e.g. "Red", "White", "Ocean Blue") — return it separately and remove it from the display name
+- Use Title Case with a dash to separate product type from variant/sub-name (e.g. "Ball Vase - Dori", "Zwitscherbox - Red" only if colour IS the variant)
+- Keep it concise and shopper-friendly
+- If the colour IS the main distinguishing variant (like "Zwitscherbox Red"), keep it in the display_name after a dash
+
+Rules for descriptions:
+- short_description: 1-2 sentences, 20-40 words. Key selling point.
+- long_description: 3-5 sentences, 50-150 words. Engaging, practical benefits, brand story context.
+- Only generate descriptions if existing description is "None". Otherwise improve/rewrite the existing one.
+
+${categoryList}
+
+Suggest 1-4 relevant tags for this product (lowercase, hyphenated, e.g. "gift-idea", "eco-friendly", "sound-therapy").
+
+Return ONLY JSON:
+{
+  "display_name": "...",
+  "colour": "<extracted colour or null>",
+  "colour_hex": "<hex code for the colour or null>",
+  "short_description": "...",
+  "long_description": "...",
+  "category": "<best matching category name or null>",
+  "tags": ["tag-1", "tag-2"]
+}`
+    };
+
+    const out = await callOpenAI([system, user], 'gpt-4o', { max_tokens: 800 });
+
+    res.json({
+      display_name: out.display_name || name,
+      colour: out.colour || null,
+      colour_hex: out.colour_hex || null,
+      short_description: out.short_description || null,
+      long_description: out.long_description || null,
+      category: out.category || null,
+      tags: Array.isArray(out.tags) ? out.tags : [],
+    });
+  } catch (e) {
+    res.status(500).json({ error: 'enhance_failed', message: e.message });
   }
 });
 

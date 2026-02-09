@@ -134,13 +134,13 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ open, onOpenChang
       side="right"
       isFloat={false}
       className="sm:max-w-lg w-full"
-      aria-label="AI Product Enrichment"
+      aria-label="Product Enrichment"
     >
       {/* Header */}
       <SheetHeader className="border-b border-border px-5 py-4">
         <div className="flex items-center gap-2.5 pr-6">
           <Sparkles size={18} className="text-brand-300" />
-          <h2 className="text-base font-semibold text-foreground">AI Product Enrichment</h2>
+          <h2 className="text-base font-semibold text-foreground">Product Enrichment</h2>
         </div>
       </SheetHeader>
 
@@ -199,12 +199,12 @@ const AIProductEnricher: React.FC<AIProductEnricherProps> = ({ open, onOpenChang
                   onChange={(e) => setOnlyUnenriched(e.target.checked)}
                   className="rounded border-border bg-background text-primary focus:ring-primary/30"
                 />
-                <span className="text-sm text-foreground/80">Only products without AI descriptions</span>
+                <span className="text-sm text-foreground/80">Only products without descriptions</span>
               </label>
             </div>
 
             <p className="text-[12px] text-muted-foreground">
-              Each product will get an AI-generated description and category classification. Results are saved automatically.
+              Each product will get a generated description and category classification. Results are saved automatically.
             </p>
           </div>
         )}

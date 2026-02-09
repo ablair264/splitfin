@@ -1,6 +1,6 @@
 import { api } from './apiClient';
 import { API_BASE_URL } from '../config/api';
-import type { WebsiteProduct, WebsiteCategory, Product, ListResponse, SingleResponse, CountResponse } from '../types/domain';
+import type { WebsiteProduct, WebsiteCategory, WebsiteTag, Product, ListResponse, SingleResponse, CountResponse, BatchEnhanceOptions, BatchEnhanceResult } from '../types/domain';
 
 export interface WebsiteProductFilters {
   search?: string;
@@ -44,7 +44,7 @@ export const websiteProductService = {
     return api.get<ListResponse<Product>>('/api/v1/website-products/available', filters as Record<string, string | number>);
   },
 
-  async batchCreate(data: { product_ids: number[]; defaults?: { category_id?: number; badge?: string; is_active?: boolean; markup?: number } }): Promise<{ created: number; skipped: number; data: WebsiteProduct[] }> {
+  async batchCreate(data: { product_ids: number[]; defaults?: { category_id?: number; badge?: string; is_active?: boolean; markup?: number; enhance?: boolean } }): Promise<{ created: number; skipped: number; data: WebsiteProduct[] }> {
     return api.post<{ created: number; skipped: number; data: WebsiteProduct[] }>('/api/v1/website-products/batch', data);
   },
 
@@ -91,5 +91,31 @@ export const websiteProductService = {
 
   async reorderImages(id: number, imageIds: number[]): Promise<void> {
     await api.put(`/api/v1/website-products/${id}/images/reorder`, { image_ids: imageIds });
+  },
+
+  // Batch enhance
+  async batchEnhance(data: { website_product_ids: number[]; options?: BatchEnhanceOptions }): Promise<BatchEnhanceResult> {
+    return api.post<BatchEnhanceResult>('/api/v1/website-products/batch-enhance', data);
+  },
+
+  // Tags
+  async getTags(): Promise<WebsiteTag[]> {
+    const result = await api.get<{ data: WebsiteTag[] }>('/api/v1/website-products/tags');
+    return result.data;
+  },
+
+  async getProductTags(id: number): Promise<WebsiteTag[]> {
+    const result = await api.get<{ data: WebsiteTag[] }>(`/api/v1/website-products/${id}/tags`);
+    return result.data;
+  },
+
+  async setProductTags(id: number, tagIds: number[]): Promise<WebsiteTag[]> {
+    const result = await api.put<{ data: WebsiteTag[] }>(`/api/v1/website-products/${id}/tags`, { tag_ids: tagIds });
+    return result.data;
+  },
+
+  async createTag(name: string): Promise<WebsiteTag> {
+    const result = await api.post<{ data: WebsiteTag }>('/api/v1/website-products/tags', { name });
+    return result.data;
   },
 };

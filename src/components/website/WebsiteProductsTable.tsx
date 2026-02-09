@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Plus, Layers } from "lucide-react";
+import { Plus, Layers, Sparkles } from "lucide-react";
 import { websiteProductService } from "@/services/websiteProductService";
 import type { WebsiteProduct, WebsiteCategory } from "@/types/domain";
 import { useDataTable } from "@/hooks/use-data-table";
@@ -12,6 +12,7 @@ import { usePageTitle } from "@/hooks/usePageTitle";
 import { WebsiteProductDetailSheet } from "./WebsiteProductDetailSheet";
 import { AddWebsiteProductSheet } from "./AddWebsiteProductSheet";
 import { BatchAddWebsiteProductSheet } from "./BatchAddWebsiteProductSheet";
+import { BatchEnhanceSheet } from "./BatchEnhanceSheet";
 import { Button } from "@/components/ui/button";
 
 const PAGE_SIZE = 50;
@@ -26,6 +27,7 @@ export default function WebsiteProductsTable() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [addSheetOpen, setAddSheetOpen] = useState(false);
   const [batchSheetOpen, setBatchSheetOpen] = useState(false);
+  const [enhanceSheetOpen, setEnhanceSheetOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const [brandOptions, setBrandOptions] = useState<{ label: string; value: string; count?: number }[]>([]);
@@ -173,6 +175,9 @@ export default function WebsiteProductsTable() {
         subtitle={`${totalCount} products on Pop Home`}
         actions={
           <div className="flex items-center gap-2">
+            <Button intent="outline" size="sm" onPress={() => setEnhanceSheetOpen(true)}>
+              <Sparkles size={14} className="mr-1.5" /> Enhance
+            </Button>
             <Button intent="outline" size="sm" onPress={() => setBatchSheetOpen(true)}>
               <Layers size={14} className="mr-1.5" /> Batch Add
             </Button>
@@ -209,6 +214,13 @@ export default function WebsiteProductsTable() {
         open={batchSheetOpen}
         onOpenChange={setBatchSheetOpen}
         onCreated={handleProductUpdated}
+      />
+
+      <BatchEnhanceSheet
+        categories={categories}
+        open={enhanceSheetOpen}
+        onOpenChange={setEnhanceSheetOpen}
+        onComplete={handleProductUpdated}
       />
     </div>
   );
