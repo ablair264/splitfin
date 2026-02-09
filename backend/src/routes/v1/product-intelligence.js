@@ -5,6 +5,9 @@ import { logger } from '../../utils/logger.js';
 
 const router = express.Router();
 
+// Only surface these brands in intelligence data
+const ALLOWED_BRANDS = ['Relaxound', 'Remember', 'Ideas 4 Seasons', 'My Flame Lifestyle'];
+
 // ── Date range helpers ───────────────────────────────────────
 
 function dateFromRange(range) {
@@ -60,6 +63,10 @@ router.get('/popularity', async (req, res) => {
     // Date param for CTEs
     params.push(dateFrom); // $2
     idx++;
+
+    // Always restrict to allowed brands
+    conditions.push(`p.brand = ANY($${idx++}::text[])`);
+    params.push(ALLOWED_BRANDS);
 
     if (brand) {
       const brands = brand.split(',').map(s => s.trim()).filter(Boolean);
@@ -283,6 +290,7 @@ router.get('/reorder-alerts', async (req, res) => {
       LEFT JOIN velocity v ON v.zoho_item_id = p.zoho_item_id
       WHERE wp.is_active = true
         AND p.stock_on_hand <= $1
+        AND p.brand = ANY($4::text[])
       ORDER BY days_remaining ASC NULLS LAST, p.stock_on_hand ASC
     `;
 
@@ -299,12 +307,12 @@ router.get('/reorder-alerts', async (req, res) => {
       FROM website_products wp
       JOIN products p ON p.id = wp.product_id
       LEFT JOIN velocity v ON v.zoho_item_id = p.zoho_item_id
-      WHERE wp.is_active = true AND p.stock_on_hand <= $1
+      WHERE wp.is_active = true AND p.stock_on_hand <= $1 AND p.brand = ANY($2::text[])
     `;
 
     const [countResult, dataResult] = await Promise.all([
-      query(countSql, [thresh]),
-      query(sql + ' LIMIT $2 OFFSET $3', [thresh, lim, off]),
+      query(countSql, [thresh, ALLOWED_BRANDS]),
+      query(sql + ' LIMIT $2 OFFSET $3', [thresh, lim, off, ALLOWED_BRANDS]),
     ]);
 
     const total = parseInt(countResult.rows[0].total);
@@ -403,8 +411,8 @@ router.post('/price-check', async (req, res) => {
              wp.retail_price
       FROM products p
       LEFT JOIN website_products wp ON wp.product_id = p.id
-      WHERE p.id = ANY($1::int[])
-    `, [product_ids]);
+      WHERE p.id = ANY($1::int[]) AND p.brand = ANY($2::text[])
+    `, [product_ids, ALLOWED_BRANDS]);
 
     if (products.length === 0) {
       return res.json({ results: [] });
@@ -513,10 +521,10 @@ router.get('/brands', async (_req, res) => {
       JOIN orders o ON o.id = oli.order_id
       JOIN products p ON p.zoho_item_id = oli.zoho_item_id
       WHERE o.status NOT IN ('cancelled', 'void')
-        AND p.brand IS NOT NULL AND p.brand != ''
+        AND p.brand = ANY($1::text[])
       GROUP BY p.brand
       ORDER BY product_count DESC
-    `);
+    `, [ALLOWED_BRANDS]);
     res.json({ data: rows });
   } catch (err) {
     logger.error('[ProductIntelligence] Brands error:', err);
