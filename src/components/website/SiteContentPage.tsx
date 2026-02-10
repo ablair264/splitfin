@@ -7,6 +7,10 @@ import { usePageTitle } from '@/hooks/usePageTitle';
 import PageHeader from '@/components/shared/PageHeader';
 import type { SiteSection } from '@/types/domain';
 
+function isRemoteUrl(url: string | null | undefined): boolean {
+  return !!url && url.startsWith('http');
+}
+
 interface CategoryHero {
   id: number;
   name: string;
@@ -122,8 +126,13 @@ function HeroSlideCard({
       <div className="flex gap-4">
         {/* Image preview */}
         <div className="shrink-0 w-48 h-28 rounded-lg overflow-hidden border border-border/30 relative">
-          {imageUrl ? (
-            <img src={imageUrl} alt="" className="w-full h-full object-cover" />
+          {isRemoteUrl(imageUrl) ? (
+            <img src={imageUrl!} alt="" className="w-full h-full object-cover" />
+          ) : imageUrl ? (
+            <div className="w-full h-full bg-muted/20 flex flex-col items-center justify-center px-2">
+              <ImageIcon size={16} className="text-muted-foreground/40 mb-1" />
+              <span className="text-[9px] text-muted-foreground/50 text-center truncate w-full">Local: {imageUrl}</span>
+            </div>
           ) : form.placeholder_gradient ? (
             <div className={cn('w-full h-full', form.placeholder_gradient)} />
           ) : (
@@ -242,8 +251,13 @@ function CategoryGridCard({
       <div className="flex gap-4">
         {/* Preview */}
         <div className="shrink-0 w-32 h-40 rounded-lg overflow-hidden border border-border/30 relative">
-          {item.image_url ? (
-            <img src={item.image_url} alt="" className="w-full h-full object-cover" />
+          {isRemoteUrl(item.image_url) ? (
+            <img src={item.image_url!} alt="" className="w-full h-full object-cover" />
+          ) : item.image_url ? (
+            <div className="w-full h-full bg-muted/20 flex flex-col items-center justify-center px-2">
+              <ImageIcon size={16} className="text-muted-foreground/40 mb-1" />
+              <span className="text-[9px] text-muted-foreground/50 text-center leading-tight break-all line-clamp-3">Local file</span>
+            </div>
           ) : hasVideo ? (
             <div className="w-full h-full bg-muted/30 flex items-center justify-center">
               <Video size={20} className="text-muted-foreground/30" />
@@ -330,8 +344,13 @@ function CategoryHeroCard({
     <div className="rounded-lg border border-border/30 bg-background/50 p-4 flex gap-4 items-center">
       {/* Preview */}
       <div className="shrink-0 w-36 h-20 rounded-lg overflow-hidden border border-border/30 relative">
-        {heroUrl ? (
-          <img src={heroUrl} alt="" className="w-full h-full object-cover" />
+        {isRemoteUrl(heroUrl) ? (
+          <img src={heroUrl!} alt="" className="w-full h-full object-cover" />
+        ) : heroUrl ? (
+          <div className="w-full h-full bg-muted/20 flex flex-col items-center justify-center px-2">
+            <ImageIcon size={14} className="text-muted-foreground/40 mb-0.5" />
+            <span className="text-[9px] text-muted-foreground/50 text-center">Local file</span>
+          </div>
         ) : placeholder ? (
           <div className={cn('w-full h-full', placeholder)} />
         ) : (
