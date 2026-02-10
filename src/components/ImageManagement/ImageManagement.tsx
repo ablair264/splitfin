@@ -1,488 +1,537 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
-import { productService } from '../../services/productService';
-import { authService } from '../../services/authService';
-import { ProgressLoader } from '../ProgressLoader';
+import PageHeader from '@/components/shared/PageHeader';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Images, HardDrive, Layers, LayoutGrid, List, Search,
+  Upload, Sparkles, Trash2, Loader2, X, Download, Copy, Check,
+  ImageOff, Eye,
+} from 'lucide-react';
+import { imageService, type ImageFilters, type ImageStats } from '@/services/imageService';
+import type { ProductImage } from '@/types/domain';
 import ImageCard from './ImageCard';
-import ImageUploadModal from './ImageUploadModal';
 import BatchImageUpload from './BatchImageUpload';
-import { ImageItem, Brand } from './types';
 
-// TODO: Image storage operations need backend implementation
-// The backend needs endpoints for:
-// 1. GET /api/v1/images - List images with brand filtering
-// 2. GET /api/v1/images/:brandId - List images for a specific brand
-// 3. DELETE /api/v1/images/:id - Delete an image
-// 4. POST /api/v1/images/upload - Upload new image (multipart/form-data)
-// These endpoints should interface with ImageKit or similar cloud storage
+const PAGE_SIZE = 50;
 
-const IMAGES_PER_PAGE = 50;
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
 
-const ImageManagement: React.FC = () => {
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString('en-GB', {
+    day: 'numeric', month: 'short', year: 'numeric',
+  });
+}
+
+// ── Main Component ──────────────────────────────────────────
+
+export default function ImageManagement() {
   usePageTitle('Image Management');
-  const { brandId } = useParams<{ brandId?: string }>();
-  const navigate = useNavigate();
-  const [images, setImages] = useState<ImageItem[]>([]);
-  const [brands, setBrands] = useState<Brand[]>([]);
+
+  const [images, setImages] = useState<ProductImage[]>([]);
+  const [brands, setBrands] = useState<{ brand: string; image_count: number }[]>([]);
+  const [stats, setStats] = useState<ImageStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'date' | 'size'>('date');
-  const [selectedImages, setSelectedImages] = useState<string[]>([]);
-  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [totalCount, setTotalCount] = useState(0);
+  const [page, setPage] = useState(0);
+
+  // Filters
+  const [search, setSearch] = useState('');
+  const [brandFilter, setBrandFilter] = useState('');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const searchTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // View
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(() =>
+    (localStorage.getItem('image-view-mode') as 'grid' | 'list') || 'grid',
+  );
+
+  // Selection
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  // Modals
   const [showBatchUpload, setShowBatchUpload] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [agentId, setAgentId] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [error, setError] = useState<string | null>(null);
+  const [detailImage, setDetailImage] = useState<ProductImage | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
-  useEffect(() => {
-    loadUserAndData();
-  }, [brandId]);
+  // ── Data loading ──
 
-  const loadUserAndData = async () => {
+  const loadImages = useCallback(async () => {
+    setLoading(true);
     try {
-      // Load user from auth service
-      const agent = authService.getCachedAgent();
-      if (agent) {
-        setAgentId(agent.id);
-      }
+      const filters: ImageFilters = {
+        limit: PAGE_SIZE,
+        offset: page * PAGE_SIZE,
+        sort_by: sortBy,
+        sort_order: sortOrder,
+      };
+      if (brandFilter) filters.brand = brandFilter;
+      if (search) filters.search = search;
 
-      await loadData();
-    } catch (error) {
-      console.error('Error loading user data:', error);
-      await loadData(); // Still try to load data
-    }
-  };
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Load brands from product service
-      // The backend returns { brand: string, count: number }[] from /api/v1/products/brands
-      // We transform this to match the Brand interface expected by the component
-      const brandsResponse = await productService.getBrands();
-      const transformedBrands: Brand[] = brandsResponse.map((b, index) => ({
-        id: b.brand.toLowerCase().replace(/[^a-z0-9]/g, '-'), // Generate ID from brand name
-        brand_name: b.brand,
-        brand_normalized: b.brand.toLowerCase().replace(/[^a-z0-9]/g, ''),
-        is_active: true
-      }));
-      setBrands(transformedBrands);
-
-      // TODO: Load images from backend API
-      // For now, images list is empty as storage operations need backend implementation
-      // When implemented, this would call something like:
-      // const imagesResponse = await imageService.list({ brandId });
-      // setImages(imagesResponse.data);
-      const imageItems: ImageItem[] = [];
-
-      // Placeholder: In future, load images from backend storage API
-      console.warn('Image listing not yet implemented - backend storage API needed');
-
-      setImages(imageItems);
+      const result = await imageService.list(filters);
+      setImages(result.data);
+      setTotalCount(result.meta?.total ?? result.data.length);
     } catch (err) {
-      console.error('Error loading data:', err);
-      setError('Failed to load images');
+      console.error('Failed to load images:', err);
     } finally {
       setLoading(false);
     }
+  }, [page, search, brandFilter, sortBy, sortOrder]);
+
+  const loadMeta = useCallback(async () => {
+    try {
+      const [b, s] = await Promise.all([imageService.getBrands(), imageService.getStats()]);
+      setBrands(b);
+      setStats(s);
+    } catch (err) {
+      console.error('Failed to load image metadata:', err);
+    }
+  }, []);
+
+  useEffect(() => { loadMeta(); }, [loadMeta]);
+  useEffect(() => { loadImages(); }, [loadImages]);
+
+  // Debounced search
+  const handleSearchChange = (value: string) => {
+    clearTimeout(searchTimer.current);
+    searchTimer.current = setTimeout(() => {
+      setSearch(value);
+      setPage(0);
+    }, 300);
   };
 
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    setCurrentPage(1);
-    await loadData();
-    setRefreshing(false);
-  }, [brandId]);
+  // View mode persistence
+  const setView = (mode: 'grid' | 'list') => {
+    setViewMode(mode);
+    localStorage.setItem('image-view-mode', mode);
+  };
 
-  const handleUploadSuccess = useCallback(async () => {
-    setShowUploadModal(false);
-    await handleRefresh();
-  }, [handleRefresh]);
+  // ── Selection ──
 
-  const handleBrandClick = useCallback((brandIdToSelect: string) => {
-    navigate(brandIdToSelect === 'all' ? '/images' : `/images/${brandIdToSelect}`);
-  }, [navigate]);
-
-  const handleDeleteImage = useCallback(async (imageId: string) => {
-    if (!window.confirm('Are you sure you want to delete this image?')) return;
-
-    try {
-      const image = images.find(img => img.id === imageId);
-      if (!image) return;
-
-      // TODO: Delete via backend API
-      // await imageService.delete(imageId);
-      console.warn('Image deletion not yet implemented - backend API needed');
-
-      setImages(prev => prev.filter(img => img.id !== imageId));
-      setSelectedImages(prev => prev.filter(id => id !== imageId));
-    } catch (err) {
-      console.error('Error deleting image:', err);
-      alert('Failed to delete image');
-    }
-  }, [images]);
-
-  const handleBulkDelete = useCallback(async () => {
-    if (selectedImages.length === 0) return;
-    const confirmMessage = `Are you sure you want to delete ${selectedImages.length} image${selectedImages.length > 1 ? 's' : ''}?`;
-    if (!window.confirm(confirmMessage)) return;
-
-    try {
-      // TODO: Bulk delete via backend API
-      // await imageService.bulkDelete(selectedImages);
-      console.warn('Bulk image deletion not yet implemented - backend API needed');
-
-      setImages(prev => prev.filter(img => !selectedImages.includes(img.id)));
-      setSelectedImages([]);
-    } catch (err) {
-      console.error('Error deleting images:', err);
-      alert('Failed to delete images');
-    }
-  }, [selectedImages, images]);
-
-  const handleSelectImage = useCallback((imageId: string) => {
-    setSelectedImages(prev =>
-      prev.includes(imageId)
-        ? prev.filter(id => id !== imageId)
-        : [...prev, imageId]
-    );
-  }, []);
-
-  const handleSelectAll = useCallback(() => {
-    const currentImageIds = currentImages.map(img => img.id);
-    const allSelected = currentImageIds.every(id => selectedImages.includes(id));
-    if (allSelected) {
-      setSelectedImages(prev => prev.filter(id => !currentImageIds.includes(id)));
-    } else {
-      setSelectedImages(prev => Array.from(new Set([...prev, ...currentImageIds])));
-    }
-  }, []);
-
-  // Memoized data processing
-  const processedImages = useMemo(() => {
-    let filtered = [...images];
-
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(img =>
-        img.name.toLowerCase().includes(query) ||
-        img.brand_name.toLowerCase().includes(query)
-      );
-    }
-
-    // Sort images
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'date':
-          return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
-        case 'size':
-          return b.size - a.size;
-        case 'name':
-        default:
-          return a.name.localeCompare(b.name);
-      }
+  const toggleSelect = (id: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
+  };
 
-    return filtered;
-  }, [images, searchQuery, sortBy]);
+  const toggleSelectAll = () => {
+    if (selected.size === images.length) setSelected(new Set());
+    else setSelected(new Set(images.map((i) => i.id)));
+  };
 
-  // Pagination
-  const totalPages = Math.ceil(processedImages.length / IMAGES_PER_PAGE);
-  const currentImages = processedImages.slice(
-    (currentPage - 1) * IMAGES_PER_PAGE,
-    currentPage * IMAGES_PER_PAGE
-  );
+  const handleBulkDelete = async () => {
+    if (selected.size === 0) return;
+    if (!confirm(`Delete ${selected.size} image${selected.size !== 1 ? 's' : ''}?`)) return;
+    setDeleting(true);
+    try {
+      await imageService.bulkDelete(Array.from(selected));
+      setSelected(new Set());
+      loadImages();
+      loadMeta();
+    } catch (err) {
+      console.error('Bulk delete failed:', err);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
-  const stats = useMemo(() => {
-    const totalSize = images.reduce((sum, img) => sum + img.size, 0);
-    const brandCounts = brands.map(brand => ({
-      ...brand,
-      count: images.filter(img => img.brand_id === brand.id).length
-    }));
-    const activeBrands = brandCounts.filter(b => b.count > 0).length;
-    return { totalSize, brandCounts, activeBrands };
-  }, [images, brands]);
+  const handleDeleteSingle = async (id: number) => {
+    if (!confirm('Delete this image?')) return;
+    try {
+      await imageService.delete(id);
+      setSelected((prev) => { const n = new Set(prev); n.delete(id); return n; });
+      if (detailImage?.id === id) setDetailImage(null);
+      loadImages();
+      loadMeta();
+    } catch (err) {
+      console.error('Delete failed:', err);
+    }
+  };
 
-  const allDisplayedSelected = currentImages.length > 0 && currentImages.every(img => selectedImages.includes(img.id));
+  // ── Pagination ──
+  const from = page * PAGE_SIZE + 1;
+  const to = Math.min((page + 1) * PAGE_SIZE, totalCount);
+
+  // ── Render ──
 
   return (
-    <div className="min-h-screen p-8 bg-background max-md:p-4">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-8 px-2 max-sm:flex-col max-sm:items-start">
-        <div>
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-br from-primary to-primary bg-clip-text text-transparent max-md:text-2xl max-sm:text-xl">
-            Image Management{brandId ? ` - ${brands.find(b => b.id === brandId)?.brand_name}` : ''}
-          </h1>
-          <p className="text-[0.95rem] text-muted-foreground">
-            {brandId ? `Manage product images for ${brands.find(b => b.id === brandId)?.brand_name}` : 'Manage product images across all brands'}
-          </p>
-        </div>
-        <div className="flex gap-4 items-center flex-wrap max-sm:w-full max-sm:justify-between">
-          <button
-            className="flex items-center gap-2 py-3 px-6 bg-gradient-to-br from-[hsl(var(--info))] to-[hsl(var(--chart-5))] text-[hsl(var(--info-foreground))] border-none rounded-lg text-sm font-semibold cursor-pointer transition-all duration-300 shadow-md relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={() => setShowBatchUpload(true)}
-            disabled={!agentId}
-          >
-            <span>AI</span> AI Batch Upload
-          </button>
-          <button
-            className="flex items-center gap-2 py-3 px-6 bg-primary text-background border-none rounded-lg text-sm font-semibold cursor-pointer transition-all duration-300 shadow-md hover:shadow-lg max-md:py-2.5 max-md:px-4 max-md:text-[0.813rem]"
-            onClick={() => setShowUploadModal(true)}
-          >
-            <span className="max-sm:hidden">Upload</span> Upload Images
-          </button>
-          <button
-            className={`w-10 h-10 flex items-center justify-center bg-foreground/5 border border-foreground/10 rounded-lg cursor-pointer transition-all duration-300 text-foreground/70 hover:bg-foreground/[0.08] hover:border-primary hover:text-primary ${refreshing ? 'rotate-45' : ''}`}
-            onClick={handleRefresh}
-            disabled={refreshing}
-          >
-            <span className="text-base transition-transform duration-200">Refresh</span>
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6 p-1">
+      <PageHeader
+        title="Image Management"
+        count={stats?.total_images}
+        subtitle="images"
+        actions={
+          <>
+            <Button intent="outline" size="sm" onPress={() => setShowBatchUpload(true)}>
+              <Sparkles className="size-4 mr-1.5" /> AI Batch Upload
+            </Button>
+          </>
+        }
+      />
 
-      {/* Error Display */}
-      {error && (
-        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 mb-4 text-destructive flex justify-between items-center">
-          <span>Warning: {error}</span>
-          <button
-            className="bg-destructive/20 border border-destructive/30 rounded-md text-destructive py-1.5 px-3 cursor-pointer transition-all duration-200 hover:bg-destructive/30"
-            onClick={handleRefresh}
-          >
-            Retry
-          </button>
+      {/* Stats cards */}
+      {stats && (
+        <div className="grid grid-cols-3 gap-4">
+          <Card className="border-blue-500/20">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Total Images</p>
+                <p className="text-2xl font-bold text-blue-400 tabular-nums">{stats.total_images.toLocaleString()}</p>
+              </div>
+              <Images className="size-5 text-blue-400" />
+            </CardContent>
+          </Card>
+          <Card className="border-emerald-500/20">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Total Size</p>
+                <p className="text-2xl font-bold text-emerald-400 tabular-nums">{formatFileSize(stats.total_size_bytes)}</p>
+              </div>
+              <HardDrive className="size-5 text-emerald-400" />
+            </CardContent>
+          </Card>
+          <Card className="border-amber-500/20">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Active Brands</p>
+                <p className="text-2xl font-bold text-amber-400 tabular-nums">{stats.brand_count}</p>
+              </div>
+              <Layers className="size-5 text-amber-400" />
+            </CardContent>
+          </Card>
         </div>
       )}
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(250px,1fr))] gap-5 mb-8 max-md:grid-cols-2 max-sm:grid-cols-1">
-        <div className="bg-card border border-foreground/10 rounded-2xl p-6 flex items-center gap-4 transition-all duration-300 relative overflow-hidden hover:shadow-[0_8px_24px_rgba(0,0,0,0.3)] hover:border-primary/30 max-md:p-5">
-          <div className="text-2xl w-14 h-14 flex items-center justify-center bg-foreground/5 rounded-xl shrink-0 max-md:text-xl max-md:w-12 max-md:h-12">Images</div>
-          <div>
-            <h3 className="text-[0.813rem] text-foreground/60 uppercase tracking-wide m-0">Total Images</h3>
-            <p className="text-2xl font-bold mt-1 mb-0 text-foreground max-md:text-xl">{images.length}</p>
-          </div>
-        </div>
-        <div className="bg-card border border-foreground/10 rounded-2xl p-6 flex items-center gap-4 transition-all duration-300 relative overflow-hidden hover:shadow-[0_8px_24px_rgba(0,0,0,0.3)] hover:border-primary/30 max-md:p-5">
-          <div className="text-2xl w-14 h-14 flex items-center justify-center bg-foreground/5 rounded-xl shrink-0 max-md:text-xl max-md:w-12 max-md:h-12">Size</div>
-          <div>
-            <h3 className="text-[0.813rem] text-foreground/60 uppercase tracking-wide m-0">Total Size</h3>
-            <p className="text-2xl font-bold mt-1 mb-0 text-foreground max-md:text-xl">
-              {(stats.totalSize / 1024 / 1024).toFixed(2)} MB
-            </p>
-          </div>
-        </div>
-        <div className="bg-card border border-foreground/10 rounded-2xl p-6 flex items-center gap-4 transition-all duration-300 relative overflow-hidden hover:shadow-[0_8px_24px_rgba(0,0,0,0.3)] hover:border-primary/30 max-md:p-5">
-          <div className="text-2xl w-14 h-14 flex items-center justify-center bg-foreground/5 rounded-xl shrink-0 max-md:text-xl max-md:w-12 max-md:h-12">Brands</div>
-          <div>
-            <h3 className="text-[0.813rem] text-foreground/60 uppercase tracking-wide m-0">Active Brands</h3>
-            <p className="text-2xl font-bold mt-1 mb-0 text-foreground max-md:text-xl">
-              {stats.activeBrands} / {brands.length}
-            </p>
-          </div>
-        </div>
-        <div className="bg-card border border-foreground/10 rounded-2xl p-6 flex items-center gap-4 transition-all duration-300 relative overflow-hidden hover:shadow-[0_8px_24px_rgba(0,0,0,0.3)] hover:border-primary/30 max-md:p-5">
-          <div className="text-2xl w-14 h-14 flex items-center justify-center bg-foreground/5 rounded-xl shrink-0 max-md:text-xl max-md:w-12 max-md:h-12">View</div>
-          <div>
-            <h3 className="text-[0.813rem] text-foreground/60 uppercase tracking-wide m-0">Showing</h3>
-            <p className="text-2xl font-bold mt-1 mb-0 text-foreground max-md:text-xl">
-              {currentImages.length} / {processedImages.length}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Brand Filter Pills */}
-      {!brandId && (
-        <div className="flex gap-3 flex-wrap mb-8 p-6 bg-foreground/[0.03] rounded-xl border border-foreground/5 max-sm:gap-2 max-sm:p-3">
-          <button
-            className={`py-2 px-4 rounded-full border text-[0.813rem] font-medium cursor-pointer transition-all duration-300 whitespace-nowrap max-sm:py-1.5 max-sm:px-3 max-sm:text-xs ${
-              !brandId
-                ? 'bg-primary text-background border-transparent shadow-[0_2px_8px] shadow-primary/30'
-                : 'border-foreground/10 bg-foreground/5 text-foreground/70 hover:bg-foreground/[0.08] hover:text-foreground'
-            }`}
-            onClick={() => handleBrandClick('all')}
-          >
-            All Brands ({images.length})
-          </button>
-          {stats.brandCounts.map(brand => (
-            <button
-              key={brand.id}
-              className={`py-2 px-4 rounded-full border text-[0.813rem] font-medium cursor-pointer transition-all duration-300 whitespace-nowrap max-sm:py-1.5 max-sm:px-3 max-sm:text-xs ${
-                brandId === brand.id
-                  ? 'bg-primary text-background border-transparent shadow-[0_2px_8px] shadow-primary/30'
-                  : 'border-foreground/10 bg-foreground/5 text-foreground/70 hover:bg-foreground/[0.08] hover:text-foreground'
-              }`}
-              onClick={() => handleBrandClick(brand.id)}
-              style={{ '--brand-color': 'var(--primary)' } as React.CSSProperties}
-            >
-              {brand.brand_name} ({brand.count})
-            </button>
-          ))}
-        </div>
-      )}
-
-      {/* Controls Section */}
-      <div className="flex gap-4 mb-6 items-center flex-wrap px-2 max-sm:flex-col max-sm:items-stretch">
-        <div className="relative flex-1 min-w-[300px] max-sm:min-w-0">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-base opacity-50 pointer-events-none">Search</span>
+      {/* Toolbar */}
+      <div className="flex items-center gap-3 flex-wrap">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[200px] max-w-xs">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <input
             type="text"
-            className="w-full py-3 pr-10 pl-11 bg-foreground/5 border border-foreground/10 rounded-xl text-foreground text-sm transition-all duration-300 placeholder:text-foreground/40 focus:outline-none focus:bg-foreground/[0.08] focus:border-primary focus:shadow-[0_0_0_3px] focus:shadow-primary/10"
-            placeholder="Search images by name..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search filename or SKU..."
+            defaultValue={search}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            className="w-full h-8 pl-8 pr-3 text-sm rounded-md border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
-          {searchQuery && (
-            <button
-              className="absolute right-4 top-1/2 -translate-y-1/2 bg-none border-none text-foreground/50 cursor-pointer text-base p-1 transition-colors duration-200 hover:text-foreground"
-              onClick={() => setSearchQuery('')}
-            >
-              X
-            </button>
-          )}
         </div>
 
-        <div className="flex gap-3 items-center max-sm:justify-between">
-          {selectedImages.length > 0 && (
-            <div className="flex items-center gap-3 py-2 px-4 bg-primary/10 border border-primary/30 rounded-lg text-[0.813rem] text-primary">
-              <span>{selectedImages.length} selected</span>
-              <button
-                className="py-1.5 px-3 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-xs font-medium cursor-pointer transition-all duration-200 hover:bg-destructive/20"
-                onClick={handleBulkDelete}
-              >
-                Delete Selected
-              </button>
-            </div>
-          )}
+        {/* Brand filter */}
+        <select
+          value={brandFilter}
+          onChange={(e) => { setBrandFilter(e.target.value); setPage(0); }}
+          className="h-8 px-2 text-sm rounded-md border border-border bg-background text-foreground"
+        >
+          <option value="">All brands</option>
+          {brands.map((b) => (
+            <option key={b.brand} value={b.brand}>
+              {b.brand} ({b.image_count})
+            </option>
+          ))}
+        </select>
 
-          <select
-            className="py-2 px-4 bg-foreground/5 border border-foreground/10 rounded-lg text-foreground text-[0.813rem] cursor-pointer transition-all duration-200 focus:outline-none focus:border-primary max-sm:text-xs max-sm:py-1.5 max-sm:px-2"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'name' | 'date' | 'size')}
+        {/* Sort */}
+        <select
+          value={`${sortBy}:${sortOrder}`}
+          onChange={(e) => {
+            const [sb, so] = e.target.value.split(':');
+            setSortBy(sb);
+            setSortOrder(so as 'asc' | 'desc');
+            setPage(0);
+          }}
+          className="h-8 px-2 text-sm rounded-md border border-border bg-background text-foreground"
+        >
+          <option value="created_at:desc">Newest first</option>
+          <option value="created_at:asc">Oldest first</option>
+          <option value="filename:asc">Name A-Z</option>
+          <option value="filename:desc">Name Z-A</option>
+          <option value="size_bytes:desc">Largest first</option>
+          <option value="size_bytes:asc">Smallest first</option>
+        </select>
+
+        <div className="flex-1" />
+
+        {/* Bulk delete */}
+        {selected.size > 0 && (
+          <Button intent="danger" size="sm" onPress={handleBulkDelete} isDisabled={deleting}>
+            {deleting ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Trash2 className="size-3.5 mr-1" />}
+            Delete {selected.size}
+          </Button>
+        )}
+
+        {/* View toggle */}
+        <div className="flex border border-border rounded-md overflow-hidden">
+          <button
+            onClick={() => setView('grid')}
+            className={`size-8 flex items-center justify-center transition-colors ${
+              viewMode === 'grid' ? 'bg-teal-600 text-white' : 'bg-background text-muted-foreground hover:text-foreground'
+            }`}
+            title="Grid view"
           >
-            <option value="name">Sort by Name</option>
-            <option value="date">Sort by Date (Newest First)</option>
-            <option value="size">Sort by Size</option>
-          </select>
-
+            <LayoutGrid className="size-4" />
+          </button>
+          <button
+            onClick={() => setView('list')}
+            className={`size-8 flex items-center justify-center transition-colors border-l border-border ${
+              viewMode === 'list' ? 'bg-teal-600 text-white' : 'bg-background text-muted-foreground hover:text-foreground'
+            }`}
+            title="List view"
+          >
+            <List className="size-4" />
+          </button>
         </div>
       </div>
 
-      {/* Select All Checkbox */}
-      {currentImages.length > 0 && (
-        <div className="flex items-center gap-2 mb-4 py-3 px-4 bg-foreground/[0.03] rounded-lg border border-foreground/5 mx-2">
+      {/* Select all */}
+      {images.length > 0 && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <input
             type="checkbox"
-            id="selectAll"
-            checked={allDisplayedSelected}
-            onChange={handleSelectAll}
-            className="w-[18px] h-[18px] accent-primary cursor-pointer"
+            checked={selected.size === images.length && images.length > 0}
+            onChange={toggleSelectAll}
+            className="rounded"
           />
-          <label htmlFor="selectAll" className="cursor-pointer text-sm text-foreground/80">
-            Select All on Page ({currentImages.length})
-          </label>
+          <span>
+            {selected.size > 0 ? `${selected.size} of ${totalCount} selected` : `${totalCount} images`}
+          </span>
         </div>
       )}
 
-      {/* Content Area */}
-      <div className="min-h-[400px]">
-        {loading ? (
-          <ProgressLoader
-            isVisible={true}
-            message="Loading images..."
-            progress={50}
-          />
-        ) : processedImages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center min-h-[400px] text-center text-foreground/60">
-            <div className="text-6xl opacity-30 mb-4">Images</div>
-            <h3 className="text-xl font-semibold text-foreground mb-2">No images found</h3>
-            <p className="mt-4 text-sm">
-              {searchQuery
-                ? `No images match "${searchQuery}"`
-                : brandId
-                  ? `No images for ${brands.find(b => b.id === brandId)?.brand_name}`
-                  : 'Upload your first image to get started'
-              }
-            </p>
-            {searchQuery && (
-              <button
-                className="mt-4 py-2 px-4 bg-foreground/5 border border-foreground/10 rounded-lg text-foreground/70 text-[0.813rem] cursor-pointer transition-all duration-200 hover:bg-foreground/[0.08] hover:border-primary hover:text-primary"
-                onClick={() => setSearchQuery('')}
-              >
-                Clear Search
-              </button>
-            )}
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-6 mb-8 px-2">
-              {currentImages.map(image => (
-                <ImageCard
-                  key={image.id}
-                  image={image}
-                  isSelected={selectedImages.includes(image.id)}
-                  onSelect={() => handleSelectImage(image.id)}
-                  onDelete={() => handleDeleteImage(image.id)}
-                  brandColor="var(--primary)"
-                />
+      {/* Content */}
+      {loading ? (
+        <div className="flex items-center justify-center py-20 text-muted-foreground">
+          <Loader2 className="size-5 animate-spin mr-2" /> Loading images...
+        </div>
+      ) : images.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+          <Images className="size-10 mb-3 opacity-30" />
+          <p className="text-sm font-medium">No images yet</p>
+          <p className="text-xs mt-1">Upload images using the AI Batch Upload button above.</p>
+        </div>
+      ) : viewMode === 'grid' ? (
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
+          {images.map((img) => (
+            <ImageCard
+              key={img.id}
+              image={img}
+              selected={selected.has(img.id)}
+              onSelect={() => toggleSelect(img.id)}
+              onView={() => setDetailImage(img)}
+              onDelete={() => handleDeleteSingle(img.id)}
+              anySelected={selected.size > 0}
+            />
+          ))}
+        </div>
+      ) : (
+        /* List view */
+        <div className="border border-border rounded-lg overflow-hidden">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border bg-muted/30 text-left text-xs text-muted-foreground">
+                <th className="p-2 w-8">
+                  <input type="checkbox" checked={selected.size === images.length && images.length > 0} onChange={toggleSelectAll} className="rounded" />
+                </th>
+                <th className="p-2 w-12"></th>
+                <th className="p-2">Filename</th>
+                <th className="p-2">Brand</th>
+                <th className="p-2">SKU</th>
+                <th className="p-2">Size</th>
+                <th className="p-2">AI Type</th>
+                <th className="p-2">Date</th>
+                <th className="p-2 w-20">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {images.map((img) => (
+                <tr
+                  key={img.id}
+                  className={`border-b border-border/50 hover:bg-muted/20 cursor-pointer transition-colors ${
+                    selected.has(img.id) ? 'bg-teal-500/5' : ''
+                  }`}
+                  onClick={() => setDetailImage(img)}
+                >
+                  <td className="p-2" onClick={(e) => e.stopPropagation()}>
+                    <input type="checkbox" checked={selected.has(img.id)} onChange={() => toggleSelect(img.id)} className="rounded" />
+                  </td>
+                  <td className="p-2">
+                    <div className="size-10 rounded bg-muted/30 overflow-hidden">
+                      <img src={img.url} alt="" className="size-full object-cover" loading="lazy" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    </div>
+                  </td>
+                  <td className="p-2 font-medium text-foreground truncate max-w-[200px]">{img.filename}</td>
+                  <td className="p-2"><Badge variant="outline" className="text-[10px]">{img.brand}</Badge></td>
+                  <td className="p-2 text-muted-foreground">{img.matched_sku || '—'}</td>
+                  <td className="p-2 text-muted-foreground tabular-nums">{formatFileSize(img.size_bytes)}</td>
+                  <td className="p-2 text-muted-foreground">{img.ai_product_type || '—'}</td>
+                  <td className="p-2 text-muted-foreground">{formatDate(img.created_at)}</td>
+                  <td className="p-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => setDetailImage(img)} className="size-7 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground">
+                        <Eye className="size-3.5" />
+                      </button>
+                      <button onClick={() => handleDeleteSingle(img.id)} className="size-7 flex items-center justify-center rounded hover:bg-red-500/10 text-muted-foreground hover:text-red-400">
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
               ))}
-            </div>
+            </tbody>
+          </table>
+        </div>
+      )}
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-4 mt-8">
-                <button
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
-                  className="py-2 px-4 bg-foreground/5 border border-foreground/10 rounded-md text-foreground/70 cursor-pointer transition-all duration-200 text-sm hover:bg-foreground/[0.08] hover:text-foreground hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Previous
-                </button>
-                <span className="text-foreground/80 text-sm">
-                  Page {currentPage} of {totalPages}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
-                  className="py-2 px-4 bg-foreground/5 border border-foreground/10 rounded-md text-foreground/70 cursor-pointer transition-all duration-200 text-sm hover:bg-foreground/[0.08] hover:text-foreground hover:border-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                </button>
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      {/* Pagination */}
+      {totalCount > PAGE_SIZE && (
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>{from}&ndash;{to} of {totalCount}</span>
+          <div className="flex gap-1">
+            <Button intent="outline" size="sm" isDisabled={page === 0} onPress={() => setPage((p) => p - 1)}>Previous</Button>
+            <Button intent="outline" size="sm" isDisabled={to >= totalCount} onPress={() => setPage((p) => p + 1)}>Next</Button>
+          </div>
+        </div>
+      )}
 
-      {/* Upload Modal */}
-      {showUploadModal && (
-        <ImageUploadModal
-          brands={brandId ? brands.filter(b => b.id === brandId) : brands}
-          onClose={() => setShowUploadModal(false)}
-          onUploadSuccess={handleUploadSuccess}
-          defaultBrand={brandId}
+      {/* Batch Upload Modal */}
+      {showBatchUpload && (
+        <BatchImageUpload
+          onClose={() => { setShowBatchUpload(false); loadImages(); loadMeta(); }}
         />
       )}
 
-      {/* AI Batch Upload Modal */}
-      {showBatchUpload && agentId && (
-        <BatchImageUpload
-          companyId={agentId}
-          onClose={() => setShowBatchUpload(false)}
-          onComplete={async () => {
-            setShowBatchUpload(false);
-            await handleRefresh();
-          }}
+      {/* Image Detail Modal */}
+      {detailImage && (
+        <ImageDetailModal
+          image={detailImage}
+          onClose={() => setDetailImage(null)}
+          onDelete={() => { handleDeleteSingle(detailImage.id); setDetailImage(null); }}
         />
       )}
     </div>
   );
-};
+}
 
-export default ImageManagement;
+// ── Image Detail Modal ──────────────────────────────────────
+
+function ImageDetailModal({ image, onClose, onDelete }: { image: ProductImage; onClose: () => void; onDelete: () => void }) {
+  const [copying, setCopying] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(image.url);
+      setCopying(true);
+      setTimeout(() => setCopying(false), 2000);
+    } catch { /* ignore */ }
+  };
+
+  const handleDownload = () => {
+    const link = document.createElement('a');
+    link.href = image.url;
+    link.download = image.filename;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60" />
+      <div
+        className="relative bg-card border border-border rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto m-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <h3 className="font-semibold text-foreground truncate pr-4">{image.filename}</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+            <X className="size-4" />
+          </button>
+        </div>
+
+        {/* Image preview */}
+        <div className="p-4 flex justify-center bg-muted/10">
+          <img
+            src={image.url}
+            alt={image.filename}
+            className="max-h-[400px] max-w-full object-contain rounded"
+          />
+        </div>
+
+        {/* Metadata */}
+        <div className="p-4 space-y-3 text-sm">
+          <div className="grid grid-cols-2 gap-3">
+            <Detail label="Brand" value={image.brand} />
+            <Detail label="Original filename" value={image.original_filename} />
+            <Detail label="Size" value={formatFileSize(image.size_bytes)} />
+            <Detail label="Format" value={image.content_type} />
+            {image.width && image.height && (
+              <Detail label="Dimensions" value={`${image.width} × ${image.height}`} />
+            )}
+            <Detail label="Uploaded" value={formatDate(image.created_at)} />
+            {image.matched_sku && (
+              <Detail label="Matched SKU" value={image.matched_sku} highlight />
+            )}
+            {image.sku_confidence != null && (
+              <Detail label="SKU Confidence" value={`${Math.round(image.sku_confidence * 100)}%`} />
+            )}
+            {image.ai_product_type && (
+              <Detail label="AI Product Type" value={image.ai_product_type} />
+            )}
+            {image.ai_color && (
+              <Detail label="AI Color" value={image.ai_color} />
+            )}
+            {image.ai_confidence != null && (
+              <Detail label="AI Confidence" value={`${Math.round(image.ai_confidence * 100)}%`} />
+            )}
+          </div>
+
+          {/* URL */}
+          <div>
+            <label className="text-xs text-muted-foreground block mb-1">URL</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                readOnly
+                value={image.url}
+                className="flex-1 h-8 px-2 text-xs rounded-md border border-border bg-muted/30 text-muted-foreground"
+              />
+              <Button intent="outline" size="sm" onPress={handleCopy}>
+                {copying ? <Check className="size-3.5 mr-1 text-emerald-400" /> : <Copy className="size-3.5 mr-1" />}
+                {copying ? 'Copied' : 'Copy'}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-between p-4 border-t border-border">
+          <Button intent="outline" size="sm" onPress={handleDownload}>
+            <Download className="size-3.5 mr-1" /> Download
+          </Button>
+          <Button intent="danger" size="sm" onPress={onDelete}>
+            <Trash2 className="size-3.5 mr-1" /> Delete
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Detail({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div>
+      <p className="text-xs text-muted-foreground">{label}</p>
+      <p className={`text-sm font-medium ${highlight ? 'text-teal-400' : 'text-foreground'}`}>{value}</p>
+    </div>
+  );
+}

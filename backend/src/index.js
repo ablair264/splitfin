@@ -25,6 +25,7 @@ import { websiteProductsRouter } from './routes/v1/website-products.js';
 import { journalPostsRouter } from './routes/v1/journal-posts.js';
 import { productIntelligenceRouter } from './routes/v1/product-intelligence.js';
 import { purchaseOrdersRouter } from './routes/v1/purchase-orders.js';
+import { imagesRouter } from './routes/v1/images.js';
 import { jwtAuth } from './middleware/jwtAuth.js';
 
 // Security middleware (your existing)
@@ -189,6 +190,7 @@ app.use('/api/v1/website-products', jwtAuth, websiteProductsRouter);
 app.use('/api/v1/journal-posts', jwtAuth, journalPostsRouter);
 app.use('/api/v1/product-intelligence', jwtAuth, productIntelligenceRouter);
 app.use('/api/v1/purchase-orders', jwtAuth, purchaseOrdersRouter);
+app.use('/api/v1/images', jwtAuth, imagesRouter);
 
 // ====================================
 // 404 HANDLER (silent + cheap is fine; your JSON is okay too)

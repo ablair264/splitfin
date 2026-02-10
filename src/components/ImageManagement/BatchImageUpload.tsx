@@ -3,7 +3,7 @@ import {
   Upload,
   Image as ImageIcon,
   CheckCircle,
-  AlertTriangle,
+
   XCircle,
   Eye,
   Download,
@@ -18,25 +18,17 @@ import {
 } from '../../services/imageProcessingService';
 import { productService } from '../../services/productService';
 
-// TODO: Backend implementation needed for file storage
-// The imageProcessingService has been partially converted but still needs:
-// 1. POST /api/v1/images/upload - Multipart file upload endpoint
-// 2. Integration with ImageKit or similar cloud storage
-// Currently, the AI processing works but final upload step is disabled
-
 interface Brand {
   id: string;
   brand_name: string;
 }
 
 interface BatchImageUploadProps {
-  companyId: string;
   onClose: () => void;
   onComplete?: (results: ImageProcessingResult[]) => void;
 }
 
 const BatchImageUpload: React.FC<BatchImageUploadProps> = ({
-  companyId,
   onClose,
   onComplete
 }) => {
@@ -56,7 +48,7 @@ const BatchImageUpload: React.FC<BatchImageUploadProps> = ({
 
   useEffect(() => {
     loadBrands();
-  }, [companyId]);
+  }, []);
 
   const loadBrands = async () => {
     try {
@@ -106,8 +98,7 @@ const BatchImageUpload: React.FC<BatchImageUploadProps> = ({
     try {
       const finalProgress = await imageProcessingService.processBatchImages(
         selectedFiles,
-        companyId,
-        selectedBrand.id,
+        selectedBrand.brand_name,
         (currentProgress) => {
           setProgress({ ...currentProgress });
         }
@@ -274,7 +265,7 @@ const BatchImageUpload: React.FC<BatchImageUploadProps> = ({
             <Upload size={20} />
             <div>
               <strong className="text-white text-sm mb-1 block">Cloud Storage</strong>
-              <p className="m-0 text-slate-400 text-xs leading-relaxed">Organized by brand (pending backend implementation)</p>
+              <p className="m-0 text-slate-400 text-xs leading-relaxed">Organized by brand on Cloudflare R2</p>
             </div>
           </div>
         </div>
@@ -339,8 +330,8 @@ const BatchImageUpload: React.FC<BatchImageUploadProps> = ({
           <span>AI Product Analysis</span>
         </div>
         <div className="flex items-center gap-3 text-sm text-slate-400">
-          <AlertTriangle size={20} />
-          <span>Cloud Storage Upload (pending backend)</span>
+          <CheckCircle className="text-emerald-500" size={20} />
+          <span>Cloud Storage Upload (R2)</span>
         </div>
       </div>
     </div>

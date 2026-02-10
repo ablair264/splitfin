@@ -1,62 +1,42 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import styles from './ImageCard.module.css';
-import { ImageItem } from './types';
+import { Download, Copy, Check, Eye, Trash2, X, ImageOff } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import type { ProductImage } from '@/types/domain';
 
 interface ImageCardProps {
-  image: ImageItem;
-  isSelected: boolean;
+  image: ProductImage;
+  selected: boolean;
   onSelect: () => void;
+  onView: () => void;
   onDelete: () => void;
-  brandColor: string;
+  anySelected: boolean;
 }
 
-const ImageCard: React.FC<ImageCardProps> = ({
-  image,
-  isSelected,
-  onSelect,
-  onDelete,
-  brandColor
-}) => {
-  const [imageError, setImageError] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+}
+
+export default function ImageCard({ image, selected, onSelect, onView, onDelete, anySelected }: ImageCardProps) {
+  const [imgError, setImgError] = useState(false);
   const [copying, setCopying] = useState(false);
 
-  // Format file size
-  const formatFileSize = (bytes: number) => {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
-  };
-
-  // Format date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  // Copy URL to clipboard
-  const handleCopyUrl = async () => {
+  const handleCopyUrl = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     try {
       await navigator.clipboard.writeText(image.url);
       setCopying(true);
       setTimeout(() => setCopying(false), 2000);
-    } catch (error) {
-      console.error('Failed to copy URL:', error);
-    }
+    } catch { /* ignore */ }
   };
 
-  // Handle download
-  const handleDownload = () => {
+  const handleDownload = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const link = document.createElement('a');
     link.href = image.url;
-    link.download = image.name;
+    link.download = image.filename;
     link.target = '_blank';
     document.body.appendChild(link);
     link.click();
@@ -64,180 +44,95 @@ const ImageCard: React.FC<ImageCardProps> = ({
   };
 
   return (
-    <div 
-      className={`${styles.imageCard} ${isSelected ? styles.selected : ''}`}
+    <div
+      className={`group relative rounded-lg border bg-card overflow-hidden transition-all cursor-pointer ${
+        selected ? 'ring-2 ring-teal-500 border-teal-500/40' : 'border-border hover:border-border/80'
+      }`}
+      onClick={onView}
     >
-      {/* Selection checkbox */}
-      <div 
-        className={styles.selectionCheckbox}
-        onClick={(e) => {
-          e.stopPropagation();
-          onSelect();
-        }}
+      {/* Checkbox */}
+      <div
+        className={`absolute top-2 right-2 z-10 transition-opacity ${
+          anySelected || selected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+        }`}
+        onClick={(e) => { e.stopPropagation(); onSelect(); }}
       >
-        <input
-          type="checkbox"
-          checked={isSelected}
-          onChange={() => {}}
-        />
+        <div className={`size-5 rounded border-2 flex items-center justify-center transition-colors ${
+          selected ? 'bg-teal-500 border-teal-500' : 'bg-card/80 border-muted-foreground/40 backdrop-blur-sm'
+        }`}>
+          {selected && <Check className="size-3 text-white" />}
+        </div>
       </div>
 
-      {/* Brand tag */}
-      <div 
-        className={styles.brandTag}
-        style={{ '--brand-color': brandColor } as React.CSSProperties}
-      >
-        {image.brand_name}
+      {/* Brand badge */}
+      <div className="absolute top-2 left-2 z-10">
+        <Badge variant="outline" className="text-[9px] bg-card/80 backdrop-blur-sm border-border/60">
+          {image.brand}
+        </Badge>
       </div>
 
-      {/* Image preview with uniform aspect ratio */}
-      <div className={styles.imagePreview}>
-        {!imageError ? (
+      {/* Image */}
+      <div className="aspect-square bg-muted/30">
+        {!imgError ? (
           <img
             src={image.url}
-            alt={image.name}
-            onError={() => setImageError(true)}
+            alt={image.filename}
+            className="size-full object-cover"
             loading="lazy"
+            onError={() => setImgError(true)}
           />
         ) : (
-          <div className={styles.imagePlaceholder}>
-            <span>🖼️</span>
-            <p>Unable to load image</p>
+          <div className="size-full flex flex-col items-center justify-center text-muted-foreground">
+            <ImageOff className="size-6 mb-1" />
+            <span className="text-[10px]">Failed</span>
           </div>
         )}
       </div>
 
-      {/* Hover overlay with actions */}
-      <div className={styles.hoverOverlay}>
-        <div className={styles.hoverActions}>
-          <button 
-            className={styles.hoverActionBtn}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDownload();
-            }}
-            title="Download"
-          >
-            <span>⬇</span>
-          </button>
-          <button 
-            className={styles.hoverActionBtn}
-            onClick={(e) => {
-              e.stopPropagation();
-              handleCopyUrl();
-            }}
-            title="Copy URL"
-          >
-            <span>{copying ? '✓' : '📋'}</span>
-          </button>
-          <button 
-            className={`${styles.hoverActionBtn} ${styles.infoBtn}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowDetails(!showDetails);
-            }}
-            title="View Details"
-          >
-            <span>ℹ️</span>
-          </button>
-          <button 
-            className={`${styles.hoverActionBtn} ${styles.deleteBtn}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            title="Delete"
-          >
-            <span>🗑️</span>
-          </button>
+      {/* Hover overlay */}
+      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+        <button
+          onClick={(e) => { e.stopPropagation(); onView(); }}
+          className="size-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+          title="View"
+        >
+          <Eye className="size-4" />
+        </button>
+        <button
+          onClick={handleDownload}
+          className="size-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+          title="Download"
+        >
+          <Download className="size-4" />
+        </button>
+        <button
+          onClick={handleCopyUrl}
+          className="size-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
+          title="Copy URL"
+        >
+          {copying ? <Check className="size-4 text-emerald-300" /> : <Copy className="size-4" />}
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDelete(); }}
+          className="size-8 rounded-full bg-red-500/30 hover:bg-red-500/50 flex items-center justify-center text-white transition-colors"
+          title="Delete"
+        >
+          <Trash2 className="size-4" />
+        </button>
+      </div>
+
+      {/* Footer */}
+      <div className="px-2 py-1.5 border-t border-border/50">
+        <p className="text-xs font-medium text-foreground truncate" title={image.filename}>
+          {image.filename}
+        </p>
+        <div className="flex items-center justify-between text-[10px] text-muted-foreground mt-0.5">
+          <span>{formatFileSize(image.size_bytes)}</span>
+          {image.matched_sku && (
+            <span className="text-teal-400 font-medium">{image.matched_sku}</span>
+          )}
         </div>
       </div>
-
-      {/* Image name */}
-      <div className={styles.imageName} title={image.name}>
-        {image.name}
-      </div>
-
-      {/* Image meta info */}
-      <div className={styles.imageMeta}>
-        <span className={styles.metaItem}>
-          {formatFileSize(image.size)}
-        </span>
-        <span className={styles.metaItem}>
-          {new Date(image.uploaded_at).toLocaleDateString()}
-        </span>
-      </div>
-
-      {/* Expanded details modal - rendered as portal */}
-      {showDetails && createPortal(
-        <div 
-          className={styles.detailsModal} 
-          onClick={() => setShowDetails(false)}
-        >
-          <div 
-            className={styles.detailsContent}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className={styles.detailsHeader}>
-              <h3>Image Details</h3>
-              <button 
-                className={styles.closeDetailsBtn}
-                onClick={() => setShowDetails(false)}
-              >
-                ✕
-              </button>
-            </div>
-            
-            <div className={styles.detailsBody}>
-              <div className={styles.detailRow}>
-                <span className={styles.detailLabel}>Filename:</span>
-                <span className={styles.detailValue}>{image.name}</span>
-              </div>
-              <div className={styles.detailRow}>
-                <span className={styles.detailLabel}>Brand:</span>
-                <span className={styles.detailValue}>{image.brand_name}</span>
-              </div>
-              <div className={styles.detailRow}>
-                <span className={styles.detailLabel}>Size:</span>
-                <span className={styles.detailValue}>{formatFileSize(image.size)}</span>
-              </div>
-              <div className={styles.detailRow}>
-                <span className={styles.detailLabel}>Type:</span>
-                <span className={styles.detailValue}>{image.content_type}</span>
-              </div>
-              <div className={styles.detailRow}>
-                <span className={styles.detailLabel}>Uploaded:</span>
-                <span className={styles.detailValue}>{formatDate(image.uploaded_at)}</span>
-              </div>
-              <div className={styles.detailRow}>
-                <span className={styles.detailLabel}>ID:</span>
-                <span className={styles.detailValue}>{image.id}</span>
-              </div>
-              
-              <div className={styles.urlRow}>
-                <label className={styles.detailLabel}>URL:</label>
-                <div className={styles.urlContainer}>
-                  <input
-                    type="text"
-                    value={image.url}
-                    readOnly
-                    className={styles.urlInput}
-                  />
-                  <button
-                    className={styles.copyUrlBtn}
-                    onClick={handleCopyUrl}
-                  >
-                    {copying ? 'Copied!' : 'Copy'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
     </div>
   );
-};
-
-export default ImageCard;
+}

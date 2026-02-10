@@ -442,6 +442,28 @@ export interface JournalPostImage {
   created_at: string;
 }
 
+// Product Images
+export interface ProductImage {
+  id: number;
+  product_id: number | null;
+  brand: string;
+  original_filename: string;
+  filename: string;
+  r2_key: string;
+  url: string;
+  content_type: string;
+  size_bytes: number;
+  width: number | null;
+  height: number | null;
+  matched_sku: string | null;
+  sku_confidence: number | null;
+  ai_product_type: string | null;
+  ai_color: string | null;
+  ai_confidence: number | null;
+  created_by: string | null;
+  created_at: string;
+}
+
 // API response wrappers
 export interface ListResponse<T> {
   data: T[];
