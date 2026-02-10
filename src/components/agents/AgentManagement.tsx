@@ -5,7 +5,9 @@ import { Users, Download, FileSpreadsheet } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { apiClient } from '@/api/client';
 import { reportService } from '@/services/reportService';
+import { Card, CardContent } from '@/components/ui/card';
 import SplitfinTable from '@/components/shared/SplitfinTable';
+import type { AgentCommissionData } from '@/types/domain';
 import {
   AgentOrdersPieChart,
   AgentRevenueRadialChart,
@@ -73,6 +75,7 @@ const AgentManagement: React.FC = () => {
   usePageTitle('Agent Performance');
   const [dateRange, setDateRange] = useState<DateRange>('30_days');
   const [data, setData] = useState<AgentAnalytics | null>(null);
+  const [commissionData, setCommissionData] = useState<AgentCommissionData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -82,8 +85,12 @@ const AgentManagement: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const res = await apiClient.get<AgentAnalytics>(`/analytics/agents?date_range=${dateRange}`);
-      setData(res.data);
+      const [analyticsRes, commissionRes] = await Promise.all([
+        apiClient.get<AgentAnalytics>(`/analytics/agents?date_range=${dateRange}`),
+        reportService.agentCommission(dateRange),
+      ]);
+      setData(analyticsRes.data);
+      setCommissionData(commissionRes);
     } catch (error) {
       console.error('Error loading agent analytics:', error);
     } finally {
@@ -304,6 +311,69 @@ const AgentManagement: React.FC = () => {
           />
         </motion.div>
       </div>
+
+      {/* Commission Breakdown */}
+      {commissionData && commissionData.agents.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: 'easeOut', delay: 0.4 }}
+          className="mt-6"
+        >
+          <Card>
+            <CardContent className="p-4">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">Commission Breakdown</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border text-left">
+                      <th className="pb-2 font-medium text-muted-foreground">Agent</th>
+                      <th className="pb-2 font-medium text-muted-foreground text-right">Rate</th>
+                      <th className="pb-2 font-medium text-muted-foreground text-right">Orders</th>
+                      <th className="pb-2 font-medium text-muted-foreground text-right">Revenue</th>
+                      <th className="pb-2 font-medium text-muted-foreground text-right">Commission</th>
+                      <th className="pb-2 font-medium text-muted-foreground text-right">Customers</th>
+                      <th className="pb-2 font-medium text-muted-foreground text-center w-28"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {commissionData.agents.map((a) => (
+                      <tr key={a.id} className="border-b border-border/50 last:border-0">
+                        <td className="py-2 pr-4 font-medium">{a.name}</td>
+                        <td className="py-2 text-right tabular-nums">{(a.commission_rate * 100).toFixed(1)}%</td>
+                        <td className="py-2 text-right tabular-nums">{a.order_count.toLocaleString()}</td>
+                        <td className="py-2 text-right tabular-nums">{formatGBP(a.revenue)}</td>
+                        <td className="py-2 text-right tabular-nums font-medium">{formatGBP(a.commission_earned)}</td>
+                        <td className="py-2 text-right tabular-nums">{a.customer_count.toLocaleString()}</td>
+                        <td className="py-2 text-center">
+                          <button
+                            onClick={() => reportService.exportFile('agent-commission', dateRange, 'xlsx', { agent_id: a.id })}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+                          >
+                            <Download className="h-3 w-3" />
+                            Export
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr className="border-t border-border font-medium">
+                      <td className="pt-3 pr-4">Total</td>
+                      <td className="pt-3 text-right" />
+                      <td className="pt-3 text-right tabular-nums">{commissionData.totals.total_orders.toLocaleString()}</td>
+                      <td className="pt-3 text-right tabular-nums">{formatGBP(commissionData.totals.total_revenue)}</td>
+                      <td className="pt-3 text-right tabular-nums">{formatGBP(commissionData.totals.total_commission)}</td>
+                      <td className="pt-3 text-right" />
+                      <td />
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
     </div>
   );
 };
