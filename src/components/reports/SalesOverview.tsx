@@ -3,7 +3,7 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { RevenueChart, OrdersChart } from '../dashboard/DashboardCharts';
-import { reportService } from '@/services/reportService';
+import { reportService, type ReportFilters } from '@/services/reportService';
 import type { ReportDateRange, SalesOverviewData } from '@/types/domain';
 
 const formatGBP = (n: number) =>
@@ -26,20 +26,20 @@ function TrendTooltip({ active, payload, label }: any) {
   );
 }
 
-export default function SalesOverview({ dateRange }: { dateRange: ReportDateRange }) {
+export default function SalesOverview({ dateRange, filters }: { dateRange: ReportDateRange; filters?: ReportFilters }) {
   const [data, setData] = useState<SalesOverviewData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.salesOverview(dateRange).then(result => {
+    reportService.salesOverview(dateRange, filters).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [dateRange]);
+  }, [dateRange, filters?.agent_id, filters?.brand, filters?.region]);
 
-  // Hooks must run unconditionally — before early returns
+  // Hooks MUST run before early returns (React rules of hooks)
   const revenueData = useMemo(() =>
     data ? data.monthly_trend.map(m => ({ name: m.month, value: m.revenue })) : [], [data]);
   const ordersData = useMemo(() =>
@@ -51,8 +51,7 @@ export default function SalesOverview({ dateRange }: { dateRange: ReportDateRang
   const { summary, monthly_trend, top_products } = data;
 
   return (
-    <div className="space-y-6 mt-4">
-      {/* Metric Cards — first two use Evil Charts sparklines */}
+    <div className="space-y-4 mt-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <RevenueChart data={revenueData} total={summary.total_revenue} />
         <OrdersChart data={ordersData} total={summary.total_orders} />
@@ -70,12 +69,11 @@ export default function SalesOverview({ dateRange }: { dateRange: ReportDateRang
         </Card>
       </div>
 
-      {/* Revenue Trend — ChartContainer with gradient area */}
       {monthly_trend.length > 0 && (
         <Card>
           <CardContent className="p-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-4">Monthly Revenue Trend</h3>
-            <ChartContainer config={trendConfig} className="h-[280px] w-full">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">Monthly Revenue Trend</h3>
+            <ChartContainer config={trendConfig} className="h-[200px] w-full">
               <AreaChart data={monthly_trend}>
                 <defs>
                   <linearGradient id="salesTrendGrad" x1="0" y1="0" x2="0" y2="1">
@@ -94,10 +92,9 @@ export default function SalesOverview({ dateRange }: { dateRange: ReportDateRang
         </Card>
       )}
 
-      {/* Top Products Table */}
       <Card>
         <CardContent className="p-4">
-          <h3 className="text-sm font-medium text-muted-foreground mb-4">Top Products by Revenue</h3>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">Top Products by Revenue</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -130,12 +127,12 @@ export default function SalesOverview({ dateRange }: { dateRange: ReportDateRang
 
 function Skeleton() {
   return (
-    <div className="space-y-6 mt-4 animate-pulse">
+    <div className="space-y-4 mt-4 animate-pulse">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => <div key={i} className="h-[180px] rounded-xl bg-muted/50" />)}
       </div>
-      <div className="h-[320px] rounded-xl bg-muted/50" />
-      <div className="h-[300px] rounded-xl bg-muted/50" />
+      <div className="h-[240px] rounded-xl bg-muted/50" />
+      <div className="h-[200px] rounded-xl bg-muted/50" />
     </div>
   );
 }

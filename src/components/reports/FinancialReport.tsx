@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
-import { reportService } from '@/services/reportService';
+import { reportService, type ReportFilters } from '@/services/reportService';
 import type { ReportDateRange, FinancialData } from '@/types/domain';
 
 const formatGBP = (n: number) =>
@@ -33,14 +33,14 @@ function AgeingTooltip({ active, payload, label }: any) {
   );
 }
 
-export default function FinancialReport({ dateRange }: { dateRange: ReportDateRange }) {
+export default function FinancialReport({ dateRange, filters }: { dateRange: ReportDateRange; filters?: ReportFilters }) {
   const [data, setData] = useState<FinancialData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.financial(dateRange).then(result => {
+    reportService.financial(dateRange, filters).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -52,7 +52,7 @@ export default function FinancialReport({ dateRange }: { dateRange: ReportDateRa
   const { summary, ageing } = data;
 
   return (
-    <div className="space-y-6 mt-4">
+    <div className="space-y-4 mt-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="py-4 gap-3">
           <CardHeader className="px-4 pb-0 gap-1">
@@ -83,8 +83,8 @@ export default function FinancialReport({ dateRange }: { dateRange: ReportDateRa
       {ageing.length > 0 && (
         <Card>
           <CardContent className="p-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-4">Invoice Ageing</h3>
-            <ChartContainer config={ageingConfig} className="h-[280px] w-full">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">Invoice Ageing</h3>
+            <ChartContainer config={ageingConfig} className="h-[200px] w-full">
               <BarChart data={ageing}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="bucket" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
@@ -103,7 +103,7 @@ export default function FinancialReport({ dateRange }: { dateRange: ReportDateRa
 
       <Card>
         <CardContent className="p-4">
-          <h3 className="text-sm font-medium text-muted-foreground mb-4">Ageing Breakdown</h3>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">Ageing Breakdown</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -137,11 +137,11 @@ export default function FinancialReport({ dateRange }: { dateRange: ReportDateRa
 
 function Skeleton() {
   return (
-    <div className="space-y-6 mt-4 animate-pulse">
+    <div className="space-y-4 mt-4 animate-pulse">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => <div key={i} className="h-20 rounded-lg bg-muted/50" />)}
       </div>
-      <div className="h-[320px] rounded-lg bg-muted/50" />
+      <div className="h-[240px] rounded-lg bg-muted/50" />
       <div className="h-[200px] rounded-lg bg-muted/50" />
     </div>
   );

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { reportService } from '@/services/reportService';
 import type { ReportDateRange, AgentPerformanceData } from '@/types/domain';
+
+const BAR_COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
 
 const formatGBP = (n: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
@@ -47,7 +49,7 @@ export default function AgentPerformance({ dateRange }: { dateRange: ReportDateR
   const avgRevenue = agents.length > 0 ? totalRevenue / agents.length : 0;
 
   return (
-    <div className="space-y-6 mt-4">
+    <div className="space-y-4 mt-4">
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="py-4 gap-3">
           <CardHeader className="px-4 pb-0 gap-1">
@@ -72,14 +74,18 @@ export default function AgentPerformance({ dateRange }: { dateRange: ReportDateR
       {agents.length > 0 && (
         <Card>
           <CardContent className="p-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-4">Revenue by Agent</h3>
-            <ChartContainer config={chartConfig} className="w-full" style={{ height: Math.max(200, agents.length * 48) }}>
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">Revenue by Agent</h3>
+            <ChartContainer config={chartConfig} className="w-full" style={{ height: Math.min(260, Math.max(150, agents.length * 36)) }}>
               <BarChart data={agents} layout="vertical" margin={{ left: 80 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                 <XAxis type="number" tickFormatter={formatCompact} tick={{ fontSize: 11 }} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={80} />
                 <ChartTooltip cursor={false} content={<GBPTooltip />} />
-                <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="revenue" radius={[0, 4, 4, 0]}>
+                  {agents.map((_, i) => (
+                    <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
+                  ))}
+                </Bar>
               </BarChart>
             </ChartContainer>
           </CardContent>
@@ -88,7 +94,7 @@ export default function AgentPerformance({ dateRange }: { dateRange: ReportDateR
 
       <Card>
         <CardContent className="p-4">
-          <h3 className="text-sm font-medium text-muted-foreground mb-4">Agent Breakdown</h3>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">Agent Breakdown</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -121,11 +127,11 @@ export default function AgentPerformance({ dateRange }: { dateRange: ReportDateR
 
 function Skeleton() {
   return (
-    <div className="space-y-6 mt-4 animate-pulse">
+    <div className="space-y-4 mt-4 animate-pulse">
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {[...Array(3)].map((_, i) => <div key={i} className="h-20 rounded-lg bg-muted/50" />)}
       </div>
-      <div className="h-[300px] rounded-lg bg-muted/50" />
+      <div className="h-[200px] rounded-lg bg-muted/50" />
       <div className="h-[200px] rounded-lg bg-muted/50" />
     </div>
   );

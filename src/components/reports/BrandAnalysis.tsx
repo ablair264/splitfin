@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
-import { reportService } from '@/services/reportService';
+import { reportService, type ReportFilters } from '@/services/reportService';
 import type { ReportDateRange, BrandAnalysisData } from '@/types/domain';
+
+const BAR_COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
 
 const formatGBP = (n: number) =>
   new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
@@ -25,18 +27,18 @@ function GBPTooltip({ active, payload, label }: any) {
   );
 }
 
-export default function BrandAnalysis({ dateRange }: { dateRange: ReportDateRange }) {
+export default function BrandAnalysis({ dateRange, filters }: { dateRange: ReportDateRange; filters?: ReportFilters }) {
   const [data, setData] = useState<BrandAnalysisData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.brandAnalysis(dateRange).then(result => {
+    reportService.brandAnalysis(dateRange, filters).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [dateRange]);
+  }, [dateRange, filters?.brand]);
 
   if (loading) return <Skeleton />;
   if (!data) return <p className="text-muted-foreground p-4">Failed to load report data.</p>;
@@ -47,7 +49,7 @@ export default function BrandAnalysis({ dateRange }: { dateRange: ReportDateRang
   const chartData = brands.slice(0, 10);
 
   return (
-    <div className="space-y-6 mt-4">
+    <div className="space-y-4 mt-4">
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="py-4 gap-3">
           <CardHeader className="px-4 pb-0 gap-1">
@@ -72,14 +74,18 @@ export default function BrandAnalysis({ dateRange }: { dateRange: ReportDateRang
       {chartData.length > 0 && (
         <Card>
           <CardContent className="p-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-4">Top 10 Brands by Revenue</h3>
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">Top 10 Brands by Revenue</h3>
+            <ChartContainer config={chartConfig} className="h-[200px] w-full">
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="brand" tick={{ fontSize: 11 }} angle={-25} textAnchor="end" height={60} tickLine={false} axisLine={false} />
+                <XAxis dataKey="brand" tick={{ fontSize: 10 }} angle={-25} textAnchor="end" height={50} tickLine={false} axisLine={false} />
                 <YAxis tickFormatter={formatCompact} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
                 <ChartTooltip cursor={false} content={<GBPTooltip />} />
-                <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="revenue" radius={[4, 4, 0, 0]}>
+                  {chartData.map((_, i) => (
+                    <Cell key={i} fill={BAR_COLORS[i % BAR_COLORS.length]} />
+                  ))}
+                </Bar>
               </BarChart>
             </ChartContainer>
           </CardContent>
@@ -88,7 +94,7 @@ export default function BrandAnalysis({ dateRange }: { dateRange: ReportDateRang
 
       <Card>
         <CardContent className="p-4">
-          <h3 className="text-sm font-medium text-muted-foreground mb-4">All Brands</h3>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">All Brands</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -121,12 +127,12 @@ export default function BrandAnalysis({ dateRange }: { dateRange: ReportDateRang
 
 function Skeleton() {
   return (
-    <div className="space-y-6 mt-4 animate-pulse">
+    <div className="space-y-4 mt-4 animate-pulse">
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         {[...Array(3)].map((_, i) => <div key={i} className="h-20 rounded-lg bg-muted/50" />)}
       </div>
-      <div className="h-[340px] rounded-lg bg-muted/50" />
-      <div className="h-[300px] rounded-lg bg-muted/50" />
+      <div className="h-[240px] rounded-lg bg-muted/50" />
+      <div className="h-[200px] rounded-lg bg-muted/50" />
     </div>
   );
 }

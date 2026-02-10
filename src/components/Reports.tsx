@@ -1,12 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import PageHeader from '@/components/shared/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Download, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { reportService } from '@/services/reportService';
-import type { ReportDateRange } from '@/types/domain';
+import { reportService, type ReportFilters } from '@/services/reportService';
+import type { ReportDateRange, ReportFilterOptions } from '@/types/domain';
 import SalesOverview from './reports/SalesOverview';
 import AgentPerformance from './reports/AgentPerformance';
 import AgentCommission from './reports/AgentCommission';
@@ -37,15 +38,25 @@ export default function Reports() {
   usePageTitle('Reports');
   const [dateRange, setDateRange] = useState<ReportDateRange>('this_year');
   const [activeTab, setActiveTab] = useState('sales-overview');
+  const [options, setOptions] = useState<ReportFilterOptions | null>(null);
+  const [agentId, setAgentId] = useState('all');
+  const [brand, setBrand] = useState('all');
+  const [region, setRegion] = useState('all');
+
+  useEffect(() => {
+    reportService.filterOptions().then(setOptions).catch(() => {});
+  }, []);
+
+  const filters: ReportFilters = {
+    agent_id: agentId !== 'all' ? agentId : undefined,
+    brand: brand !== 'all' ? brand : undefined,
+    region: region !== 'all' ? region : undefined,
+  };
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Reports"
-        subtitle="Generate and export business reports"
-      />
+      <PageHeader title="Reports" subtitle="Generate and export business reports" />
 
-      {/* Controls Row */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Date Range Pills */}
         <div className="flex items-center gap-1.5">
@@ -65,6 +76,45 @@ export default function Reports() {
           ))}
         </div>
 
+        {/* Filter Dropdowns */}
+        {options && (
+          <div className="flex items-center gap-2">
+            <Select value={agentId} onValueChange={setAgentId}>
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Agents</SelectItem>
+                {options.agents.map(a => (
+                  <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={brand} onValueChange={setBrand}>
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Brands</SelectItem>
+                {options.brands.map(b => (
+                  <SelectItem key={b} value={b}>{b}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={region} onValueChange={setRegion}>
+              <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Regions</SelectItem>
+                {options.regions.map(r => (
+                  <SelectItem key={r} value={r}>{r}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         <div className="ml-auto flex items-center gap-2">
           <Button
             intent="outline"
@@ -83,7 +133,6 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full justify-start bg-muted/50 overflow-x-auto">
           <TabsTrigger value="sales-overview">Sales</TabsTrigger>
@@ -96,25 +145,25 @@ export default function Reports() {
         </TabsList>
 
         <TabsContent value="sales-overview">
-          <SalesOverview dateRange={dateRange} />
+          <SalesOverview dateRange={dateRange} filters={filters} />
         </TabsContent>
         <TabsContent value="agent-performance">
           <AgentPerformance dateRange={dateRange} />
         </TabsContent>
         <TabsContent value="agent-commission">
-          <AgentCommission dateRange={dateRange} />
+          <AgentCommission dateRange={dateRange} filters={filters} />
         </TabsContent>
         <TabsContent value="brand-analysis">
-          <BrandAnalysis dateRange={dateRange} />
+          <BrandAnalysis dateRange={dateRange} filters={filters} />
         </TabsContent>
         <TabsContent value="customer-insights">
-          <CustomerInsights dateRange={dateRange} />
+          <CustomerInsights dateRange={dateRange} filters={filters} />
         </TabsContent>
         <TabsContent value="inventory-health">
-          <InventoryHealth dateRange={dateRange} />
+          <InventoryHealth dateRange={dateRange} filters={filters} />
         </TabsContent>
         <TabsContent value="financial">
-          <FinancialReport dateRange={dateRange} />
+          <FinancialReport dateRange={dateRange} filters={filters} />
         </TabsContent>
       </Tabs>
     </div>

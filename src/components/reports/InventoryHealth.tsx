@@ -3,7 +3,7 @@ import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
-import { reportService } from '@/services/reportService';
+import { reportService, type ReportFilters } from '@/services/reportService';
 import type { ReportDateRange, InventoryHealthData } from '@/types/domain';
 
 const formatGBP = (n: number) =>
@@ -35,18 +35,18 @@ function StockTooltip({ active, payload, label }: any) {
   );
 }
 
-export default function InventoryHealth({ dateRange }: { dateRange: ReportDateRange }) {
+export default function InventoryHealth({ dateRange, filters }: { dateRange: ReportDateRange; filters?: ReportFilters }) {
   const [data, setData] = useState<InventoryHealthData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.inventoryHealth(dateRange).then(result => {
+    reportService.inventoryHealth(dateRange, filters).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [dateRange]);
+  }, [dateRange, filters?.brand]);
 
   if (loading) return <Skeleton />;
   if (!data) return <p className="text-muted-foreground p-4">Failed to load report data.</p>;
@@ -59,7 +59,7 @@ export default function InventoryHealth({ dateRange }: { dateRange: ReportDateRa
   }));
 
   return (
-    <div className="space-y-6 mt-4">
+    <div className="space-y-4 mt-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="py-4 gap-3">
           <CardHeader className="px-4 pb-0 gap-1">
@@ -90,11 +90,11 @@ export default function InventoryHealth({ dateRange }: { dateRange: ReportDateRa
       {chartData.length > 0 && (
         <Card>
           <CardContent className="p-4">
-            <h3 className="text-sm font-medium text-muted-foreground mb-4">Stock Status by Brand (Top 10)</h3>
-            <ChartContainer config={chartConfig} className="h-[300px] w-full">
+            <h3 className="text-sm font-medium text-muted-foreground mb-3">Stock Status by Brand (Top 10)</h3>
+            <ChartContainer config={chartConfig} className="h-[220px] w-full">
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis dataKey="brand" tick={{ fontSize: 10 }} angle={-25} textAnchor="end" height={60} tickLine={false} axisLine={false} />
+                <XAxis dataKey="brand" tick={{ fontSize: 10 }} angle={-25} textAnchor="end" height={50} tickLine={false} axisLine={false} />
                 <YAxis tickFormatter={formatCompact} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
                 <ChartTooltip cursor={false} content={<StockTooltip />} />
                 <Legend />
@@ -108,7 +108,7 @@ export default function InventoryHealth({ dateRange }: { dateRange: ReportDateRa
 
       <Card>
         <CardContent className="p-4">
-          <h3 className="text-sm font-medium text-muted-foreground mb-4">Slow Movers (In stock, not sold in 90+ days)</h3>
+          <h3 className="text-sm font-medium text-muted-foreground mb-3">Slow Movers (In stock, not sold in 90+ days)</h3>
           {slow_movers.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4">No slow movers found.</p>
           ) : (
@@ -153,12 +153,12 @@ export default function InventoryHealth({ dateRange }: { dateRange: ReportDateRa
 
 function Skeleton() {
   return (
-    <div className="space-y-6 mt-4 animate-pulse">
+    <div className="space-y-4 mt-4 animate-pulse">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[...Array(4)].map((_, i) => <div key={i} className="h-20 rounded-lg bg-muted/50" />)}
       </div>
-      <div className="h-[340px] rounded-lg bg-muted/50" />
-      <div className="h-[300px] rounded-lg bg-muted/50" />
+      <div className="h-[260px] rounded-lg bg-muted/50" />
+      <div className="h-[200px] rounded-lg bg-muted/50" />
     </div>
   );
 }
