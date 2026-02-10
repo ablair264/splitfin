@@ -183,11 +183,13 @@ export function secureCors(options = {}) {
 
 // Request sanitization middleware
 export function sanitizeRequest(req, res, next) {
-  // Limit request size
-  const MAX_BODY_SIZE = 1048576; // 1MB
+  // Limit request size (skip for multipart — multer handles its own limits)
+  const contentType = (req.headers['content-type'] || '').toLowerCase();
+  const isMultipart = contentType.startsWith('multipart/');
+  const MAX_BODY_SIZE = 1048576; // 1MB for JSON/urlencoded
   const contentLength = parseInt(req.headers['content-length'] || '0');
-  
-  if (contentLength > MAX_BODY_SIZE) {
+
+  if (!isMultipart && contentLength > MAX_BODY_SIZE) {
     logger.warn(`[Sanitize] Request body too large: ${contentLength} bytes from ${req.ip}`);
     return res.status(413).json({
       error: 'Payload Too Large',
