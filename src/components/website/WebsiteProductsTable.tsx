@@ -150,6 +150,11 @@ export default function WebsiteProductsTable() {
     setRefreshKey((k) => k + 1);
   }, []);
 
+  const handleCategoryCreated = useCallback((category: WebsiteCategory) => {
+    setCategories((prev) => [...prev, category]);
+    setCategoryOptions((prev) => [...prev, { label: category.name, value: category.name }]);
+  }, []);
+
   const handleRowClick = useCallback((row: WebsiteProduct) => {
     setSelectedProduct(row);
     setSheetOpen(true);
@@ -201,6 +206,7 @@ export default function WebsiteProductsTable() {
           if (!open) setSelectedProduct(null);
         }}
         onUpdated={handleProductUpdated}
+        onCategoryCreated={handleCategoryCreated}
       />
 
       <AddWebsiteProductSheet
@@ -208,6 +214,7 @@ export default function WebsiteProductsTable() {
         open={addSheetOpen}
         onOpenChange={setAddSheetOpen}
         onCreated={handleProductUpdated}
+        onCategoryCreated={handleCategoryCreated}
       />
 
       <BatchAddWebsiteProductSheet
@@ -215,6 +222,7 @@ export default function WebsiteProductsTable() {
         open={batchSheetOpen}
         onOpenChange={setBatchSheetOpen}
         onCreated={handleProductUpdated}
+        onCategoryCreated={handleCategoryCreated}
       />
 
       <BatchEnhanceSheet

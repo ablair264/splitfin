@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { websiteProductService } from '@/services/websiteProductService';
 import { formatBrand } from '@/lib/format';
+import { CategorySelect } from './CategorySelect';
 import type { Product, WebsiteCategory } from '@/types/domain';
 
 interface BatchAddWebsiteProductSheetProps {
@@ -14,12 +15,13 @@ interface BatchAddWebsiteProductSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: () => void;
+  onCategoryCreated: (category: WebsiteCategory) => void;
 }
 
 const POP_HOME_BRANDS = ['Relaxound', 'Remember', 'Ideas 4 Seasons', 'My Flame Lifestyle', 'ppd PAPERPRODUCTS DESIGN GmbH'];
 
 export function BatchAddWebsiteProductSheet({
-  categories, open, onOpenChange, onCreated,
+  categories, open, onOpenChange, onCreated, onCategoryCreated,
 }: BatchAddWebsiteProductSheetProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [brandFilter, setBrandFilter] = useState('');
@@ -325,14 +327,13 @@ export function BatchAddWebsiteProductSheet({
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">Category</label>
-              <select
-                value={categoryId ?? ''}
-                onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 rounded-md bg-background border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
-              >
-                <option value="">None</option>
-                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <CategorySelect
+                categories={categories}
+                value={categoryId}
+                onChange={setCategoryId}
+                onCategoryCreated={onCategoryCreated}
+                placeholder="None"
+              />
             </div>
             <div>
               <label className="block text-xs font-medium text-muted-foreground mb-1">Markup</label>

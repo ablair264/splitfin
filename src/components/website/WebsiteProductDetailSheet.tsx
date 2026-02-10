@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { websiteProductService } from '@/services/websiteProductService';
 import { formatBrand } from '@/lib/format';
+import { CategorySelect } from './CategorySelect';
 import type { WebsiteProduct, WebsiteCategory, WebsiteTag } from '@/types/domain';
 
 interface WebsiteProductDetailSheetProps {
@@ -22,6 +23,7 @@ interface WebsiteProductDetailSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onUpdated: () => void;
+  onCategoryCreated: (category: WebsiteCategory) => void;
 }
 
 const formatCurrency = (value?: number | null) => {
@@ -39,7 +41,7 @@ function DetailRow({ label, editing, children }: { label: string; editing: boole
 }
 
 export function WebsiteProductDetailSheet({
-  product, categories, open, onOpenChange, onUpdated,
+  product, categories, open, onOpenChange, onUpdated, onCategoryCreated,
 }: WebsiteProductDetailSheetProps) {
   const [staleProduct, setStaleProduct] = useState<WebsiteProduct | null>(null);
   const [dirtyFields, setDirtyFields] = useState<Record<string, unknown>>({});
@@ -369,14 +371,14 @@ export function WebsiteProductDetailSheet({
 
                 <DetailRow label="Category" editing={isEditing}>
                   {isEditing ? (
-                    <select
-                      value={effectiveCategoryId ?? ''}
-                      onChange={(e) => handleSelectChange('category_id', e.target.value ? Number(e.target.value) : null)}
-                      className="text-sm bg-transparent border border-border/50 rounded px-2 py-0.5 text-foreground"
-                    >
-                      <option value="">None</option>
-                      {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
+                    <CategorySelect
+                      categories={categories}
+                      value={effectiveCategoryId}
+                      onChange={(id) => handleSelectChange('category_id', id)}
+                      onCategoryCreated={onCategoryCreated}
+                      placeholder="None"
+                      className="text-sm bg-transparent border-border/50 rounded px-2 py-0.5"
+                    />
                   ) : (
                     <span className="text-sm text-foreground">{p.category_name || '—'}</span>
                   )}

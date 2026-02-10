@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { websiteProductService } from '@/services/websiteProductService';
 import { formatBrand } from '@/lib/format';
+import { CategorySelect } from './CategorySelect';
 import type { Product, WebsiteCategory } from '@/types/domain';
 
 interface AddWebsiteProductSheetProps {
@@ -15,6 +16,7 @@ interface AddWebsiteProductSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: () => void;
+  onCategoryCreated: (category: WebsiteCategory) => void;
 }
 
 function slugify(text: string): string {
@@ -27,7 +29,7 @@ function slugify(text: string): string {
 }
 
 export function AddWebsiteProductSheet({
-  categories, open, onOpenChange, onCreated,
+  categories, open, onOpenChange, onCreated, onCategoryCreated,
 }: AddWebsiteProductSheetProps) {
   // Step 1: Search & select a wholesale product
   // Step 2: Fill website-specific fields
@@ -289,14 +291,12 @@ export function AddWebsiteProductSheet({
               {/* Category */}
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1">Category</label>
-                <select
-                  value={categoryId ?? ''}
-                  onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full px-3 py-1.5 rounded-md bg-background border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
-                >
-                  <option value="">Select category...</option>
-                  {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <CategorySelect
+                  categories={categories}
+                  value={categoryId}
+                  onChange={setCategoryId}
+                  onCategoryCreated={onCategoryCreated}
+                />
               </div>
 
               {/* Badge + Featured + Active */}
