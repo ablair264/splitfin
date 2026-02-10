@@ -52,6 +52,44 @@ async function getUploadMiddleware() {
 }
 
 // ---------------------------------------------------------------------------
+// Lazy-loaded sharp for image processing
+// ---------------------------------------------------------------------------
+let _sharp = null;
+
+async function getSharp() {
+  if (!_sharp) {
+    const mod = await import('sharp');
+    _sharp = mod.default;
+  }
+  return _sharp;
+}
+
+const MAX_WIDTH = 1200;
+const WEBP_QUALITY = 80;
+
+/**
+ * Resize + convert to WebP. Returns { buffer, width, height, size, contentType, ext }.
+ * If the image is already <= MAX_WIDTH, it still gets converted to WebP for consistency.
+ */
+async function processImage(inputBuffer) {
+  const sharp = await getSharp();
+  const processed = sharp(inputBuffer)
+    .resize({ width: MAX_WIDTH, withoutEnlargement: true })
+    .webp({ quality: WEBP_QUALITY });
+
+  const buffer = await processed.toBuffer();
+  const meta = await sharp(buffer).metadata();
+  return {
+    buffer,
+    width: meta.width,
+    height: meta.height,
+    size: buffer.length,
+    contentType: 'image/webp',
+    ext: 'webp',
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Allowed sort columns
 // ---------------------------------------------------------------------------
 const IMAGE_SORT_COLUMNS = {
@@ -185,15 +223,19 @@ router.post('/upload', async (req, res) => {
       return res.status(400).json({ error: 'No image file provided' });
     }
 
-    const { brand, matched_sku, sku_confidence, original_filename, width, height } = req.body;
+    const { brand, matched_sku, sku_confidence, original_filename } = req.body;
 
     if (!brand) {
       return res.status(400).json({ error: 'Brand is required' });
     }
 
-    // Build R2 key
+    // Resize + convert to WebP
+    const processed = await processImage(req.file.buffer);
+
+    // Build R2 key (always .webp after processing)
     const brandSlug = brand.toLowerCase().replace(/\s+/g, '-');
-    const key = `images/${brandSlug}/${req.file.originalname}`;
+    const baseName = req.file.originalname.replace(/\.[^.]+$/, '');
+    const key = `images/${brandSlug}/${baseName}.webp`;
 
     // Upload to R2
     const r2 = await getR2Client();
@@ -202,8 +244,8 @@ router.post('/upload', async (req, res) => {
     await r2.send(new _s3Sdk.PutObjectCommand({
       Bucket: R2_BUCKET,
       Key: key,
-      Body: req.file.buffer,
-      ContentType: req.file.mimetype,
+      Body: processed.buffer,
+      ContentType: processed.contentType,
     }));
 
     const publicUrl = `${R2_PUBLIC_URL}/${key}`;
@@ -225,7 +267,7 @@ router.post('/upload', async (req, res) => {
     try {
       const apiKey = process.env.OPENAI_API_KEY;
       if (apiKey) {
-        const base64 = req.file.buffer.toString('base64');
+        const base64 = processed.buffer.toString('base64');
         const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -244,7 +286,7 @@ router.post('/upload', async (req, res) => {
                 {
                   type: 'image_url',
                   image_url: {
-                    url: `data:${req.file.mimetype};base64,${base64}`,
+                    url: `data:image/webp;base64,${base64}`,
                     detail: 'low',
                   },
                 },
@@ -258,7 +300,6 @@ router.post('/upload', async (req, res) => {
         if (aiResponse.ok) {
           const aiData = await aiResponse.json();
           const content = aiData.choices?.[0]?.message?.content || '';
-          // Extract JSON from response (may be wrapped in markdown code fence)
           const jsonMatch = content.match(/\{[\s\S]*?\}/);
           if (jsonMatch) {
             const parsed = JSON.parse(jsonMatch[0]);
@@ -274,17 +315,17 @@ router.post('/upload', async (req, res) => {
 
     // INSERT into product_images
     const insertParams = [
-      req.file.originalname,                              // filename
+      `${baseName}.webp`,                                 // filename
       publicUrl,                                          // url
       key,                                                // r2_key
-      req.file.mimetype,                                  // content_type
-      req.file.size,                                      // size_bytes
+      processed.contentType,                              // content_type
+      processed.size,                                     // size_bytes
       brand,                                              // brand
       matched_sku || null,                                // matched_sku
       parseFloat(sku_confidence) || null,                 // sku_confidence
       productId,                                          // product_id
-      parseInt(width, 10) || null,                        // width
-      parseInt(height, 10) || null,                       // height
+      processed.width,                                    // width
+      processed.height,                                   // height
       aiProductType,                                      // ai_product_type
       aiColor,                                            // ai_color
       aiConfidence,                                       // ai_confidence
@@ -372,16 +413,20 @@ router.post('/upload-batch', async (req, res) => {
       try {
         const fileMeta = metadataMap[file.originalname] || {};
 
-        // Build R2 key
+        // Resize + convert to WebP
+        const processed = await processImage(file.buffer);
+
+        // Build R2 key (always .webp after processing)
         const brandSlug = brand.toLowerCase().replace(/\s+/g, '-');
-        const key = `images/${brandSlug}/${file.originalname}`;
+        const baseName = file.originalname.replace(/\.[^.]+$/, '');
+        const key = `images/${brandSlug}/${baseName}.webp`;
 
         // Upload to R2
         await r2.send(new _s3Sdk.PutObjectCommand({
           Bucket: R2_BUCKET,
           Key: key,
-          Body: file.buffer,
-          ContentType: file.mimetype,
+          Body: processed.buffer,
+          ContentType: processed.contentType,
         }));
 
         const publicUrl = `${R2_PUBLIC_URL}/${key}`;
@@ -404,7 +449,7 @@ router.post('/upload-batch', async (req, res) => {
         try {
           const apiKey = process.env.OPENAI_API_KEY;
           if (apiKey) {
-            const base64 = file.buffer.toString('base64');
+            const base64 = processed.buffer.toString('base64');
             const aiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
               method: 'POST',
               headers: {
@@ -423,7 +468,7 @@ router.post('/upload-batch', async (req, res) => {
                     {
                       type: 'image_url',
                       image_url: {
-                        url: `data:${file.mimetype};base64,${base64}`,
+                        url: `data:image/webp;base64,${base64}`,
                         detail: 'low',
                       },
                     },
@@ -452,17 +497,17 @@ router.post('/upload-batch', async (req, res) => {
 
         // INSERT into product_images
         const insertParams = [
-          file.originalname,
+          `${baseName}.webp`,
           publicUrl,
           key,
-          file.mimetype,
-          file.size,
+          processed.contentType,
+          processed.size,
           brand,
           matchedSku,
           parseFloat(fileMeta.sku_confidence) || null,
           productId,
-          parseInt(fileMeta.width, 10) || null,
-          parseInt(fileMeta.height, 10) || null,
+          processed.width,
+          processed.height,
           aiProductType,
           aiColor,
           aiConfidence,

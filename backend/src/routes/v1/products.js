@@ -49,6 +49,27 @@ async function getUploadMiddleware() {
   return _upload;
 }
 
+// Lazy-loaded sharp for image processing
+let _sharp = null;
+
+async function getSharp() {
+  if (!_sharp) {
+    const mod = await import('sharp');
+    _sharp = mod.default;
+  }
+  return _sharp;
+}
+
+async function processImage(inputBuffer) {
+  const sharp = await getSharp();
+  const processed = sharp(inputBuffer)
+    .resize({ width: 1200, withoutEnlargement: true })
+    .webp({ quality: 80 });
+  const buffer = await processed.toBuffer();
+  const meta = await sharp(buffer).metadata();
+  return { buffer, width: meta.width, height: meta.height, contentType: 'image/webp' };
+}
+
 // Allowed sort columns for products
 const PRODUCT_SORT_COLUMNS = {
   name: 'name',
@@ -249,19 +270,21 @@ router.post('/:id/image', async (req, res) => {
       return res.status(400).json({ error: 'No image file provided' });
     }
 
+    // Resize + convert to WebP
+    const processed = await processImage(req.file.buffer);
+
     const r2 = await getR2Client();
     if (!_s3Sdk) _s3Sdk = await import('@aws-sdk/client-s3');
 
-    // Build R2 key: products/{id}/{sanitised-sku}.{ext}
-    const ext = req.file.originalname.split('.').pop()?.toLowerCase() || 'jpg';
+    // Build R2 key: products/{id}/{sanitised-sku}.webp
     const safeName = product.sku.replace(/[^a-zA-Z0-9-_]/g, '_').toLowerCase();
-    const key = `products/${product.id}/${safeName}.${ext}`;
+    const key = `products/${product.id}/${safeName}.webp`;
 
     await r2.send(new _s3Sdk.PutObjectCommand({
       Bucket: R2_BUCKET,
       Key: key,
-      Body: req.file.buffer,
-      ContentType: req.file.mimetype,
+      Body: processed.buffer,
+      ContentType: processed.contentType,
     }));
 
     const imageUrl = `${R2_PUBLIC_URL}/${key}`;
