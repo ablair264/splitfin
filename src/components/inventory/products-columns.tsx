@@ -1,4 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
+import { Globe, AlertTriangle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import type { Product } from "@/types/domain";
@@ -178,6 +179,34 @@ export function getProductColumns(
       size: 90,
       enableColumnFilter: false,
       meta: { label: "Price" },
+    },
+    {
+      id: "badges",
+      accessorFn: () => null,
+      header: () => <span className="text-xs font-medium text-muted-foreground">Badges</span>,
+      cell: ({ row }) => {
+        const onWebsite = row.original.on_website;
+        const lowStock = row.original.stock_on_hand <= 10 && row.original.status === "active";
+        if (!onWebsite && !lowStock) return null;
+        return (
+          <div className="flex flex-wrap gap-1">
+            {onWebsite && (
+              <span className="inline-flex items-center gap-0.5 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-400">
+                <Globe size={10} /> Live
+              </span>
+            )}
+            {lowStock && (
+              <span className="inline-flex items-center gap-0.5 rounded-md border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-400">
+                <AlertTriangle size={10} /> Reorder
+              </span>
+            )}
+          </div>
+        );
+      },
+      size: 120,
+      enableSorting: false,
+      enableColumnFilter: false,
+      meta: { label: "Badges" },
     },
     {
       id: "status",

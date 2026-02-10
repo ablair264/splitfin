@@ -268,7 +268,7 @@ export function WebsiteProductDetailSheet({
         onOpenChange={onOpenChange}
         side="right"
         isFloat={false}
-        className="sm:max-w-[580px] w-full backdrop-blur-xl bg-card/95"
+        className="sm:max-w-[720px] w-full backdrop-blur-xl bg-card/95"
         aria-label="Website product details"
       >
         {p && (

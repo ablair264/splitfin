@@ -129,7 +129,14 @@ router.get('/', async (req, res) => {
     const off = parseInt(offset);
 
     const countSql = `SELECT COUNT(*) as total FROM products WHERE ${where}`;
-    const dataSql = `SELECT * FROM products WHERE ${where} ORDER BY ${col} ${dir} NULLS LAST LIMIT $${idx++} OFFSET $${idx++}`;
+    const dataSql = `
+      SELECT *,
+        EXISTS(SELECT 1 FROM website_products wp WHERE wp.product_id = products.id AND wp.is_active = true) AS on_website
+      FROM products
+      WHERE ${where}
+      ORDER BY ${col} ${dir} NULLS LAST
+      LIMIT $${idx++} OFFSET $${idx++}
+    `;
     params.push(lim, off);
 
     const countParams = params.slice(0, -2);

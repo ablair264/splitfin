@@ -347,7 +347,7 @@ router.post('/generate', async (req, res) => {
       }
     }
 
-    const agentId = req.user?.id;
+    const agentId = req.agent?.id;
     if (!agentId) {
       return res.status(401).json({ error: 'Authentication required' });
     }

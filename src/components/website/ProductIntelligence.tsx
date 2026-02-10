@@ -12,8 +12,11 @@ import {
   Globe,
   Users,
   ShoppingCart,
+  FileSpreadsheet,
+  Check,
 } from "lucide-react";
 import { productIntelligenceService } from "@/services/productIntelligenceService";
+import { purchaseOrderService } from "@/services/purchaseOrderService";
 import type {
   ProductPopularity,
   ReorderAlert,
@@ -405,6 +408,9 @@ function ReorderAlertsTab() {
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [threshold, setThreshold] = useState(10);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [generatingPO, setGeneratingPO] = useState(false);
+  const [poSuccess, setPOSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -431,6 +437,45 @@ function ReorderAlertsTab() {
 
   const criticalCount = data.filter((d) => d.priority === "critical").length;
   const warningCount = data.filter((d) => d.priority === "warning").length;
+
+  const toggleSelect = useCallback((id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleAll = useCallback(() => {
+    if (selectedIds.size === data.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(data.map((d) => d.product_id)));
+    }
+  }, [data, selectedIds.size]);
+
+  const handleGeneratePO = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    setGeneratingPO(true);
+    setPOSuccess(null);
+    try {
+      const items = data
+        .filter((d) => selectedIds.has(d.product_id))
+        .map((d) => ({
+          product_id: d.product_id,
+          quantity: Math.max(1, Math.ceil(30 * d.daily_velocity) - d.stock_on_hand),
+        }));
+      const result = await purchaseOrderService.generate(items);
+      const poNumbers = result.purchase_orders.map((po) => po.po_number).join(", ");
+      setPOSuccess(`Created ${result.purchase_orders.length} PO${result.purchase_orders.length !== 1 ? "s" : ""}: ${poNumbers}`);
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error("Generate PO error:", err);
+    } finally {
+      setGeneratingPO(false);
+    }
+  }, [data, selectedIds]);
 
   return (
     <div className="space-y-4">
@@ -471,8 +516,8 @@ function ReorderAlertsTab() {
         </Card>
       </div>
 
-      {/* Threshold control */}
-      <div className="flex items-center gap-3">
+      {/* Threshold control + actions */}
+      <div className="flex items-center gap-3 flex-wrap">
         <label className="text-xs text-muted-foreground">Stock threshold:</label>
         <input
           type="range"
@@ -483,7 +528,34 @@ function ReorderAlertsTab() {
           className="w-40 accent-primary"
         />
         <span className="text-xs font-medium text-foreground">&le; {threshold} units</span>
+
+        {selectedIds.size > 0 && (
+          <Button
+            size="sm"
+            className="ml-auto bg-teal-600 hover:bg-teal-700 text-white"
+            onClick={handleGeneratePO}
+            isDisabled={generatingPO}
+          >
+            {generatingPO ? (
+              <Loader2 size={14} className="mr-1.5 animate-spin" />
+            ) : (
+              <FileSpreadsheet size={14} className="mr-1.5" />
+            )}
+            Create PO ({selectedIds.size} items)
+          </Button>
+        )}
       </div>
+
+      {/* Success message */}
+      {poSuccess && (
+        <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5">
+          <Check size={16} className="text-emerald-400 shrink-0" />
+          <span className="text-sm text-emerald-400">{poSuccess}</span>
+          <a href="/purchase-orders" className="ml-auto text-xs text-primary hover:underline">
+            View Purchase Orders
+          </a>
+        </div>
+      )}
 
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -491,6 +563,14 @@ function ReorderAlertsTab() {
           <table className="w-full text-sm">
             <thead className="bg-secondary">
               <tr>
+                <th className="w-10 px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={data.length > 0 && selectedIds.size === data.length}
+                    onChange={toggleAll}
+                    className="accent-teal-500"
+                  />
+                </th>
                 <th className="px-3 py-2 text-left text-xs font-medium text-muted-foreground">
                   Product
                 </th>
@@ -517,14 +597,14 @@ function ReorderAlertsTab() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={8} className="py-12 text-center text-muted-foreground">
                     <Loader2 className="mx-auto mb-2 size-5 animate-spin" />
                     Calculating stock velocity...
                   </td>
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-muted-foreground">
+                  <td colSpan={8} className="py-12 text-center text-muted-foreground">
                     No low-stock website products found.
                   </td>
                 </tr>
@@ -538,6 +618,14 @@ function ReorderAlertsTab() {
                       row.priority === "warning" && "bg-amber-500/5"
                     )}
                   >
+                    <td className="px-3 py-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(row.product_id)}
+                        onChange={() => toggleSelect(row.product_id)}
+                        className="accent-teal-500"
+                      />
+                    </td>
                     <td className="px-3 py-2">
                       <div className="flex items-center gap-2.5">
                         {row.image_url ? (

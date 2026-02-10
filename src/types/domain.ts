@@ -149,6 +149,7 @@ export interface Product {
   catalogue_page: number | null;
   catalogue_id: string | null;
   sync_status: SyncStatus;
+  on_website?: boolean;
   created_at: string;
   updated_at: string;
 }
