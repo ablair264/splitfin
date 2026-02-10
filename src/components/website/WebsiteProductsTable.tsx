@@ -135,6 +135,11 @@ export default function WebsiteProductsTable() {
         if (cancelled) return;
         setProducts(result.data);
         setTotalCount(result.meta?.total ?? result.count);
+        // Sync the open detail sheet with fresh data
+        setSelectedProduct((prev) => {
+          if (!prev) return null;
+          return result.data.find((p) => p.id === prev.id) ?? prev;
+        });
       } catch (err) {
         if (!cancelled) console.error("Failed to fetch website products:", err);
       } finally {
