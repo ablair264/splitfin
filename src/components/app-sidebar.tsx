@@ -45,6 +45,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   notifications?: Notification[]
   onMarkRead?: (id: number) => void
   onMarkAllRead?: () => void
+  onNotificationClick?: (notification: Notification) => void
 }
 
 // ---------- Nav item definition ----------
@@ -303,7 +304,7 @@ const COLLAPSED_ITEMS: { id: string; item: NavItemDef; divider?: boolean; adminO
 
 // ---------- Main Sidebar ----------
 
-export default function AppSidebar({ user, unreadNotifications = 0, unreadMessages = 0, notifications = [], onMarkRead, onMarkAllRead, ...props }: AppSidebarProps) {
+export default function AppSidebar({ user, unreadNotifications = 0, unreadMessages = 0, notifications = [], onMarkRead, onMarkAllRead, onNotificationClick, ...props }: AppSidebarProps) {
   const location = useLocation()
   const navigate = useNavigate()
   const { state, toggleSidebar } = useSidebar()
@@ -399,17 +400,10 @@ export default function AppSidebar({ user, unreadNotifications = 0, unreadMessag
     }
   }, [isCollapsed])
 
-  // Navigate to relevant page on notification click
-  const handleNotificationClick = (notification: Notification) => {
+  // Handle notification click — delegate navigation to parent
+  const handleNotificationClickInternal = (notification: Notification) => {
     onMarkRead?.(notification.id)
-    const data = notification.data as Record<string, string | number> | null
-    if (notification.type === 'order_placed' && data?.order_id) {
-      navigate(`/orders/${data.order_id}`)
-    } else if (notification.type === 'customer_created' && data?.customer_id) {
-      navigate(`/customers/${data.customer_id}`)
-    } else if (notification.type === 'lead_captured') {
-      navigate('/enquiries')
-    }
+    onNotificationClick?.(notification)
     setProfileOpen(false)
     setNotificationsExpanded(false)
   }
@@ -537,7 +531,7 @@ export default function AppSidebar({ user, unreadNotifications = 0, unreadMessag
                                     {notifications.slice(0, 5).map(n => (
                                       <button
                                         key={n.id}
-                                        onClick={() => handleNotificationClick(n)}
+                                        onClick={() => handleNotificationClickInternal(n)}
                                         className={`flex flex-col w-full px-2.5 py-2 rounded-md text-left hover:bg-zinc-100 dark:hover:bg-zinc-800/40 transition-colors ${!n.is_read ? 'bg-teal-500/5 dark:bg-teal-900/10' : ''}`}
                                       >
                                         <span className={`text-[12px] font-medium truncate ${!n.is_read ? 'text-zinc-800 dark:text-zinc-100' : 'text-zinc-500 dark:text-zinc-400'}`}>

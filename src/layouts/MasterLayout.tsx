@@ -3,6 +3,7 @@ import { useLocation, useNavigate, Routes, Route } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { notificationService } from '../services/notificationService';
 import { messageService } from '../services/messageService';
+import { orderService } from '../services/orderService';
 import type { Agent, Notification } from '../types/domain';
 
 // New Intent UI Sidebar
@@ -135,6 +136,27 @@ export default function MasterLayout() {
     }
   }, []);
 
+  const handleNotificationClick = useCallback(async (notification: Notification) => {
+    const data = notification.data as Record<string, string | number> | null;
+    if (notification.type === 'order_placed' && data?.order_number) {
+      // Search by order number to get the internal DB id
+      try {
+        const result = await orderService.list({ search: String(data.order_number), limit: 1 });
+        if (result.data?.length > 0) {
+          navigate(`/order/${result.data[0].id}`);
+          return;
+        }
+      } catch {
+        // Fall through to fallback
+      }
+    }
+    if (notification.type === 'customer_created' && data?.customer_id) {
+      navigate(`/customers/${data.customer_id}`);
+    } else if (notification.type === 'lead_captured') {
+      navigate('/enquiries');
+    }
+  }, [navigate]);
+
   // Loading state
   if (loading) {
     return (
@@ -160,6 +182,7 @@ export default function MasterLayout() {
         notifications={notifications}
         onMarkRead={handleMarkRead}
         onMarkAllRead={handleMarkAllRead}
+        onNotificationClick={handleNotificationClick}
       />
       <SidebarInset className="dark:bg-gradient-to-br dark:from-[#0f1419] dark:via-[#1a1f2a] dark:to-[#2c3e50]">
 
