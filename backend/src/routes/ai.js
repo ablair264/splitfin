@@ -107,7 +107,7 @@ Existing description: ${description || 'None'}
 Dimensions: ${dimensions || 'None'}
 
 Rules for display_name:
-- Remove the brand name prefix if present (Relaxound, Remember, Ideas 4 Seasons, My Flame Lifestyle)
+- Remove the brand name prefix if present (Relaxound, Remember, Ideas 4 Seasons, My Flame Lifestyle, ppd PAPERPRODUCTS DESIGN GmbH, PPD)
 - Remove any promotional tags like *SALE*, **LAST CHANCE**, *NEW*, **NEW**, (SALE), etc.
 - Remove dimension info (e.g. "l.5,5 x w.4 x h.10cm", "Ø10cm", "H:15cm", "20x30cm") — these belong in specs, not the title
 - Extract any colour mentioned in the name (e.g. "Red", "White", "Ocean Blue") — return it separately and remove it from the display name

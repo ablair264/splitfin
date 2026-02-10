@@ -49,7 +49,7 @@ async function getUploadMiddleware() {
 }
 
 // Pop Home brand whitelist
-const POP_HOME_BRANDS = ['Relaxound', 'Remember', 'Ideas 4 Seasons', 'My Flame Lifestyle'];
+const POP_HOME_BRANDS = ['Relaxound', 'Remember', 'Ideas 4 Seasons', 'My Flame Lifestyle', 'ppd PAPERPRODUCTS DESIGN GmbH'];
 
 // Sort whitelist
 const WP_SORT_COLUMNS = {

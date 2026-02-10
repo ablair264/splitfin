@@ -6,7 +6,7 @@ import { logger } from '../../utils/logger.js';
 const router = express.Router();
 
 // Only surface these brands in intelligence data
-const ALLOWED_BRANDS = ['Relaxound', 'Remember', 'Ideas 4 Seasons', 'My Flame Lifestyle'];
+const ALLOWED_BRANDS = ['Relaxound', 'Remember', 'Ideas 4 Seasons', 'My Flame Lifestyle', 'ppd PAPERPRODUCTS DESIGN GmbH'];
 
 // ── Date range helpers ───────────────────────────────────────
 
