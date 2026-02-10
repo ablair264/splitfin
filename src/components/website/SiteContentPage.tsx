@@ -383,12 +383,14 @@ export default function SiteContentPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [sectionsRes, catsRes] = await Promise.all([
+      const [sectionsRes, catsRes] = await Promise.allSettled([
         siteContentService.list(),
         siteContentService.getCategories(),
       ]);
-      setSections(sectionsRes.data);
-      setCategories(catsRes as CategoryHero[]);
+      if (sectionsRes.status === 'fulfilled') setSections(sectionsRes.value.data);
+      else console.error('Failed to load sections:', sectionsRes.reason);
+      if (catsRes.status === 'fulfilled') setCategories(catsRes.value as CategoryHero[]);
+      else console.error('Failed to load categories:', catsRes.reason);
     } catch (err) {
       console.error('Failed to load site content:', err);
     } finally {

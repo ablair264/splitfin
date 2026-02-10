@@ -109,6 +109,70 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ── GET /categories ──────────────────────────────────────────
+// (Must be before /:id to avoid matching 'categories' as an ID)
+router.get('/categories', async (req, res) => {
+  try {
+    const { rows } = await query('SELECT id, name, slug, hero_image_url, hero_placeholder FROM website_categories WHERE is_active = true ORDER BY display_order ASC');
+    res.json({ data: rows });
+  } catch (err) {
+    logger.error('[SiteContent] Categories list error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── PUT /categories/:id ──────────────────────────────────────
+router.put('/categories/:id', async (req, res) => {
+  try {
+    const category = await getById('website_categories', req.params.id);
+    if (!category) return res.status(404).json({ error: 'Category not found' });
+
+    const allowed = ['hero_placeholder', 'description'];
+    const updates = {};
+    for (const key of allowed) {
+      if (req.body[key] !== undefined) updates[key] = req.body[key];
+    }
+    updates.updated_at = new Date().toISOString();
+
+    const result = await update('website_categories', category.id, updates);
+    res.json({ data: result });
+  } catch (err) {
+    logger.error('[SiteContent] Category update error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ── POST /categories/:id/hero-image ──────────────────────────
+router.post('/categories/:id/hero-image', async (req, res) => {
+  try {
+    const uploadMiddleware = await getUploadMiddleware();
+    await new Promise((resolve, reject) => {
+      uploadMiddleware.single('image')(req, res, (err) => {
+        if (err) reject(err); else resolve();
+      });
+    });
+
+    const category = await getById('website_categories', req.params.id);
+    if (!category) return res.status(404).json({ error: 'Category not found' });
+    if (!req.file) return res.status(400).json({ error: 'No image file provided' });
+
+    const processed = await processImage(req.file.buffer, 1920);
+    const timestamp = Date.now();
+    const key = `categories/${category.id}/${timestamp}-hero.webp`;
+    const imageUrl = await uploadToR2(key, processed.buffer, processed.contentType);
+
+    await deleteFromR2(category.hero_image_url);
+    await update('website_categories', category.id, { hero_image_url: imageUrl, updated_at: new Date().toISOString() });
+
+    logger.info(`[SiteContent] Category hero uploaded: ${key} for ${category.name}`);
+    res.json({ hero_image_url: imageUrl });
+  } catch (err) {
+    logger.error('[SiteContent] Category hero upload error:', err);
+    if (err.message === 'Only image files are allowed') return res.status(400).json({ error: err.message });
+    res.status(500).json({ error: 'Failed to upload hero image' });
+  }
+});
+
 // ── GET /:id ──────────────────────────────────────────────────
 router.get('/:id', async (req, res) => {
   try {
@@ -244,71 +308,6 @@ router.post('/:id/poster', async (req, res) => {
     logger.error('[SiteContent] Poster upload error:', err);
     if (err.message === 'Only image files are allowed') return res.status(400).json({ error: err.message });
     res.status(500).json({ error: 'Failed to upload poster' });
-  }
-});
-
-// ── POST /categories/:id/hero-image ──────────────────────────
-router.post('/categories/:id/hero-image', async (req, res) => {
-  try {
-    const uploadMiddleware = await getUploadMiddleware();
-    await new Promise((resolve, reject) => {
-      uploadMiddleware.single('image')(req, res, (err) => {
-        if (err) reject(err); else resolve();
-      });
-    });
-
-    const category = await getById('website_categories', req.params.id);
-    if (!category) return res.status(404).json({ error: 'Category not found' });
-    if (!req.file) return res.status(400).json({ error: 'No image file provided' });
-
-    const processed = await processImage(req.file.buffer, 1920);
-    const timestamp = Date.now();
-    const key = `categories/${category.id}/${timestamp}-hero.webp`;
-    const imageUrl = await uploadToR2(key, processed.buffer, processed.contentType);
-
-    await deleteFromR2(category.hero_image_url);
-    await update('website_categories', category.id, { hero_image_url: imageUrl, updated_at: new Date().toISOString() });
-
-    logger.info(`[SiteContent] Category hero uploaded: ${key} for ${category.name}`);
-    res.json({ hero_image_url: imageUrl });
-  } catch (err) {
-    logger.error('[SiteContent] Category hero upload error:', err);
-    if (err.message === 'Only image files are allowed') return res.status(400).json({ error: err.message });
-    res.status(500).json({ error: 'Failed to upload hero image' });
-  }
-});
-
-// ── GET /categories ──────────────────────────────────────────
-// List categories with hero image info (for the admin UI)
-router.get('/categories', async (req, res) => {
-  try {
-    const { rows } = await query('SELECT id, name, slug, hero_image_url, hero_placeholder FROM website_categories WHERE is_active = true ORDER BY display_order ASC');
-    res.json({ data: rows });
-  } catch (err) {
-    logger.error('[SiteContent] Categories list error:', err);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// ── PUT /categories/:id ──────────────────────────────────────
-// Update category hero fields (placeholder class, etc.)
-router.put('/categories/:id', async (req, res) => {
-  try {
-    const category = await getById('website_categories', req.params.id);
-    if (!category) return res.status(404).json({ error: 'Category not found' });
-
-    const allowed = ['hero_placeholder', 'description'];
-    const updates = {};
-    for (const key of allowed) {
-      if (req.body[key] !== undefined) updates[key] = req.body[key];
-    }
-    updates.updated_at = new Date().toISOString();
-
-    const result = await update('website_categories', category.id, updates);
-    res.json({ data: result });
-  } catch (err) {
-    logger.error('[SiteContent] Category update error:', err);
-    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
