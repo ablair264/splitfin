@@ -295,11 +295,10 @@ const DashboardContent: React.FC = () => {
                 <button
                   key={option.value}
                   onClick={() => setDateRange(option.value)}
-                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 whitespace-nowrap ${
-                    dateRange === option.value
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
-                  }`}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 whitespace-nowrap ${dateRange === option.value
+                    ? 'bg-primary text-primary-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
+                    }`}
                 >
                   {option.label}
                 </button>
@@ -332,7 +331,7 @@ const DashboardContent: React.FC = () => {
           <StockChart
             data={metrics.stockChartData}
             total={metrics.stockTotal}
-            onClick={() => navigate('/inventory')}
+            onClick={() => navigate('/inventory/products')}
           />
         </motion.div>
 
@@ -342,7 +341,7 @@ const DashboardContent: React.FC = () => {
             agentName={metrics.topAgent.name}
             orderCount={metrics.topAgent.orderCount}
             revenue={metrics.topAgent.revenue}
-            onClick={() => navigate('/analytics')}
+            onClick={() => navigate('/agents')}
           />
         </motion.div>
       </div>
@@ -350,55 +349,55 @@ const DashboardContent: React.FC = () => {
       {/* Data Tables Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.2 }}>
-        <SplitfinTable
-          title="Latest Orders"
-          viewAllLink={{ onClick: () => navigate('/orders') }}
-          columns={orderColumns}
-          data={recentOrders}
-          onRowClick={(item) => navigate(`/orders/${item.id}`)}
-          loading={tablesLoading}
-          emptyState={{
-            icon: <ShoppingCart size={32} />,
-            title: 'No orders yet',
-            description: 'Orders will appear here once created',
-          }}
-        />
+          <SplitfinTable
+            title="Latest Orders"
+            viewAllLink={{ onClick: () => navigate('/order') }}
+            columns={orderColumns}
+            data={recentOrders}
+            onRowClick={(item) => navigate(`/order/${item.id}`)}
+            loading={tablesLoading}
+            emptyState={{
+              icon: <ShoppingCart size={32} />,
+              title: 'No orders yet',
+              description: 'Orders will appear here once created',
+            }}
+          />
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.25 }}>
-        <SplitfinTable
-          title="New Customers"
-          viewAllLink={{ onClick: () => navigate('/customers') }}
-          columns={customerColumns}
-          data={recentCustomers}
-          onRowClick={(item) => navigate(`/customers/${item.id}`)}
-          loading={tablesLoading}
-          emptyState={{
-            icon: <Users size={32} />,
-            title: 'No customers yet',
-            description: 'Customers will appear here once added',
-          }}
-        />
+          <SplitfinTable
+            title="New Customers"
+            viewAllLink={{ onClick: () => navigate('/customers') }}
+            columns={customerColumns}
+            data={recentCustomers}
+            onRowClick={(item) => navigate(`/customers/${item.id}`)}
+            loading={tablesLoading}
+            emptyState={{
+              icon: <Users size={32} />,
+              title: 'No customers yet',
+              description: 'Customers will appear here once added',
+            }}
+          />
         </motion.div>
       </div>
 
       {/* Recently Added Products - Full Width */}
       <div className="border-t border-border/40 mb-6" />
       <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, ease: 'easeOut', delay: 0.3 }}>
-      <SplitfinTable
-        className="mb-6"
-        title="Recently Added Products"
-        viewAllLink={{ onClick: () => navigate('/inventory') }}
-        columns={productColumns}
-        data={recentProducts}
-        onRowClick={(item) => navigate(`/inventory/${item.id}`)}
-        loading={tablesLoading}
-        emptyState={{
-          icon: <Package size={32} />,
-          title: 'No products yet',
-          description: 'Products will appear here once added',
-        }}
-      />
+        <SplitfinTable
+          className="mb-6"
+          title="Recently Added Products"
+          viewAllLink={{ onClick: () => navigate('/inventory/products') }}
+          columns={productColumns}
+          data={recentProducts}
+          onRowClick={(item) => navigate(`/inventory/products/?page=1&status=active&search=${item.sku}`)}
+          loading={tablesLoading}
+          emptyState={{
+            icon: <Package size={32} />,
+            title: 'No products yet',
+            description: 'Products will appear here once added',
+          }}
+        />
       </motion.div>
     </div>
   );
