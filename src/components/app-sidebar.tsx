@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useReducedMotion } from "motion/react"
 import {
   ShoppingCart, Users, Settings, ChevronDown,
   Pin, Bell, Mail, Sun, Moon, Globe, BookOpen, TrendingUp,
-  LogOut, Check,
+  LogOut, Check, LayoutTemplate,
 } from "lucide-react"
 
 // Animated icons
@@ -259,6 +259,7 @@ const ALL_NAV_ITEMS: Record<string, NavItemDef> = {
   // Website
   websiteProducts: { id: "websiteProducts", label: "Products", icon: <BoxesIcon size={18} />, path: "/website/products" },
   journal: { id: "journal", label: "Journal", icon: <BookOpen size={18} />, path: "/website/journal" },
+  siteContent: { id: "siteContent", label: "Site Content", icon: <LayoutTemplate size={18} />, path: "/website/site-content" },
   intelligence: { id: "intelligence", label: "Intelligence", icon: <TrendingUp size={18} />, path: "/website/intelligence" },
   // Warehouse
   pipeline: { id: "pipeline", label: "Pipeline", icon: <BoxIcon size={18} />, path: "/shipping/warehouse" },
@@ -289,6 +290,7 @@ const COLLAPSED_ITEMS: { id: string; item: NavItemDef; divider?: boolean; adminO
   // Website
   { id: "websiteProducts", item: ALL_NAV_ITEMS.websiteProducts, adminOnly: true },
   { id: "journal", item: ALL_NAV_ITEMS.journal, adminOnly: true },
+  { id: "siteContent", item: ALL_NAV_ITEMS.siteContent, adminOnly: true },
   { id: "intelligence", item: ALL_NAV_ITEMS.intelligence, adminOnly: true },
   { id: "d2", item: ALL_NAV_ITEMS.dashboard, divider: true },
   // Warehouse
@@ -705,6 +707,7 @@ export default function AppSidebar({ user, unreadNotifications = 0, unreadMessag
                     >
                       <NavItem indent item={ALL_NAV_ITEMS.websiteProducts} isActive={isPathActive("/website/products")} isCollapsed={false} onPin={() => togglePin("websiteProducts")} pinned={pinnedIds.includes("websiteProducts")} />
                       <NavItem indent item={ALL_NAV_ITEMS.journal} isActive={isPathActive("/website/journal")} isCollapsed={false} onPin={() => togglePin("journal")} pinned={pinnedIds.includes("journal")} />
+                      <NavItem indent item={ALL_NAV_ITEMS.siteContent} isActive={isPathActive("/website/site-content")} isCollapsed={false} onPin={() => togglePin("siteContent")} pinned={pinnedIds.includes("siteContent")} />
                       <NavItem indent item={ALL_NAV_ITEMS.intelligence} isActive={isPathActive("/website/intelligence")} isCollapsed={false} onPin={() => togglePin("intelligence")} pinned={pinnedIds.includes("intelligence")} />
                     </AccordionSection>
                   )}

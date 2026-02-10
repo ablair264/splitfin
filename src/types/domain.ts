@@ -277,6 +277,29 @@ export interface WebsiteTag {
   created_at: string;
 }
 
+export interface SiteSection {
+  id: number;
+  section: 'hero_slides' | 'category_grid';
+  slot_key: string;
+  display_order: number;
+  title: string | null;
+  subtitle: string | null;
+  cta_label: string | null;
+  cta_link: string | null;
+  secondary_cta_label: string | null;
+  secondary_cta_link: string | null;
+  image_url: string | null;
+  video_url: string | null;
+  poster_url: string | null;
+  image_alt: string | null;
+  placeholder_gradient: string | null;
+  overlay_position: string;
+  text_colour: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface EnhanceProductResult {
   display_name: string;
   colour: string | null;
