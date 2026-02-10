@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { Download } from 'lucide-react';
 import { reportService } from '@/services/reportService';
-import type { ReportFilters } from '@/services/reportService';
 import type { ReportDateRange, AgentCommissionData } from '@/types/domain';
 
 const formatGBP = (n: number) =>
@@ -11,23 +12,37 @@ const formatGBP = (n: number) =>
 const formatCompact = (n: number) =>
   new Intl.NumberFormat('en-GB', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
 
-interface AgentCommissionProps {
-  dateRange: ReportDateRange;
-  filters?: ReportFilters;
+const chartConfig = {
+  commission_earned: { label: 'Commission', color: 'var(--chart-3)' },
+} satisfies ChartConfig;
+
+function GBPTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  const item = payload[0];
+  return (
+    <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
+      <p className="font-medium mb-1">{item.payload?.name}</p>
+      <p className="font-mono font-medium tabular-nums text-foreground">{formatGBP(item.value)}</p>
+    </div>
+  );
 }
 
-export default function AgentCommission({ dateRange, filters }: AgentCommissionProps) {
+interface AgentCommissionProps {
+  dateRange: ReportDateRange;
+}
+
+export default function AgentCommission({ dateRange }: AgentCommissionProps) {
   const [data, setData] = useState<AgentCommissionData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.agentCommission(dateRange, filters).then(result => {
+    reportService.agentCommission(dateRange).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [dateRange, filters]);
+  }, [dateRange]);
 
   if (loading) return <Skeleton />;
   if (!data) return <p className="text-muted-foreground p-4">Failed to load report data.</p>;
@@ -63,37 +78,20 @@ export default function AgentCommission({ dateRange, filters }: AgentCommissionP
         <Card>
           <CardContent className="p-4">
             <h3 className="text-sm font-medium text-muted-foreground mb-4">Commission Earned by Agent</h3>
-            <ResponsiveContainer width="100%" height={Math.max(200, agents.length * 48)}>
+            <ChartContainer config={chartConfig} className="w-full" style={{ height: Math.max(200, agents.length * 48) }}>
               <BarChart data={agents} layout="vertical" margin={{ left: 80 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-                <XAxis
-                  type="number"
-                  tickFormatter={(v) => formatCompact(v)}
-                  tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }}
-                />
-                <YAxis
-                  type="category"
-                  dataKey="name"
-                  tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }}
-                  width={80}
-                />
-                <Tooltip
-                  formatter={(value: number) => [formatGBP(value), 'Commission']}
-                  contentStyle={{
-                    backgroundColor: 'var(--popover)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                  }}
-                />
-                <Bar dataKey="commission_earned" fill="var(--chart-3)" radius={[0, 4, 4, 0]} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tickFormatter={formatCompact} tick={{ fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={80} />
+                <ChartTooltip cursor={false} content={<GBPTooltip />} />
+                <Bar dataKey="commission_earned" fill="var(--color-commission_earned)" radius={[0, 4, 4, 0]} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       )}
 
-      {/* Agent Commission Table */}
+      {/* Agent Commission Table with per-agent export */}
       <Card>
         <CardContent className="p-4">
           <h3 className="text-sm font-medium text-muted-foreground mb-4">Commission Breakdown</h3>
@@ -107,6 +105,7 @@ export default function AgentCommission({ dateRange, filters }: AgentCommissionP
                   <th className="pb-2 font-medium text-muted-foreground text-right">Revenue</th>
                   <th className="pb-2 font-medium text-muted-foreground text-right">Commission Earned</th>
                   <th className="pb-2 font-medium text-muted-foreground text-right">Customers</th>
+                  <th className="pb-2 font-medium text-muted-foreground text-center w-10">Export</th>
                 </tr>
               </thead>
               <tbody>
@@ -118,6 +117,15 @@ export default function AgentCommission({ dateRange, filters }: AgentCommissionP
                     <td className="py-2 text-right tabular-nums">{formatGBP(a.revenue)}</td>
                     <td className="py-2 text-right tabular-nums font-medium">{formatGBP(a.commission_earned)}</td>
                     <td className="py-2 text-right tabular-nums">{a.customer_count.toLocaleString()}</td>
+                    <td className="py-2 text-center">
+                      <button
+                        onClick={() => reportService.exportFile('agent-commission', dateRange, 'xlsx', { agent_id: a.id })}
+                        className="text-muted-foreground hover:text-foreground transition-colors inline-flex"
+                        title={`Export ${a.name}'s commission report`}
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -129,6 +137,7 @@ export default function AgentCommission({ dateRange, filters }: AgentCommissionP
                   <td className="pt-3 text-right tabular-nums">{formatGBP(totals.total_revenue)}</td>
                   <td className="pt-3 text-right tabular-nums">{formatGBP(totals.total_commission)}</td>
                   <td className="pt-3 text-right" />
+                  <td />
                 </tr>
               </tfoot>
             </table>

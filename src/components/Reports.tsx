@@ -1,13 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import PageHeader from '@/components/shared/PageHeader';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Download, FileSpreadsheet } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { reportService, type ReportFilters } from '@/services/reportService';
-import type { ReportDateRange, ReportFilterOptions } from '@/types/domain';
+import { reportService } from '@/services/reportService';
+import type { ReportDateRange } from '@/types/domain';
 import SalesOverview from './reports/SalesOverview';
 import AgentPerformance from './reports/AgentPerformance';
 import AgentCommission from './reports/AgentCommission';
@@ -38,24 +37,6 @@ export default function Reports() {
   usePageTitle('Reports');
   const [dateRange, setDateRange] = useState<ReportDateRange>('this_year');
   const [activeTab, setActiveTab] = useState('sales-overview');
-  const [filters, setFilters] = useState<ReportFilters>({});
-  const [filterOptions, setFilterOptions] = useState<ReportFilterOptions | null>(null);
-
-  useEffect(() => {
-    reportService.filterOptions().then(setFilterOptions).catch(() => {});
-  }, []);
-
-  const updateFilter = (key: keyof ReportFilters, value: string) => {
-    setFilters(prev => {
-      const next = { ...prev };
-      if (value === '__all__') {
-        delete next[key];
-      } else {
-        next[key] = value;
-      }
-      return next;
-    });
-  };
 
   return (
     <div className="space-y-6">
@@ -83,49 +64,6 @@ export default function Reports() {
             </button>
           ))}
         </div>
-
-        <div className="h-6 w-px bg-border" />
-
-        {/* Filter Dropdowns */}
-        {filterOptions && (
-          <>
-            <Select value={filters.agent_id || '__all__'} onValueChange={v => updateFilter('agent_id', v)}>
-              <SelectTrigger size="sm" className="w-[140px] text-xs">
-                <SelectValue placeholder="All Agents" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">All Agents</SelectItem>
-                {filterOptions.agents.map(a => (
-                  <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.brand || '__all__'} onValueChange={v => updateFilter('brand', v)}>
-              <SelectTrigger size="sm" className="w-[140px] text-xs">
-                <SelectValue placeholder="All Brands" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">All Brands</SelectItem>
-                {filterOptions.brands.map(b => (
-                  <SelectItem key={b} value={b}>{b}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Select value={filters.region || '__all__'} onValueChange={v => updateFilter('region', v)}>
-              <SelectTrigger size="sm" className="w-[140px] text-xs">
-                <SelectValue placeholder="All Regions" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">All Regions</SelectItem>
-                {filterOptions.regions.map(r => (
-                  <SelectItem key={r} value={r}>{r}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </>
-        )}
 
         <div className="ml-auto flex items-center gap-2">
           <Button
@@ -158,25 +96,25 @@ export default function Reports() {
         </TabsList>
 
         <TabsContent value="sales-overview">
-          <SalesOverview dateRange={dateRange} filters={filters} />
+          <SalesOverview dateRange={dateRange} />
         </TabsContent>
         <TabsContent value="agent-performance">
           <AgentPerformance dateRange={dateRange} />
         </TabsContent>
         <TabsContent value="agent-commission">
-          <AgentCommission dateRange={dateRange} filters={filters} />
+          <AgentCommission dateRange={dateRange} />
         </TabsContent>
         <TabsContent value="brand-analysis">
-          <BrandAnalysis dateRange={dateRange} filters={filters} />
+          <BrandAnalysis dateRange={dateRange} />
         </TabsContent>
         <TabsContent value="customer-insights">
-          <CustomerInsights dateRange={dateRange} filters={filters} />
+          <CustomerInsights dateRange={dateRange} />
         </TabsContent>
         <TabsContent value="inventory-health">
-          <InventoryHealth dateRange={dateRange} filters={filters} />
+          <InventoryHealth dateRange={dateRange} />
         </TabsContent>
         <TabsContent value="financial">
-          <FinancialReport dateRange={dateRange} filters={filters} />
+          <FinancialReport dateRange={dateRange} />
         </TabsContent>
       </Tabs>
     </div>

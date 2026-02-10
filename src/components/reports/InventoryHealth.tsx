@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { reportService, type ReportFilters } from '@/services/reportService';
+import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { reportService } from '@/services/reportService';
 import type { ReportDateRange, InventoryHealthData } from '@/types/domain';
 
 const formatGBP = (n: number) =>
@@ -11,18 +12,41 @@ const formatGBP = (n: number) =>
 const formatCompact = (n: number) =>
   new Intl.NumberFormat('en-GB', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
 
-export default function InventoryHealth({ dateRange, filters }: { dateRange: ReportDateRange; filters?: ReportFilters }) {
+const chartConfig = {
+  in_stock: { label: 'In Stock', color: 'var(--chart-1)' },
+  out_of_stock: { label: 'Out of Stock', color: 'var(--destructive)' },
+} satisfies ChartConfig;
+
+function StockTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
+      {label && <p className="font-medium mb-1">{label}</p>}
+      {payload.map((item: any, i: number) => (
+        <div key={i} className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-1.5">
+            <div className="h-2.5 w-2.5 shrink-0 rounded-[2px]" style={{ background: item.color || item.fill }} />
+            <span className="text-muted-foreground">{item.name}</span>
+          </div>
+          <span className="font-mono font-medium tabular-nums text-foreground">{item.value.toLocaleString()}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function InventoryHealth({ dateRange }: { dateRange: ReportDateRange }) {
   const [data, setData] = useState<InventoryHealthData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.inventoryHealth(dateRange, filters).then(result => {
+    reportService.inventoryHealth(dateRange).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [dateRange, filters]);
+  }, [dateRange]);
 
   if (loading) return <Skeleton />;
   if (!data) return <p className="text-muted-foreground p-4">Failed to load report data.</p>;
@@ -67,17 +91,17 @@ export default function InventoryHealth({ dateRange, filters }: { dateRange: Rep
         <Card>
           <CardContent className="p-4">
             <h3 className="text-sm font-medium text-muted-foreground mb-4">Stock Status by Brand (Top 10)</h3>
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer config={chartConfig} className="h-[300px] w-full">
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="brand" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} angle={-25} textAnchor="end" height={60} />
-                <YAxis tickFormatter={(v) => formatCompact(v)} tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
-                <Tooltip />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="brand" tick={{ fontSize: 10 }} angle={-25} textAnchor="end" height={60} tickLine={false} axisLine={false} />
+                <YAxis tickFormatter={formatCompact} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <ChartTooltip cursor={false} content={<StockTooltip />} />
                 <Legend />
-                <Bar dataKey="in_stock" name="In Stock" fill="var(--chart-1)" stackId="a" radius={[0, 0, 0, 0]} />
-                <Bar dataKey="out_of_stock" name="Out of Stock" fill="var(--destructive)" stackId="a" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="in_stock" name="In Stock" fill="var(--color-in_stock)" stackId="a" radius={[0, 0, 0, 0]} />
+                <Bar dataKey="out_of_stock" name="Out of Stock" fill="var(--color-out_of_stock)" stackId="a" radius={[4, 4, 0, 0]} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       )}

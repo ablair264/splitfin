@@ -726,24 +726,61 @@ router.get('/export/:report', async (req, res) => {
         break;
       }
       case 'agent-commission': {
-        const result = await query(`
-          SELECT a.name,
-            COALESCE(a.commission_rate, 0) AS commission_rate,
-            COUNT(o.id) AS order_count,
-            COALESCE(SUM(o.total), 0) AS revenue,
-            COALESCE(SUM(o.total), 0) * COALESCE(a.commission_rate, 0) AS commission_earned,
-            COUNT(DISTINCT o.zoho_customer_id) AS customer_count
-          FROM agents a LEFT JOIN orders o ON (
-            o.salesperson_id = a.zoho_id
-            OR (o.salesperson_id IS NULL AND LOWER(o.salesperson_name) = LOWER(a.name))
-          ) AND o.date >= $1 AND o.date <= $2 AND o.status NOT IN ('void','draft')
-          WHERE a.active = true AND (a.is_admin = false OR a.is_admin IS NULL)
-          GROUP BY a.id, a.name, a.commission_rate ORDER BY commission_earned DESC NULLS LAST
-        `, [start, end]);
-        rows = result.rows;
-        columns = ['name', 'commission_rate', 'order_count', 'revenue', 'commission_earned', 'customer_count'];
-        filename = 'agent-commission';
-        sheetName = 'Agent Commission';
+        const { agent_id: exportAgentId } = req.query;
+
+        if (exportAgentId) {
+          // Per-agent detailed export: individual orders with commission
+          const agentRes = await query(
+            'SELECT id, name, zoho_id, COALESCE(commission_rate, 0) AS commission_rate FROM agents WHERE id = $1',
+            [exportAgentId]
+          );
+          if (!agentRes.rows.length) return res.status(404).json({ error: 'Agent not found' });
+          const agent = agentRes.rows[0];
+          const rate = parseFloat(agent.commission_rate) || 0;
+
+          const result = await query(`
+            SELECT
+              o.zoho_salesorder_number AS order_number,
+              o.date::text AS order_date,
+              c.company_name AS customer,
+              COALESCE(o.total, 0) AS order_total,
+              ROUND(COALESCE(o.total, 0) * $3, 2) AS commission_earned
+            FROM orders o
+            LEFT JOIN customers c ON c.zoho_contact_id = o.zoho_customer_id
+            WHERE o.date >= $1 AND o.date <= $2
+              AND o.status NOT IN ('void', 'draft')
+              AND (
+                o.salesperson_id = $4
+                OR (o.salesperson_id IS NULL AND LOWER(o.salesperson_name) = LOWER($5))
+              )
+            ORDER BY o.date DESC
+          `, [start, end, rate, agent.zoho_id || '__NO_MATCH__', agent.name]);
+
+          rows = result.rows;
+          columns = ['order_number', 'order_date', 'customer', 'order_total', 'commission_earned'];
+          filename = `commission-${agent.name.toLowerCase().replace(/\s+/g, '-')}`;
+          sheetName = `${agent.name} Commission`;
+        } else {
+          // Summary export: all agents
+          const result = await query(`
+            SELECT a.name,
+              COALESCE(a.commission_rate, 0) AS commission_rate,
+              COUNT(o.id) AS order_count,
+              COALESCE(SUM(o.total), 0) AS revenue,
+              COALESCE(SUM(o.total), 0) * COALESCE(a.commission_rate, 0) AS commission_earned,
+              COUNT(DISTINCT o.zoho_customer_id) AS customer_count
+            FROM agents a LEFT JOIN orders o ON (
+              o.salesperson_id = a.zoho_id
+              OR (o.salesperson_id IS NULL AND LOWER(o.salesperson_name) = LOWER(a.name))
+            ) AND o.date >= $1 AND o.date <= $2 AND o.status NOT IN ('void','draft')
+            WHERE a.active = true AND (a.is_admin = false OR a.is_admin IS NULL)
+            GROUP BY a.id, a.name, a.commission_rate ORDER BY commission_earned DESC NULLS LAST
+          `, [start, end]);
+          rows = result.rows;
+          columns = ['name', 'commission_rate', 'order_count', 'revenue', 'commission_earned', 'customer_count'];
+          filename = 'agent-commission';
+          sheetName = 'Agent Commission';
+        }
         break;
       }
       case 'brand-analysis': {

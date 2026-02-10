@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { useEffect, useState, useMemo } from 'react';
+import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { reportService, type ReportFilters } from '@/services/reportService';
+import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { reportService } from '@/services/reportService';
 import type { ReportDateRange, CustomerInsightsData } from '@/types/domain';
 
 const formatGBP = (n: number) =>
@@ -12,18 +13,40 @@ const formatCompact = (n: number) =>
 
 const SEGMENT_COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
 
-export default function CustomerInsights({ dateRange, filters }: { dateRange: ReportDateRange; filters?: ReportFilters }) {
+const regionConfig = {
+  revenue: { label: 'Revenue', color: 'var(--chart-4)' },
+} satisfies ChartConfig;
+
+function GBPTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
+      {label && <p className="font-medium mb-1">{label}</p>}
+      {payload.map((item: any, i: number) => (
+        <div key={i} className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-1.5">
+            <div className="h-2.5 w-2.5 shrink-0 rounded-[2px]" style={{ background: item.color || item.payload?.fill || 'var(--chart-1)' }} />
+            <span className="text-muted-foreground">{item.payload?.segment || item.name}</span>
+          </div>
+          <span className="font-mono font-medium tabular-nums text-foreground">{formatGBP(item.value)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function CustomerInsights({ dateRange }: { dateRange: ReportDateRange }) {
   const [data, setData] = useState<CustomerInsightsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.customerInsights(dateRange, filters).then(result => {
+    reportService.customerInsights(dateRange).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [dateRange, filters]);
+  }, [dateRange]);
 
   if (loading) return <Skeleton />;
   if (!data) return <p className="text-muted-foreground p-4">Failed to load report data.</p>;
@@ -32,6 +55,14 @@ export default function CustomerInsights({ dateRange, filters }: { dateRange: Re
   const totalCustomers = segments.reduce((sum, s) => sum + s.customer_count, 0);
   const totalRevenue = segments.reduce((sum, s) => sum + s.total_revenue, 0);
   const avgRevenue = totalCustomers > 0 ? totalRevenue / totalCustomers : 0;
+
+  const segmentConfig = useMemo<ChartConfig>(() => {
+    const cfg: ChartConfig = { total_revenue: { label: 'Revenue' } };
+    segments.forEach((s, i) => {
+      cfg[s.segment] = { label: s.segment, color: SEGMENT_COLORS[i % SEGMENT_COLORS.length] };
+    });
+    return cfg;
+  }, [segments]);
 
   return (
     <div className="space-y-6 mt-4">
@@ -55,7 +86,7 @@ export default function CustomerInsights({ dateRange, filters }: { dateRange: Re
           <Card>
             <CardContent className="p-4">
               <h3 className="text-sm font-medium text-muted-foreground mb-4">Revenue by Segment</h3>
-              <ResponsiveContainer width="100%" height={250}>
+              <ChartContainer config={segmentConfig} className="h-[250px] w-full">
                 <PieChart>
                   <Pie
                     data={segments}
@@ -72,9 +103,9 @@ export default function CustomerInsights({ dateRange, filters }: { dateRange: Re
                       <Cell key={i} fill={SEGMENT_COLORS[i % SEGMENT_COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip formatter={(value: number) => [formatGBP(value), 'Revenue']} />
+                  <ChartTooltip cursor={false} content={<GBPTooltip />} />
                 </PieChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             </CardContent>
           </Card>
         )}
@@ -83,15 +114,15 @@ export default function CustomerInsights({ dateRange, filters }: { dateRange: Re
           <Card>
             <CardContent className="p-4">
               <h3 className="text-sm font-medium text-muted-foreground mb-4">Revenue by Region</h3>
-              <ResponsiveContainer width="100%" height={250}>
+              <ChartContainer config={regionConfig} className="h-[250px] w-full">
                 <BarChart data={regions.slice(0, 10)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis dataKey="region" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} angle={-25} textAnchor="end" height={60} />
-                  <YAxis tickFormatter={(v) => formatCompact(v)} tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
-                  <Tooltip formatter={(value: number) => [formatGBP(value), 'Revenue']} />
-                  <Bar dataKey="revenue" fill="var(--chart-4)" radius={[4, 4, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="region" tick={{ fontSize: 10 }} angle={-25} textAnchor="end" height={60} tickLine={false} axisLine={false} />
+                  <YAxis tickFormatter={formatCompact} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <ChartTooltip cursor={false} content={<GBPTooltip />} />
+                  <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[4, 4, 0, 0]} />
                 </BarChart>
-              </ResponsiveContainer>
+              </ChartContainer>
             </CardContent>
           </Card>
         )}

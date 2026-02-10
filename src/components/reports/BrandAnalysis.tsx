@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { reportService, type ReportFilters } from '@/services/reportService';
+import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { reportService } from '@/services/reportService';
 import type { ReportDateRange, BrandAnalysisData } from '@/types/domain';
 
 const formatGBP = (n: number) =>
@@ -10,18 +11,32 @@ const formatGBP = (n: number) =>
 const formatCompact = (n: number) =>
   new Intl.NumberFormat('en-GB', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
 
-export default function BrandAnalysis({ dateRange, filters }: { dateRange: ReportDateRange; filters?: ReportFilters }) {
+const chartConfig = {
+  revenue: { label: 'Revenue', color: 'var(--chart-3)' },
+} satisfies ChartConfig;
+
+function GBPTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
+      {label && <p className="font-medium mb-1">{label}</p>}
+      <p className="font-mono font-medium tabular-nums text-foreground">{formatGBP(payload[0].value)}</p>
+    </div>
+  );
+}
+
+export default function BrandAnalysis({ dateRange }: { dateRange: ReportDateRange }) {
   const [data, setData] = useState<BrandAnalysisData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.brandAnalysis(dateRange, filters).then(result => {
+    reportService.brandAnalysis(dateRange).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [dateRange, filters]);
+  }, [dateRange]);
 
   if (loading) return <Skeleton />;
   if (!data) return <p className="text-muted-foreground p-4">Failed to load report data.</p>;
@@ -58,15 +73,15 @@ export default function BrandAnalysis({ dateRange, filters }: { dateRange: Repor
         <Card>
           <CardContent className="p-4">
             <h3 className="text-sm font-medium text-muted-foreground mb-4">Top 10 Brands by Revenue</h3>
-            <ResponsiveContainer width="100%" height={300}>
+            <ChartContainer config={chartConfig} className="h-[300px] w-full">
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="brand" tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} angle={-25} textAnchor="end" height={60} />
-                <YAxis tickFormatter={(v) => formatCompact(v)} tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
-                <Tooltip formatter={(value: number) => [formatGBP(value), 'Revenue']} />
-                <Bar dataKey="revenue" fill="var(--chart-3)" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="brand" tick={{ fontSize: 11 }} angle={-25} textAnchor="end" height={60} tickLine={false} axisLine={false} />
+                <YAxis tickFormatter={formatCompact} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <ChartTooltip cursor={false} content={<GBPTooltip />} />
+                <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[4, 4, 0, 0]} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       )}

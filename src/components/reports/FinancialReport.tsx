@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { reportService, type ReportFilters } from '@/services/reportService';
+import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
+import { reportService } from '@/services/reportService';
 import type { ReportDateRange, FinancialData } from '@/types/domain';
 
 const formatGBP = (n: number) =>
@@ -18,18 +19,32 @@ const AGEING_COLORS: Record<string, string> = {
   '90+ days': 'var(--destructive)',
 };
 
-export default function FinancialReport({ dateRange, filters }: { dateRange: ReportDateRange; filters?: ReportFilters }) {
+const ageingConfig = {
+  amount: { label: 'Amount', color: 'var(--chart-1)' },
+} satisfies ChartConfig;
+
+function AgeingTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
+      {label && <p className="font-medium mb-1">{label}</p>}
+      <p className="font-mono font-medium tabular-nums text-foreground">{formatGBP(payload[0].value)}</p>
+    </div>
+  );
+}
+
+export default function FinancialReport({ dateRange }: { dateRange: ReportDateRange }) {
   const [data, setData] = useState<FinancialData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.financial(dateRange, filters).then(result => {
+    reportService.financial(dateRange).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [dateRange, filters]);
+  }, [dateRange]);
 
   if (loading) return <Skeleton />;
   if (!data) return <p className="text-muted-foreground p-4">Failed to load report data.</p>;
@@ -69,19 +84,19 @@ export default function FinancialReport({ dateRange, filters }: { dateRange: Rep
         <Card>
           <CardContent className="p-4">
             <h3 className="text-sm font-medium text-muted-foreground mb-4">Invoice Ageing</h3>
-            <ResponsiveContainer width="100%" height={280}>
+            <ChartContainer config={ageingConfig} className="h-[280px] w-full">
               <BarChart data={ageing}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="bucket" tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
-                <YAxis tickFormatter={(v) => formatCompact(v)} tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
-                <Tooltip formatter={(value: number) => [formatGBP(value), 'Amount']} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="bucket" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <YAxis tickFormatter={formatCompact} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                <ChartTooltip cursor={false} content={<AgeingTooltip />} />
                 <Bar dataKey="amount" radius={[4, 4, 0, 0]}>
                   {ageing.map((entry, i) => (
                     <Cell key={i} fill={AGEING_COLORS[entry.bucket] || 'var(--chart-5)'} />
                   ))}
                 </Bar>
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       )}

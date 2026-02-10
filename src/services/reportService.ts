@@ -61,11 +61,14 @@ export const reportService = {
     return api.get<FinancialData>('/api/v1/reports/financial', buildParams(range, filters));
   },
 
-  async exportFile(report: string, range: ReportDateRange, format: 'csv' | 'xlsx' = 'csv'): Promise<void> {
+  async exportFile(report: string, range: ReportDateRange, format: 'csv' | 'xlsx' = 'csv', params?: Record<string, string>): Promise<void> {
     const token = localStorage.getItem('auth_token');
     const url = new URL(`${API_BASE_URL}/api/v1/reports/export/${report}`);
     url.searchParams.set('range', range);
     url.searchParams.set('format', format);
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
+    }
 
     const response = await fetch(url.toString(), {
       headers: token ? { Authorization: `Bearer ${token}` } : {},

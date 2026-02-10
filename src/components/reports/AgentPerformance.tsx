@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { reportService } from '@/services/reportService';
 import type { ReportDateRange, AgentPerformanceData } from '@/types/domain';
 
@@ -9,6 +10,21 @@ const formatGBP = (n: number) =>
 
 const formatCompact = (n: number) =>
   new Intl.NumberFormat('en-GB', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
+
+const chartConfig = {
+  revenue: { label: 'Revenue', color: 'var(--chart-2)' },
+} satisfies ChartConfig;
+
+function GBPTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  const item = payload[0];
+  return (
+    <div className="border-border/50 bg-background rounded-lg border px-2.5 py-1.5 text-xs shadow-xl">
+      <p className="font-medium mb-1">{item.payload?.name}</p>
+      <p className="font-mono font-medium tabular-nums text-foreground">{formatGBP(item.value)}</p>
+    </div>
+  );
+}
 
 export default function AgentPerformance({ dateRange }: { dateRange: ReportDateRange }) {
   const [data, setData] = useState<AgentPerformanceData | null>(null);
@@ -57,15 +73,15 @@ export default function AgentPerformance({ dateRange }: { dateRange: ReportDateR
         <Card>
           <CardContent className="p-4">
             <h3 className="text-sm font-medium text-muted-foreground mb-4">Revenue by Agent</h3>
-            <ResponsiveContainer width="100%" height={Math.max(200, agents.length * 48)}>
+            <ChartContainer config={chartConfig} className="w-full" style={{ height: Math.max(200, agents.length * 48) }}>
               <BarChart data={agents} layout="vertical" margin={{ left: 80 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
-                <XAxis type="number" tickFormatter={(v) => formatCompact(v)} tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} width={80} />
-                <Tooltip formatter={(value: number) => [formatGBP(value), 'Revenue']} />
-                <Bar dataKey="revenue" fill="var(--chart-2)" radius={[0, 4, 4, 0]} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                <XAxis type="number" tickFormatter={formatCompact} tick={{ fontSize: 11 }} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 12 }} width={80} />
+                <ChartTooltip cursor={false} content={<GBPTooltip />} />
+                <Bar dataKey="revenue" fill="var(--color-revenue)" radius={[0, 4, 4, 0]} />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       )}
