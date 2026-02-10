@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
-import { reportService, type ReportFilters } from '@/services/reportService';
+import { reportService } from '@/services/reportService';
 import type { ReportDateRange, BrandAnalysisData } from '@/types/domain';
 
 const BAR_COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
@@ -27,18 +27,18 @@ function GBPTooltip({ active, payload, label }: any) {
   );
 }
 
-export default function BrandAnalysis({ dateRange, filters }: { dateRange: ReportDateRange; filters?: ReportFilters }) {
+export default function BrandAnalysis({ dateRange }: { dateRange: ReportDateRange }) {
   const [data, setData] = useState<BrandAnalysisData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.brandAnalysis(dateRange, filters).then(result => {
+    reportService.brandAnalysis(dateRange).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [dateRange, filters?.brand]);
+  }, [dateRange]);
 
   if (loading) return <Skeleton />;
   if (!data) return <p className="text-muted-foreground p-4">Failed to load report data.</p>;
@@ -51,19 +51,19 @@ export default function BrandAnalysis({ dateRange, filters }: { dateRange: Repor
   return (
     <div className="space-y-4 mt-4">
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="py-4 gap-3">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Active Brands</CardDescription>
             <CardTitle className="text-xl tabular-nums">{brands.length}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="py-4 gap-3">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Total Units Sold</CardDescription>
             <CardTitle className="text-xl tabular-nums">{totalUnits.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="py-4 gap-3">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Total Revenue</CardDescription>
             <CardTitle className="text-xl tabular-nums">{formatGBP(totalRevenue)}</CardTitle>

@@ -744,7 +744,7 @@ router.get('/export/:report', async (req, res) => {
               o.date::text AS order_date,
               c.company_name AS customer,
               COALESCE(o.total, 0) AS order_total,
-              ROUND(COALESCE(o.total, 0) * $3, 2) AS commission_earned
+              ROUND((COALESCE(o.total, 0) * $3)::numeric, 2) AS commission_earned
             FROM orders o
             LEFT JOIN customers c ON c.zoho_contact_id = o.zoho_customer_id
             WHERE o.date >= $1 AND o.date <= $2

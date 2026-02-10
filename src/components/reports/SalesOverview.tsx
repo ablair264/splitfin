@@ -3,7 +3,7 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
 import { RevenueChart, OrdersChart } from '../dashboard/DashboardCharts';
-import { reportService, type ReportFilters } from '@/services/reportService';
+import { reportService } from '@/services/reportService';
 import type { ReportDateRange, SalesOverviewData } from '@/types/domain';
 
 const formatGBP = (n: number) =>
@@ -26,18 +26,18 @@ function TrendTooltip({ active, payload, label }: any) {
   );
 }
 
-export default function SalesOverview({ dateRange, filters }: { dateRange: ReportDateRange; filters?: ReportFilters }) {
+export default function SalesOverview({ dateRange }: { dateRange: ReportDateRange }) {
   const [data, setData] = useState<SalesOverviewData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.salesOverview(dateRange, filters).then(result => {
+    reportService.salesOverview(dateRange).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [dateRange, filters?.agent_id, filters?.brand, filters?.region]);
+  }, [dateRange]);
 
   // Hooks MUST run before early returns (React rules of hooks)
   const revenueData = useMemo(() =>
@@ -55,13 +55,13 @@ export default function SalesOverview({ dateRange, filters }: { dateRange: Repor
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <RevenueChart data={revenueData} total={summary.total_revenue} />
         <OrdersChart data={ordersData} total={summary.total_orders} />
-        <Card className="py-4 gap-3 h-full">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Avg Order Value</CardDescription>
             <CardTitle className="text-xl tabular-nums">{formatGBP(summary.avg_order_value)}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="py-4 gap-3 h-full">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Unique Customers</CardDescription>
             <CardTitle className="text-xl tabular-nums">{summary.unique_customers.toLocaleString('en-GB')}</CardTitle>

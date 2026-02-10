@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
-import { reportService, type ReportFilters } from '@/services/reportService';
+import { reportService } from '@/services/reportService';
 import type { ReportDateRange, FinancialData } from '@/types/domain';
 
 const formatGBP = (n: number) =>
@@ -33,14 +33,14 @@ function AgeingTooltip({ active, payload, label }: any) {
   );
 }
 
-export default function FinancialReport({ dateRange, filters }: { dateRange: ReportDateRange; filters?: ReportFilters }) {
+export default function FinancialReport({ dateRange }: { dateRange: ReportDateRange }) {
   const [data, setData] = useState<FinancialData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.financial(dateRange, filters).then(result => {
+    reportService.financial(dateRange).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
@@ -54,25 +54,25 @@ export default function FinancialReport({ dateRange, filters }: { dateRange: Rep
   return (
     <div className="space-y-4 mt-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="py-4 gap-3">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Total Invoiced</CardDescription>
             <CardTitle className="text-xl tabular-nums">{formatGBP(summary.total_invoiced)}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="py-4 gap-3">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Outstanding</CardDescription>
             <CardTitle className="text-xl tabular-nums text-amber-400">{formatGBP(summary.total_outstanding)}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="py-4 gap-3">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Overdue Count</CardDescription>
             <CardTitle className="text-xl tabular-nums text-red-400">{summary.overdue_count.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="py-4 gap-3">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Overdue Amount</CardDescription>
             <CardTitle className="text-xl tabular-nums text-red-400">{formatGBP(summary.overdue_amount)}</CardTitle>

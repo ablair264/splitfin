@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, XAxis, YAxis } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
-import { reportService, type ReportFilters } from '@/services/reportService';
+import { reportService } from '@/services/reportService';
 import type { ReportDateRange, CustomerInsightsData } from '@/types/domain';
 
 const formatGBP = (n: number) =>
@@ -36,18 +36,18 @@ function GBPTooltip({ active, payload, label }: any) {
   );
 }
 
-export default function CustomerInsights({ dateRange, filters }: { dateRange: ReportDateRange; filters?: ReportFilters }) {
+export default function CustomerInsights({ dateRange }: { dateRange: ReportDateRange }) {
   const [data, setData] = useState<CustomerInsightsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.customerInsights(dateRange, filters).then(result => {
+    reportService.customerInsights(dateRange).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [dateRange, filters?.region]);
+  }, [dateRange]);
 
   // Hooks MUST run before early returns (React rules of hooks)
   const segmentConfig = useMemo<ChartConfig>(() => {
@@ -70,13 +70,13 @@ export default function CustomerInsights({ dateRange, filters }: { dateRange: Re
   return (
     <div className="space-y-4 mt-4">
       <div className="grid grid-cols-2 gap-4">
-        <Card className="py-4 gap-3">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Active Customers</CardDescription>
             <CardTitle className="text-xl tabular-nums">{totalCustomers.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="py-4 gap-3">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Avg Revenue / Customer</CardDescription>
             <CardTitle className="text-xl tabular-nums">{formatGBP(avgRevenue)}</CardTitle>

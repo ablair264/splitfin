@@ -3,7 +3,7 @@ import { Bar, BarChart, CartesianGrid, Legend, XAxis, YAxis } from 'recharts';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { type ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/chart';
-import { reportService, type ReportFilters } from '@/services/reportService';
+import { reportService } from '@/services/reportService';
 import type { ReportDateRange, InventoryHealthData } from '@/types/domain';
 
 const formatGBP = (n: number) =>
@@ -35,18 +35,18 @@ function StockTooltip({ active, payload, label }: any) {
   );
 }
 
-export default function InventoryHealth({ dateRange, filters }: { dateRange: ReportDateRange; filters?: ReportFilters }) {
+export default function InventoryHealth({ dateRange }: { dateRange: ReportDateRange }) {
   const [data, setData] = useState<InventoryHealthData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.inventoryHealth(dateRange, filters).then(result => {
+    reportService.inventoryHealth(dateRange).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [dateRange, filters?.brand]);
+  }, [dateRange]);
 
   if (loading) return <Skeleton />;
   if (!data) return <p className="text-muted-foreground p-4">Failed to load report data.</p>;
@@ -61,25 +61,25 @@ export default function InventoryHealth({ dateRange, filters }: { dateRange: Rep
   return (
     <div className="space-y-4 mt-4">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="py-4 gap-3">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Active Products</CardDescription>
             <CardTitle className="text-xl tabular-nums">{summary.active_products.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="py-4 gap-3">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Out of Stock</CardDescription>
             <CardTitle className="text-xl tabular-nums text-red-400">{summary.out_of_stock.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="py-4 gap-3">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Low Stock</CardDescription>
             <CardTitle className="text-xl tabular-nums text-amber-400">{summary.low_stock.toLocaleString()}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="py-4 gap-3">
+        <Card className="py-4 gap-3 h-full hover:border-primary/30 transition-colors">
           <CardHeader className="px-4 pb-0 gap-1">
             <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Stock Value</CardDescription>
             <CardTitle className="text-xl tabular-nums">{formatGBP(summary.stock_value)}</CardTitle>
