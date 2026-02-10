@@ -8,7 +8,6 @@ import { Download, FileSpreadsheet } from 'lucide-react';
 import { reportService } from '@/services/reportService';
 import type { ReportDateRange } from '@/types/domain';
 import SalesOverview from './reports/SalesOverview';
-import AgentOverview from './reports/AgentOverview';
 import BrandAnalysis from './reports/BrandAnalysis';
 import CustomerInsights from './reports/CustomerInsights';
 import InventoryHealth from './reports/InventoryHealth';
@@ -18,13 +17,16 @@ const DATE_RANGES: { value: ReportDateRange; label: string }[] = [
   { value: '7_days', label: '7 Days' },
   { value: '30_days', label: '30 Days' },
   { value: '90_days', label: '90 Days' },
+  { value: 'this_month', label: 'This Month' },
+  { value: 'last_month', label: 'Last Month' },
+  { value: 'this_quarter', label: 'This Quarter' },
+  { value: 'last_quarter', label: 'Last Quarter' },
   { value: 'this_year', label: 'This Year' },
   { value: 'all_time', label: 'All Time' },
 ];
 
 const TAB_EXPORTS: Record<string, string> = {
   'sales-overview': 'sales-overview',
-  'agents': 'agent-commission',
   'brand-analysis': 'brand-analysis',
   'customer-insights': 'customer-insights',
   'inventory-health': 'inventory-health',
@@ -73,7 +75,6 @@ export default function Reports() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="w-full justify-start bg-muted/50 overflow-x-auto">
           <TabsTrigger value="sales-overview">Sales</TabsTrigger>
-          <TabsTrigger value="agents">Agents</TabsTrigger>
           <TabsTrigger value="brand-analysis">Brands</TabsTrigger>
           <TabsTrigger value="customer-insights">Customers</TabsTrigger>
           <TabsTrigger value="inventory-health">Inventory</TabsTrigger>
@@ -82,9 +83,6 @@ export default function Reports() {
 
         <TabsContent value="sales-overview">
           <SalesOverview dateRange={dateRange} />
-        </TabsContent>
-        <TabsContent value="agents">
-          <AgentOverview dateRange={dateRange} />
         </TabsContent>
         <TabsContent value="brand-analysis">
           <BrandAnalysis dateRange={dateRange} />

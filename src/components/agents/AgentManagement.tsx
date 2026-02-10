@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Users } from 'lucide-react';
+import { Users, Download, FileSpreadsheet } from 'lucide-react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { apiClient } from '@/api/client';
+import { reportService } from '@/services/reportService';
 import SplitfinTable from '@/components/shared/SplitfinTable';
 import {
   AgentOrdersPieChart,
@@ -33,12 +34,16 @@ interface AgentAnalytics {
   activityChart: Record<string, unknown>[];
 }
 
-type DateRange = '7_days' | '30_days' | '90_days' | 'this_year' | 'all_time';
+type DateRange = '7_days' | '30_days' | '90_days' | 'this_month' | 'last_month' | 'this_quarter' | 'last_quarter' | 'this_year' | 'all_time';
 
 const DATE_RANGE_OPTIONS: { value: DateRange; label: string }[] = [
-  { value: '7_days', label: 'Last 7 Days' },
-  { value: '30_days', label: 'Last 30 Days' },
-  { value: '90_days', label: 'Last 90 Days' },
+  { value: '7_days', label: '7 Days' },
+  { value: '30_days', label: '30 Days' },
+  { value: '90_days', label: '90 Days' },
+  { value: 'this_month', label: 'This Month' },
+  { value: 'last_month', label: 'Last Month' },
+  { value: 'this_quarter', label: 'This Quarter' },
+  { value: 'last_quarter', label: 'Last Quarter' },
   { value: 'this_year', label: 'This Year' },
   { value: 'all_time', label: 'All Time' },
 ];
@@ -178,22 +183,38 @@ const AgentManagement: React.FC = () => {
         transition={{ duration: 0.35, ease: 'easeOut' }}
         className="mb-6"
       >
-        <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Agent Performance</h1>
-          <div className="flex items-center gap-0.5 bg-muted/40 border border-border/60 rounded-lg p-0.5">
-            {DATE_RANGE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => setDateRange(option.value)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 whitespace-nowrap ${
-                  dateRange === option.value
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground">Agent Performance</h1>
+            <div className="flex items-center gap-0.5 bg-muted/40 border border-border/60 rounded-lg p-0.5">
+              {DATE_RANGE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  onClick={() => setDateRange(option.value)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-200 whitespace-nowrap ${
+                    dateRange === option.value
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/80'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => reportService.exportFile('agent-commission', dateRange, 'csv')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+            >
+              <Download className="h-3.5 w-3.5" />CSV
+            </button>
+            <button
+              onClick={() => reportService.exportFile('agent-commission', dateRange, 'xlsx')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border border-border/60 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+            >
+              <FileSpreadsheet className="h-3.5 w-3.5" />Excel
+            </button>
           </div>
         </div>
       </motion.div>

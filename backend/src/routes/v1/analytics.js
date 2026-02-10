@@ -212,11 +212,12 @@ router.get('/agents', async (req, res) => {
   try {
     const { date_range = '30_days' } = req.query;
     const startDate = getStartDate(date_range);
+    const endDate = getEndDate(date_range);
 
     const [agentSummary, activityData, brandSpreadData] = await Promise.all([
-      getAgentSummary(startDate),
-      getAgentActivityTimeSeries(startDate, date_range),
-      getAgentBrandSpread(startDate),
+      getAgentSummary(startDate, endDate),
+      getAgentActivityTimeSeries(startDate, date_range, endDate),
+      getAgentBrandSpread(startDate, endDate),
     ]);
 
     // Derive chart data from summary
@@ -236,7 +237,13 @@ router.get('/agents', async (req, res) => {
   }
 });
 
-async function getAgentSummary(startDate) {
+async function getAgentSummary(startDate, endDate = null) {
+  const endClause = endDate ? 'AND o.date <= $2' : '';
+  const customerEndClause = endDate ? 'AND c.created_at <= $2' : '';
+  const params = endDate
+    ? [startDate.toISOString(), endDate.toISOString()]
+    : [startDate.toISOString()];
+
   const { rows } = await query(`
     SELECT
       a.id,
@@ -244,16 +251,16 @@ async function getAgentSummary(startDate) {
       COALESCE(a.commission_rate, 0) as commission_rate,
       COUNT(o.id) as order_count,
       COALESCE(SUM(o.total), 0) as total_revenue,
-      (SELECT COUNT(*) FROM customers c WHERE c.agent_id = a.id AND c.created_at >= $1) as new_customers
+      (SELECT COUNT(*) FROM customers c WHERE c.agent_id = a.id AND c.created_at >= $1 ${customerEndClause}) as new_customers
     FROM agents a
     LEFT JOIN orders o ON (
       o.salesperson_id = a.zoho_id
       OR (o.salesperson_id IS NULL AND LOWER(o.salesperson_name) = LOWER(a.name))
-    ) AND o.date >= $1
+    ) AND o.date >= $1 ${endClause}
     WHERE (a.is_admin = false OR a.is_admin IS NULL)
     GROUP BY a.id, a.name, a.commission_rate
     ORDER BY total_revenue DESC
-  `, [startDate.toISOString()]);
+  `, params);
 
   return rows.map(r => ({
     id: r.id,
@@ -266,7 +273,7 @@ async function getAgentSummary(startDate) {
   }));
 }
 
-async function getAgentActivityTimeSeries(startDate, dateRange) {
+async function getAgentActivityTimeSeries(startDate, dateRange, endDate = null) {
   // Pick granularity (same logic as getOrderTimeSeries)
   let sqlLabel, sqlGroup, sqlOrder;
 
@@ -277,12 +284,16 @@ async function getAgentActivityTimeSeries(startDate, dateRange) {
       sqlOrder = `DATE(o.date)`;
       break;
     case '30_days':
+    case 'this_month':
+    case 'last_month':
       sqlLabel = `TO_CHAR(o.date, 'DD Mon')`;
       sqlGroup = `DATE(o.date)`;
       sqlOrder = `DATE(o.date)`;
       break;
     case '90_days':
     case 'quarter':
+    case 'this_quarter':
+    case 'last_quarter':
       sqlLabel = `'W' || EXTRACT(WEEK FROM o.date)::int || ' ' || TO_CHAR(date_trunc('week', o.date), 'Mon')`;
       sqlGroup = `date_trunc('week', o.date)`;
       sqlOrder = `date_trunc('week', o.date)`;
@@ -307,6 +318,11 @@ async function getAgentActivityTimeSeries(startDate, dateRange) {
       break;
   }
 
+  const endClause = endDate ? 'AND o.date <= $2' : '';
+  const params = endDate
+    ? [startDate.toISOString(), endDate.toISOString()]
+    : [startDate.toISOString()];
+
   const { rows } = await query(`
     SELECT
       ${sqlLabel} as period_label,
@@ -318,10 +334,10 @@ async function getAgentActivityTimeSeries(startDate, dateRange) {
       o.salesperson_id = a.zoho_id
       OR (o.salesperson_id IS NULL AND LOWER(o.salesperson_name) = LOWER(a.name))
     ) AND (a.is_admin = false OR a.is_admin IS NULL)
-    WHERE o.date >= $1
+    WHERE o.date >= $1 ${endClause}
     GROUP BY ${sqlGroup}, ${sqlLabel}, a.name
     ORDER BY ${sqlOrder}
-  `, [startDate.toISOString()]);
+  `, params);
 
   // Pivot: group by period, each agent becomes a key
   const periodMap = new Map();
@@ -336,7 +352,12 @@ async function getAgentActivityTimeSeries(startDate, dateRange) {
   return Array.from(periodMap.values());
 }
 
-async function getAgentBrandSpread(startDate) {
+async function getAgentBrandSpread(startDate, endDate = null) {
+  const endClause = endDate ? 'AND o.date <= $2' : '';
+  const params = endDate
+    ? [startDate.toISOString(), endDate.toISOString()]
+    : [startDate.toISOString()];
+
   const { rows } = await query(`
     SELECT
       a.name as agent_name,
@@ -349,10 +370,10 @@ async function getAgentBrandSpread(startDate) {
     ) AND (a.is_admin = false OR a.is_admin IS NULL)
     JOIN order_line_items oli ON oli.order_id = o.id
     JOIN products p ON p.zoho_item_id = oli.zoho_item_id
-    WHERE o.date >= $1 AND p.brand IS NOT NULL AND p.brand != ''
+    WHERE o.date >= $1 ${endClause} AND p.brand IS NOT NULL AND p.brand != ''
     GROUP BY a.name, p.brand
     ORDER BY brand_revenue DESC
-  `, [startDate.toISOString()]);
+  `, params);
 
   // Pivot: group by brand, each agent becomes a key
   const brandMap = new Map();
@@ -692,6 +713,7 @@ router.get('/top-customers', async (req, res) => {
 
 // Helper functions
 function getStartDate(range) {
+  const now = new Date();
   const startDate = new Date();
 
   switch (range) {
@@ -709,23 +731,44 @@ function getStartDate(range) {
     case 'this_year':
       startDate.setFullYear(startDate.getFullYear(), 0, 1);
       break;
+    case 'this_month':
+      return new Date(now.getFullYear(), now.getMonth(), 1);
     case 'last_month':
-      startDate.setMonth(startDate.getMonth() - 1);
-      break;
+      return new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    case 'this_quarter': {
+      const qMonth = Math.floor(now.getMonth() / 3) * 3;
+      return new Date(now.getFullYear(), qMonth, 1);
+    }
+    case 'last_quarter': {
+      const curQStart = Math.floor(now.getMonth() / 3) * 3;
+      return new Date(now.getFullYear(), curQStart - 3, 1);
+    }
     case 'quarter':
       startDate.setMonth(startDate.getMonth() - 3);
       break;
-    case 'last_quarter':
-      startDate.setMonth(startDate.getMonth() - 6);
-      break;
     case 'all_time':
-      startDate.setFullYear(2000, 0, 1); // Far enough back to include all data
+      startDate.setFullYear(2000, 0, 1);
       break;
     default: // 30_days
       startDate.setDate(startDate.getDate() - 30);
   }
 
   return startDate;
+}
+
+// Returns an end date for bounded ranges (last_month, last_quarter), null otherwise
+function getEndDate(range) {
+  const now = new Date();
+  switch (range) {
+    case 'last_month':
+      return new Date(now.getFullYear(), now.getMonth(), 0); // last day of previous month
+    case 'last_quarter': {
+      const curQStart = Math.floor(now.getMonth() / 3) * 3;
+      return new Date(now.getFullYear(), curQStart, 0); // last day of previous quarter
+    }
+    default:
+      return null;
+  }
 }
 
 async function getOrderMetrics(startDate) {

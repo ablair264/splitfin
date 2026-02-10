@@ -5,6 +5,23 @@ import { logger } from '../../utils/logger.js';
 
 const router = express.Router();
 
+// Helper: human-readable date range label
+function formatDateRangeLabel(range, start, end) {
+  const labels = {
+    '7_days': 'Last 7 Days',
+    '30_days': 'Last 30 Days',
+    '90_days': 'Last 90 Days',
+    'this_month': 'This Month',
+    'last_month': 'Last Month',
+    'this_quarter': 'This Quarter',
+    'last_quarter': 'Last Quarter',
+    'this_year': 'This Year',
+    'all_time': 'All Time',
+  };
+  const label = labels[range] || range;
+  return `${label} (${start} to ${end})`;
+}
+
 // Helper: parse date range from query params
 function getDateRange(req) {
   const { start_date, end_date, range = '12_months' } = req.query;
@@ -29,6 +46,31 @@ function getDateRange(req) {
       start = new Date(now);
       start.setDate(start.getDate() - 90);
       break;
+    case 'this_month':
+      start = new Date(now.getFullYear(), now.getMonth(), 1);
+      break;
+    case 'last_month': {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      return {
+        start: start.toISOString().split('T')[0],
+        end: endOfLastMonth.toISOString().split('T')[0],
+      };
+    }
+    case 'this_quarter': {
+      const qMonth = Math.floor(now.getMonth() / 3) * 3;
+      start = new Date(now.getFullYear(), qMonth, 1);
+      break;
+    }
+    case 'last_quarter': {
+      const curQStart = Math.floor(now.getMonth() / 3) * 3;
+      start = new Date(now.getFullYear(), curQStart - 3, 1);
+      const endOfLastQ = new Date(now.getFullYear(), curQStart, 0);
+      return {
+        start: start.toISOString().split('T')[0],
+        end: endOfLastQ.toISOString().split('T')[0],
+      };
+    }
     case 'this_year':
       start = new Date(now.getFullYear(), 0, 1);
       break;
@@ -85,8 +127,11 @@ function buildFilters(req, tableAlias = 'o') {
 }
 
 // Helper: convert rows to CSV string
-function rowsToCsv(rows, columns) {
-  if (!rows.length) return columns.join(',') + '\n';
+function rowsToCsv(rows, columns, titleRows = []) {
+  const titleSection = titleRows.length
+    ? titleRows.map(line => `"${line.replace(/"/g, '""')}"`).join('\n') + '\n\n'
+    : '';
+  if (!rows.length) return titleSection + columns.join(',') + '\n';
   const header = columns.join(',');
   const body = rows.map(row =>
     columns.map(col => {
@@ -98,40 +143,50 @@ function rowsToCsv(rows, columns) {
         : str;
     }).join(',')
   ).join('\n');
-  return header + '\n' + body + '\n';
+  return titleSection + header + '\n' + body + '\n';
 }
 
 // Helper: generate xlsx buffer from rows
-async function rowsToXlsx(rows, columns, sheetName = 'Report') {
+async function rowsToXlsx(rows, columns, sheetName = 'Report', titleRows = []) {
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet(sheetName);
 
-  // Header row
-  sheet.columns = columns.map(col => ({
-    header: col.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()),
-    key: col,
-    width: Math.max(col.length + 4, 14),
-  }));
+  // Title rows (agent name, date range, etc.)
+  let dataStartRow = 1;
+  if (titleRows.length) {
+    for (const line of titleRows) {
+      const row = sheet.addRow([line]);
+      row.font = { bold: true, size: 12 };
+      row.getCell(1).alignment = { horizontal: 'left' };
+    }
+    sheet.addRow([]); // blank spacer row
+    dataStartRow = titleRows.length + 2;
+  }
 
-  // Style header
-  sheet.getRow(1).font = { bold: true };
-  sheet.getRow(1).fill = {
+  // Column headers
+  const headerRow = sheet.addRow(
+    columns.map(col => col.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()))
+  );
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  headerRow.fill = {
     type: 'pattern',
     pattern: 'solid',
     fgColor: { argb: 'FF1A1A2E' },
   };
-  sheet.getRow(1).font = { bold: true, color: { argb: 'FFFFFFFF' } };
+
+  // Set column widths
+  columns.forEach((col, i) => {
+    sheet.getColumn(i + 1).width = Math.max(col.length + 4, 14);
+  });
 
   // Data rows
   rows.forEach(row => {
-    const data = {};
-    columns.forEach(col => { data[col] = row[col]; });
-    sheet.addRow(data);
+    sheet.addRow(columns.map(col => row[col]));
   });
 
-  // Auto-format numbers
+  // Auto-format numbers (skip title rows and header)
   sheet.eachRow((row, rowNumber) => {
-    if (rowNumber === 1) return;
+    if (rowNumber <= dataStartRow) return;
     row.eachCell((cell) => {
       if (typeof cell.value === 'number') {
         cell.numFmt = cell.value % 1 === 0 ? '#,##0' : '#,##0.00';
@@ -682,12 +737,13 @@ router.get('/financial', async (req, res) => {
 router.get('/export/:report', async (req, res) => {
   try {
     const { report } = req.params;
-    const { format = 'csv' } = req.query;
+    const { format = 'csv', range = '12_months' } = req.query;
     const { start, end } = getDateRange(req);
     let rows = [];
     let columns = [];
     let filename = '';
     let sheetName = '';
+    let titleRows = [];
 
     switch (report) {
       case 'sales-overview': {
@@ -760,6 +816,11 @@ router.get('/export/:report', async (req, res) => {
           columns = ['order_number', 'order_date', 'customer', 'order_total', 'commission_earned'];
           filename = `commission-${agent.name.toLowerCase().replace(/\s+/g, '-')}`;
           sheetName = `${agent.name} Commission`;
+          titleRows = [
+            `Commission Report: ${agent.name}`,
+            `Commission Rate: ${(rate * 100).toFixed(1)}%`,
+            `Period: ${formatDateRangeLabel(range, start, end)}`,
+          ];
         } else {
           // Summary export: all agents
           const result = await query(`
@@ -780,6 +841,10 @@ router.get('/export/:report', async (req, res) => {
           columns = ['name', 'commission_rate', 'order_count', 'revenue', 'commission_earned', 'customer_count'];
           filename = 'agent-commission';
           sheetName = 'Agent Commission';
+          titleRows = [
+            'Agent Commission Report',
+            `Period: ${formatDateRangeLabel(range, start, end)}`,
+          ];
         }
         break;
       }
@@ -873,12 +938,12 @@ router.get('/export/:report', async (req, res) => {
     const dateStr = new Date().toISOString().split('T')[0];
 
     if (format === 'xlsx') {
-      const buffer = await rowsToXlsx(rows, columns, sheetName);
+      const buffer = await rowsToXlsx(rows, columns, sheetName, titleRows);
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}-${dateStr}.xlsx"`);
       res.send(Buffer.from(buffer));
     } else {
-      const csv = rowsToCsv(rows, columns);
+      const csv = rowsToCsv(rows, columns, titleRows);
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}-${dateStr}.csv"`);
       res.send(csv);

@@ -523,7 +523,7 @@ export interface NotificationsResponse {
 
 // ── Report Types ────────────────────────────────────────────
 
-export type ReportDateRange = '7_days' | '30_days' | '90_days' | 'this_year' | 'all_time';
+export type ReportDateRange = '7_days' | '30_days' | '90_days' | 'this_month' | 'last_month' | 'this_quarter' | 'last_quarter' | 'this_year' | 'all_time';
 
 export interface SalesOverviewData {
   summary: { total_orders: number; total_revenue: number; avg_order_value: number; unique_customers: number };
