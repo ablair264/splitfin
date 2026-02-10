@@ -7,10 +7,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   Images, HardDrive, Layers, LayoutGrid, List, Search,
   Upload, Sparkles, Trash2, Loader2, X, Download, Copy, Check,
-  ImageOff, Eye,
+  ImageOff, Eye, Save, Link, RefreshCw,
 } from 'lucide-react';
 import { imageService, type ImageFilters, type ImageStats } from '@/services/imageService';
-import type { ProductImage } from '@/types/domain';
+import { productService } from '@/services/productService';
+import type { ProductImage, Product } from '@/types/domain';
 import ImageCard from './ImageCard';
 import BatchImageUpload from './BatchImageUpload';
 
@@ -157,6 +158,35 @@ export default function ImageManagement() {
     }
   };
 
+  const [refreshingSizes, setRefreshingSizes] = useState(false);
+  const handleRefreshSizes = async () => {
+    setRefreshingSizes(true);
+    try {
+      const result = await imageService.refreshSizes();
+      if (result.updated > 0) {
+        loadImages();
+        loadMeta();
+      }
+      alert(`Updated ${result.updated} of ${result.total} images. ${result.errors} errors.`);
+    } catch (err) {
+      console.error('Refresh sizes failed:', err);
+    } finally {
+      setRefreshingSizes(false);
+    }
+  };
+
+  const handleImageUpdate = async (id: number, data: Parameters<typeof imageService.update>[1]) => {
+    try {
+      const updated = await imageService.update(id, data);
+      // Update in local state
+      setImages((prev) => prev.map((img) => img.id === id ? { ...img, ...updated } : img));
+      setDetailImage((prev) => prev && prev.id === id ? { ...prev, ...updated } : prev);
+    } catch (err) {
+      console.error('Update failed:', err);
+      throw err;
+    }
+  };
+
   // ── Pagination ──
   const from = page * PAGE_SIZE + 1;
   const to = Math.min((page + 1) * PAGE_SIZE, totalCount);
@@ -171,6 +201,9 @@ export default function ImageManagement() {
         subtitle="images"
         actions={
           <>
+            <Button intent="outline" size="sm" onPress={handleRefreshSizes} isDisabled={refreshingSizes}>
+              <RefreshCw className={`size-4 mr-1.5 ${refreshingSizes ? 'animate-spin' : ''}`} /> {refreshingSizes ? 'Refreshing...' : 'Refresh Sizes'}
+            </Button>
             <Button intent="outline" size="sm" onPress={() => setShowBatchUpload(true)}>
               <Sparkles className="size-4 mr-1.5" /> AI Batch Upload
             </Button>
@@ -414,6 +447,7 @@ export default function ImageManagement() {
           image={detailImage}
           onClose={() => setDetailImage(null)}
           onDelete={() => { handleDeleteSingle(detailImage.id); setDetailImage(null); }}
+          onUpdate={(data) => handleImageUpdate(detailImage.id, data)}
         />
       )}
     </div>
@@ -422,8 +456,61 @@ export default function ImageManagement() {
 
 // ── Image Detail Modal ──────────────────────────────────────
 
-function ImageDetailModal({ image, onClose, onDelete }: { image: ProductImage; onClose: () => void; onDelete: () => void }) {
+interface ImageDetailModalProps {
+  image: ProductImage;
+  onClose: () => void;
+  onDelete: () => void;
+  onUpdate: (data: { brand?: string; matched_sku?: string; product_id?: number | null; ai_product_type?: string; ai_color?: string }) => Promise<void>;
+}
+
+function ImageDetailModal({ image, onClose, onDelete, onUpdate }: ImageDetailModalProps) {
   const [copying, setCopying] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Editable fields
+  const [brand, setBrand] = useState(image.brand);
+  const [matchedSku, setMatchedSku] = useState(image.matched_sku || '');
+  const [aiProductType, setAiProductType] = useState(image.ai_product_type || '');
+  const [aiColor, setAiColor] = useState(image.ai_color || '');
+
+  // Product search
+  const [productSearch, setProductSearch] = useState('');
+  const [productResults, setProductResults] = useState<Product[]>([]);
+  const [linkedProduct, setLinkedProduct] = useState<{ id: number; name: string; sku: string } | null>(
+    image.product_id ? { id: image.product_id, name: '', sku: image.matched_sku || '' } : null,
+  );
+  const [searching, setSearching] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const handleProductSearch = (value: string) => {
+    setProductSearch(value);
+    clearTimeout(searchTimerRef.current);
+    if (value.length < 2) { setProductResults([]); return; }
+    searchTimerRef.current = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const result = await productService.list({ search: value, limit: 8 });
+        setProductResults(result.data || []);
+      } catch { setProductResults([]); }
+      finally { setSearching(false); }
+    }, 300);
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      await onUpdate({
+        brand,
+        matched_sku: matchedSku || undefined,
+        product_id: linkedProduct?.id ?? null,
+        ai_product_type: aiProductType || undefined,
+        ai_color: aiColor || undefined,
+      });
+      setEditing(false);
+    } catch { /* parent logs */ }
+    finally { setSaving(false); }
+  };
 
   const handleCopy = async () => {
     try {
@@ -443,6 +530,8 @@ function ImageDetailModal({ image, onClose, onDelete }: { image: ProductImage; o
     document.body.removeChild(link);
   };
 
+  const inputCls = 'h-8 px-2 text-sm rounded-md border border-border bg-muted/20 text-foreground w-full';
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60" />
@@ -453,9 +542,16 @@ function ImageDetailModal({ image, onClose, onDelete }: { image: ProductImage; o
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-semibold text-foreground truncate pr-4">{image.filename}</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="size-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            {!editing && (
+              <button onClick={() => setEditing(true)} className="text-xs text-teal-400 hover:text-teal-300">
+                Edit
+              </button>
+            )}
+            <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+              <X className="size-4" />
+            </button>
+          </div>
         </div>
 
         {/* Image preview */}
@@ -470,30 +566,110 @@ function ImageDetailModal({ image, onClose, onDelete }: { image: ProductImage; o
         {/* Metadata */}
         <div className="p-4 space-y-3 text-sm">
           <div className="grid grid-cols-2 gap-3">
-            <Detail label="Brand" value={image.brand} />
-            <Detail label="Original filename" value={image.original_filename} />
-            <Detail label="Size" value={formatFileSize(image.size_bytes)} />
-            <Detail label="Format" value={image.content_type} />
-            {image.width && image.height && (
-              <Detail label="Dimensions" value={`${image.width} × ${image.height}`} />
-            )}
-            <Detail label="Uploaded" value={formatDate(image.created_at)} />
-            {image.matched_sku && (
-              <Detail label="Matched SKU" value={image.matched_sku} highlight />
-            )}
-            {image.sku_confidence != null && (
-              <Detail label="SKU Confidence" value={`${Math.round(image.sku_confidence * 100)}%`} />
-            )}
-            {image.ai_product_type && (
-              <Detail label="AI Product Type" value={image.ai_product_type} />
-            )}
-            {image.ai_color && (
-              <Detail label="AI Color" value={image.ai_color} />
-            )}
-            {image.ai_confidence != null && (
-              <Detail label="AI Confidence" value={`${Math.round(image.ai_confidence * 100)}%`} />
+            {editing ? (
+              <>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Brand</label>
+                  <input className={inputCls} value={brand} onChange={(e) => setBrand(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">Matched SKU</label>
+                  <input className={inputCls} value={matchedSku} onChange={(e) => setMatchedSku(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">AI Product Type</label>
+                  <input className={inputCls} value={aiProductType} onChange={(e) => setAiProductType(e.target.value)} />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground block mb-1">AI Color</label>
+                  <input className={inputCls} value={aiColor} onChange={(e) => setAiColor(e.target.value)} />
+                </div>
+              </>
+            ) : (
+              <>
+                <Detail label="Brand" value={image.brand} />
+                <Detail label="Original filename" value={image.original_filename} />
+                <Detail label="Size" value={formatFileSize(image.size_bytes)} />
+                <Detail label="Format" value={image.content_type} />
+                {image.width && image.height && (
+                  <Detail label="Dimensions" value={`${image.width} × ${image.height}`} />
+                )}
+                <Detail label="Uploaded" value={formatDate(image.created_at)} />
+                {image.matched_sku && (
+                  <Detail label="Matched SKU" value={image.matched_sku} highlight />
+                )}
+                {image.sku_confidence != null && (
+                  <Detail label="SKU Confidence" value={`${Math.round(image.sku_confidence * 100)}%`} />
+                )}
+                {image.ai_product_type && (
+                  <Detail label="AI Product Type" value={image.ai_product_type} />
+                )}
+                {image.ai_color && (
+                  <Detail label="AI Color" value={image.ai_color} />
+                )}
+              </>
             )}
           </div>
+
+          {/* Product link */}
+          {editing && (
+            <div className="pt-2 border-t border-border">
+              <label className="text-xs text-muted-foreground block mb-1">
+                <Link className="size-3 inline mr-1" />Linked Product
+              </label>
+              {linkedProduct && (
+                <div className="flex items-center gap-2 mb-2 p-2 rounded-md bg-teal-500/10 border border-teal-500/20">
+                  <span className="text-sm text-foreground flex-1">
+                    {linkedProduct.sku && <span className="text-teal-400 font-medium mr-2">{linkedProduct.sku}</span>}
+                    {linkedProduct.name}
+                  </span>
+                  <button onClick={() => setLinkedProduct(null)} className="text-muted-foreground hover:text-foreground">
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              )}
+              <div className="relative">
+                <input
+                  className={inputCls}
+                  placeholder="Search products by name or SKU..."
+                  value={productSearch}
+                  onChange={(e) => handleProductSearch(e.target.value)}
+                />
+                {searching && <Loader2 className="size-3.5 animate-spin absolute right-2 top-2 text-muted-foreground" />}
+              </div>
+              {productResults.length > 0 && (
+                <div className="mt-1 border border-border rounded-md bg-card max-h-[200px] overflow-y-auto">
+                  {productResults.map((p) => (
+                    <button
+                      key={p.id}
+                      className="w-full text-left px-3 py-2 text-sm hover:bg-muted/30 border-b border-border/50 last:border-b-0 flex items-center gap-2"
+                      onClick={() => {
+                        setLinkedProduct({ id: p.id, name: p.name, sku: p.sku });
+                        setMatchedSku(p.sku);
+                        setProductSearch('');
+                        setProductResults([]);
+                      }}
+                    >
+                      {p.image_url && (
+                        <img src={p.image_url} alt="" className="size-8 rounded object-cover" />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-foreground truncate">{p.name}</p>
+                        <p className="text-xs text-muted-foreground">{p.sku} - {p.brand}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {!editing && image.product_id && (
+            <div>
+              <p className="text-xs text-muted-foreground">Linked Product ID</p>
+              <p className="text-sm font-medium text-teal-400">{image.product_id}</p>
+            </div>
+          )}
 
           {/* URL */}
           <div>
@@ -515,9 +691,16 @@ function ImageDetailModal({ image, onClose, onDelete }: { image: ProductImage; o
 
         {/* Actions */}
         <div className="flex items-center justify-between p-4 border-t border-border">
-          <Button intent="outline" size="sm" onPress={handleDownload}>
-            <Download className="size-3.5 mr-1" /> Download
-          </Button>
+          <div className="flex gap-2">
+            <Button intent="outline" size="sm" onPress={handleDownload}>
+              <Download className="size-3.5 mr-1" /> Download
+            </Button>
+            {editing && (
+              <Button intent="primary" size="sm" onPress={handleSave} isDisabled={saving}>
+                <Save className="size-3.5 mr-1" /> {saving ? 'Saving...' : 'Save'}
+              </Button>
+            )}
+          </div>
           <Button intent="danger" size="sm" onPress={onDelete}>
             <Trash2 className="size-3.5 mr-1" /> Delete
           </Button>

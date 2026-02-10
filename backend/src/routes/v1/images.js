@@ -41,7 +41,7 @@ async function getUploadMiddleware() {
     const multer = multerMod.default;
     _upload = multer({
       storage: multer.memoryStorage(),
-      limits: { fileSize: 10 * 1024 * 1024 },
+      limits: { fileSize: 15 * 1024 * 1024 },
       fileFilter: (_req, file, cb) => {
         if (file.mimetype.startsWith('image/')) cb(null, true);
         else cb(new Error('Only image files are allowed'));
@@ -275,7 +275,7 @@ router.post('/upload', async (req, res) => {
     // INSERT into product_images
     const insertParams = [
       req.file.originalname,                              // filename
-      publicUrl,                                          // r2_url
+      publicUrl,                                          // url
       key,                                                // r2_key
       req.file.mimetype,                                  // content_type
       req.file.size,                                      // size_bytes
@@ -293,7 +293,7 @@ router.post('/upload', async (req, res) => {
 
     const insertResult = await query(
       `INSERT INTO product_images
-        (filename, r2_url, r2_key, content_type, size_bytes, brand,
+        (filename, url, r2_key, content_type, size_bytes, brand,
          matched_sku, sku_confidence, product_id, width, height,
          ai_product_type, ai_color, ai_confidence, original_filename)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
@@ -315,6 +315,9 @@ router.post('/upload', async (req, res) => {
         logger.warn('[Images] Failed to update product image_url (non-fatal):', prodErr.message);
       }
     }
+
+    // Normalise column name for frontend
+    imageRow.url = imageRow.url || publicUrl;
 
     logger.info(`[Images] Uploaded: ${key} (brand=${brand}, sku=${matched_sku || 'none'})`);
     res.status(201).json({ data: imageRow });
@@ -468,7 +471,7 @@ router.post('/upload-batch', async (req, res) => {
 
         const insertResult = await query(
           `INSERT INTO product_images
-            (filename, r2_url, r2_key, content_type, size_bytes, brand,
+            (filename, url, r2_key, content_type, size_bytes, brand,
              matched_sku, sku_confidence, product_id, width, height,
              ai_product_type, ai_color, ai_confidence, original_filename)
            VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
@@ -561,12 +564,12 @@ router.post('/bulk-delete', async (req, res) => {
         }
 
         // If product's image_url matches, clear it
-        if (image.product_id && image.r2_url) {
+        if (image.product_id && image.url) {
           try {
             await query(
               `UPDATE products SET image_url = NULL, updated_at = NOW()
                WHERE id = $1 AND image_url = $2`,
-              [image.product_id, image.r2_url]
+              [image.product_id, image.url]
             );
           } catch (prodErr) {
             logger.warn('[Images] Failed to clear product image_url (non-fatal):', prodErr.message);
@@ -591,7 +594,124 @@ router.post('/bulk-delete', async (req, res) => {
 });
 
 // ===========================================================================
-// 7. GET /:id — Single image
+// 7. PATCH /:id — Update image metadata
+// ===========================================================================
+router.patch('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { brand, matched_sku, product_id, ai_product_type, ai_color } = req.body;
+
+    // Check image exists
+    const existing = await query('SELECT * FROM product_images WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+
+    const sets = [];
+    const params = [];
+
+    if (brand !== undefined) {
+      params.push(brand);
+      sets.push(`brand = $${params.length}`);
+    }
+    if (matched_sku !== undefined) {
+      params.push(matched_sku || null);
+      sets.push(`matched_sku = $${params.length}`);
+    }
+    if (product_id !== undefined) {
+      params.push(product_id || null);
+      sets.push(`product_id = $${params.length}`);
+    }
+    if (ai_product_type !== undefined) {
+      params.push(ai_product_type || null);
+      sets.push(`ai_product_type = $${params.length}`);
+    }
+    if (ai_color !== undefined) {
+      params.push(ai_color || null);
+      sets.push(`ai_color = $${params.length}`);
+    }
+
+    if (sets.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    params.push(id);
+    const result = await query(
+      `UPDATE product_images SET ${sets.join(', ')} WHERE id = $${params.length} RETURNING *`,
+      params
+    );
+
+    // If product_id changed and image has a URL, optionally update product image_url
+    const updated = result.rows[0];
+    if (product_id && updated.url) {
+      try {
+        const prodCheck = await query('SELECT image_url FROM products WHERE id = $1', [product_id]);
+        if (prodCheck.rows.length > 0 && !prodCheck.rows[0].image_url) {
+          await query('UPDATE products SET image_url = $1, updated_at = NOW() WHERE id = $2', [updated.url, product_id]);
+        }
+      } catch (prodErr) {
+        logger.warn('[Images] Failed to update product image_url (non-fatal):', prodErr.message);
+      }
+    }
+
+    logger.info(`[Images] Updated image ${id}: ${sets.join(', ')}`);
+    res.json({ data: updated });
+  } catch (err) {
+    logger.error('[Images] Update error:', err);
+    res.status(500).json({ error: 'Failed to update image' });
+  }
+});
+
+// ===========================================================================
+// 8. POST /refresh-sizes — Fetch file sizes from R2 for images with size_bytes = 0
+// ===========================================================================
+router.post('/refresh-sizes', async (_req, res) => {
+  try {
+    const r2 = await getR2Client();
+    if (!_s3Sdk) _s3Sdk = await import('@aws-sdk/client-s3');
+
+    // Get images missing sizes (batch of 500)
+    const { rows } = await query(
+      `SELECT id, r2_key FROM product_images WHERE size_bytes = 0 AND r2_key IS NOT NULL LIMIT 500`
+    );
+
+    if (rows.length === 0) {
+      return res.json({ updated: 0, message: 'All images already have sizes' });
+    }
+
+    let updated = 0;
+    let errors = 0;
+
+    for (const row of rows) {
+      try {
+        const head = await r2.send(new _s3Sdk.HeadObjectCommand({
+          Bucket: R2_BUCKET,
+          Key: row.r2_key,
+        }));
+
+        if (head.ContentLength) {
+          await query(
+            'UPDATE product_images SET size_bytes = $1 WHERE id = $2',
+            [head.ContentLength, row.id]
+          );
+          updated++;
+        }
+      } catch (headErr) {
+        // Object might not exist in R2
+        errors++;
+      }
+    }
+
+    logger.info(`[Images] Refresh sizes: ${updated} updated, ${errors} errors out of ${rows.length}`);
+    res.json({ updated, errors, total: rows.length });
+  } catch (err) {
+    logger.error('[Images] Refresh sizes error:', err);
+    res.status(500).json({ error: 'Failed to refresh sizes' });
+  }
+});
+
+// ===========================================================================
+// 9. GET /:id — Single image
 // ===========================================================================
 router.get('/:id', async (req, res) => {
   try {
@@ -640,12 +760,12 @@ router.delete('/:id', async (req, res) => {
     }
 
     // If product's image_url matches, clear it
-    if (image.product_id && image.r2_url) {
+    if (image.product_id && image.url) {
       try {
         await query(
           `UPDATE products SET image_url = NULL, updated_at = NOW()
            WHERE id = $1 AND image_url = $2`,
-          [image.product_id, image.r2_url]
+          [image.product_id, image.url]
         );
       } catch (prodErr) {
         logger.warn('[Images] Failed to clear product image_url (non-fatal):', prodErr.message);

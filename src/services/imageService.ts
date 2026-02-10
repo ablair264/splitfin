@@ -88,4 +88,28 @@ export const imageService = {
       { ids },
     );
   },
+
+  async update(
+    id: number,
+    data: {
+      brand?: string;
+      matched_sku?: string;
+      product_id?: number | null;
+      ai_product_type?: string;
+      ai_color?: string;
+    },
+  ): Promise<ProductImage> {
+    const result = await api.patch<SingleResponse<ProductImage>>(
+      `/api/v1/images/${id}`,
+      data,
+    );
+    return result.data;
+  },
+
+  async refreshSizes(): Promise<{ updated: number; errors: number; total: number }> {
+    return api.post<{ updated: number; errors: number; total: number }>(
+      '/api/v1/images/refresh-sizes',
+      {},
+    );
+  },
 };
