@@ -438,8 +438,8 @@ router.post('/generate', async (req, res) => {
           const lineTotal = unitCost * bi.quantity;
 
           const { rows: itemRows } = await client.query(
-            `INSERT INTO purchase_order_items (purchase_order_id, product_id, product_name, sku, quantity, unit_cost, total_cost, stock_on_hand, daily_velocity, days_remaining)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+            `INSERT INTO purchase_order_items (purchase_order_id, product_id, product_name, sku, quantity, unit_cost, stock_on_hand, daily_velocity, days_remaining)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
              RETURNING *`,
             [
               po.id,
@@ -448,7 +448,6 @@ router.post('/generate', async (req, res) => {
               product.sku,
               bi.quantity,
               unitCost,
-              lineTotal,
               parseInt(product.stock_on_hand) || 0,
               vel ? parseFloat(vel.daily_velocity) || 0 : 0,
               vel?.days_remaining != null ? parseInt(vel.days_remaining) : null,
