@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { websiteProductService } from '@/services/websiteProductService';
+import { formatBrand } from '@/lib/format';
 import type { WebsiteProduct, WebsiteCategory, WebsiteTag } from '@/types/domain';
 
 interface WebsiteProductDetailSheetProps {
@@ -294,7 +295,7 @@ export function WebsiteProductDetailSheet({
                       /{p.slug}
                     </button>
                     {p.brand && (
-                      <span className="px-2 py-0.5 rounded-md bg-primary/8 border border-primary/15 text-[11px] font-medium text-primary">{p.brand}</span>
+                      <span className="px-2 py-0.5 rounded-md bg-primary/8 border border-primary/15 text-[11px] font-medium text-primary">{formatBrand(p.brand)}</span>
                     )}
                     {p.sku && (
                       <span className="px-2 py-0.5 rounded-md bg-muted/50 border border-border/50 text-[11px] font-mono text-muted-foreground">{p.sku}</span>

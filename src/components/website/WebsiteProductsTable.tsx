@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Plus, Layers, Sparkles } from "lucide-react";
 import { websiteProductService } from "@/services/websiteProductService";
+import { formatBrand } from "@/lib/format";
 import type { WebsiteProduct, WebsiteCategory } from "@/types/domain";
 import { useDataTable } from "@/hooks/use-data-table";
 import { getWebsiteProductColumns } from "./website-products-columns";
@@ -45,7 +46,7 @@ export default function WebsiteProductsTable() {
         setBrandOptions(
           brandsData
             .filter((b) => b.brand && b.brand !== "nan" && b.brand !== "")
-            .map((b) => ({ label: b.brand, value: b.brand, count: Number(b.count) }))
+            .map((b) => ({ label: formatBrand(b.brand), value: b.brand, count: Number(b.count) }))
         );
         setCategories(categoriesData);
         setCategoryOptions(

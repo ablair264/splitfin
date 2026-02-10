@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
+import { formatBrand } from "@/lib/format";
 import type { WebsiteProduct } from "@/types/domain";
 
 function formatCurrency(value: number | null | undefined): string {
@@ -108,7 +109,7 @@ export function getWebsiteProductColumns(
       ),
       cell: ({ row }) => (
         <span className="text-sm text-muted-foreground truncate block">
-          {row.original.brand || "-"}
+          {row.original.brand ? formatBrand(row.original.brand) : "-"}
         </span>
       ),
       size: 140,

@@ -6,6 +6,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { websiteProductService } from '@/services/websiteProductService';
+import { formatBrand } from '@/lib/format';
 import type { Product, WebsiteCategory } from '@/types/domain';
 
 interface BatchAddWebsiteProductSheetProps {
@@ -15,7 +16,7 @@ interface BatchAddWebsiteProductSheetProps {
   onCreated: () => void;
 }
 
-const POP_HOME_BRANDS = ['Relaxound', 'Remember', 'Ideas 4 Seasons', 'My Flame Lifestyle'];
+const POP_HOME_BRANDS = ['Relaxound', 'Remember', 'Ideas 4 Seasons', 'My Flame Lifestyle', 'ppd PAPERPRODUCTS DESIGN GmbH'];
 
 export function BatchAddWebsiteProductSheet({
   categories, open, onOpenChange, onCreated,
@@ -212,7 +213,7 @@ export function BatchAddWebsiteProductSheet({
           >
             <option value="">All Brands</option>
             {POP_HOME_BRANDS.map((b) => (
-              <option key={b} value={b}>{b}</option>
+              <option key={b} value={b}>{formatBrand(b)}</option>
             ))}
           </select>
         </div>
@@ -220,7 +221,7 @@ export function BatchAddWebsiteProductSheet({
         {/* Selection summary */}
         <div className="flex items-center justify-between text-xs">
           <span className="text-muted-foreground">
-            {totalAvailable} available{brandFilter ? ` (${brandFilter})` : ''}
+            {totalAvailable} available{brandFilter ? ` (${formatBrand(brandFilter)})` : ''}
           </span>
           <span className={cn(
             'font-medium tabular-nums',
@@ -285,7 +286,7 @@ export function BatchAddWebsiteProductSheet({
                       <div className="text-sm text-foreground truncate">{product.name}</div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-[10px] text-muted-foreground font-mono">{product.sku}</span>
-                        <span className="text-[10px] text-primary/70">{product.brand}</span>
+                        <span className="text-[10px] text-primary/70">{formatBrand(product.brand)}</span>
                       </div>
                     </div>
                     <div className="text-right shrink-0">

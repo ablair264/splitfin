@@ -7,6 +7,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { websiteProductService } from '@/services/websiteProductService';
+import { formatBrand } from '@/lib/format';
 import type { Product, WebsiteCategory } from '@/types/domain';
 
 interface AddWebsiteProductSheetProps {
@@ -193,7 +194,7 @@ export function AddWebsiteProductSheet({
                       <div className="text-sm font-medium text-foreground truncate">{product.name}</div>
                       <div className="flex items-center gap-2 mt-0.5">
                         <span className="text-xs text-muted-foreground font-mono">{product.sku}</span>
-                        {product.brand && <span className="text-xs text-primary/70">{product.brand}</span>}
+                        {product.brand && <span className="text-xs text-primary/70">{formatBrand(product.brand)}</span>}
                         <span className="text-xs text-muted-foreground tabular-nums">
                           {new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(product.rate)}
                         </span>
@@ -339,7 +340,7 @@ export function AddWebsiteProductSheet({
                   <span className="text-muted-foreground">SKU</span>
                   <span className="text-foreground font-mono">{selectedProduct?.sku}</span>
                   <span className="text-muted-foreground">Brand</span>
-                  <span className="text-foreground">{selectedProduct?.brand}</span>
+                  <span className="text-foreground">{selectedProduct?.brand ? formatBrand(selectedProduct.brand) : ''}</span>
                   <span className="text-muted-foreground">Wholesale</span>
                   <span className="text-foreground tabular-nums">
                     {selectedProduct?.rate ? new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(selectedProduct.rate) : '—'}

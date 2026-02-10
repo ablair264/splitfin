@@ -1,3 +1,11 @@
+const BRAND_DISPLAY_NAMES: Record<string, string> = {
+  'ppd PAPERPRODUCTS DESIGN GmbH': 'PPD',
+};
+
+export function formatBrand(brand: string): string {
+  return BRAND_DISPLAY_NAMES[brand] || brand;
+}
+
 export function formatDate(
   date: Date | string | number | undefined,
   opts: Intl.DateTimeFormatOptions = {},
