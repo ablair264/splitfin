@@ -14,7 +14,6 @@ import {
   ShoppingCart,
   FileSpreadsheet,
   Check,
-  X,
 } from "lucide-react";
 import { productIntelligenceService } from "@/services/productIntelligenceService";
 import { purchaseOrderService } from "@/services/purchaseOrderService";
@@ -410,7 +409,7 @@ function ReorderAlertsTab() {
   const [totalCount, setTotalCount] = useState(0);
   const [threshold, setThreshold] = useState(10);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [showPOModal, setShowPOModal] = useState(false);
+  const [generatingPO, setGeneratingPO] = useState(false);
   const [poSuccess, setPOSuccess] = useState<string | null>(null);
 
   useEffect(() => {
@@ -456,16 +455,27 @@ function ReorderAlertsTab() {
     }
   }, [data, selectedIds.size]);
 
-  const selectedItems = useMemo(
-    () => data.filter((d) => selectedIds.has(d.product_id)),
-    [data, selectedIds],
-  );
-
-  const handlePOCreated = useCallback((msg: string) => {
-    setPOSuccess(msg);
-    setSelectedIds(new Set());
-    setShowPOModal(false);
-  }, []);
+  const handleGeneratePO = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    setGeneratingPO(true);
+    setPOSuccess(null);
+    try {
+      const items = data
+        .filter((d) => selectedIds.has(d.product_id))
+        .map((d) => ({
+          product_id: d.product_id,
+          quantity: Math.max(1, Math.ceil(30 * d.daily_velocity) - d.stock_on_hand),
+        }));
+      const result = await purchaseOrderService.generate(items);
+      const poNumbers = result.purchase_orders.map((po) => po.po_number).join(", ");
+      setPOSuccess(`Created ${result.purchase_orders.length} draft PO${result.purchase_orders.length !== 1 ? "s" : ""}: ${poNumbers}`);
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error("Generate PO error:", err);
+    } finally {
+      setGeneratingPO(false);
+    }
+  }, [data, selectedIds]);
 
   return (
     <div className="space-y-4">
@@ -523,9 +533,14 @@ function ReorderAlertsTab() {
           <Button
             size="sm"
             className="ml-auto bg-teal-600 hover:bg-teal-700 text-white"
-            onClick={() => { setPOSuccess(null); setShowPOModal(true); }}
+            onClick={handleGeneratePO}
+            isDisabled={generatingPO}
           >
-            <FileSpreadsheet size={14} className="mr-1.5" />
+            {generatingPO ? (
+              <Loader2 size={14} className="mr-1.5 animate-spin" />
+            ) : (
+              <FileSpreadsheet size={14} className="mr-1.5" />
+            )}
             Create Draft PO ({selectedIds.size} items)
           </Button>
         )}
@@ -669,161 +684,6 @@ function ReorderAlertsTab() {
         </div>
       </div>
 
-      {showPOModal && selectedItems.length > 0 && (
-        <DraftPOModal
-          items={selectedItems}
-          onClose={() => setShowPOModal(false)}
-          onSuccess={handlePOCreated}
-        />
-      )}
-    </div>
-  );
-}
-
-// ── Draft PO Modal ───────────────────────────────────────────
-
-function DraftPOModal({
-  items,
-  onClose,
-  onSuccess,
-}: {
-  items: ReorderAlert[];
-  onClose: () => void;
-  onSuccess: (msg: string) => void;
-}) {
-  const [quantities, setQuantities] = useState<Record<number, number>>(() => {
-    const q: Record<number, number> = {};
-    items.forEach((item) => {
-      q[item.product_id] = Math.max(1, Math.ceil(30 * item.daily_velocity) - item.stock_on_hand);
-    });
-    return q;
-  });
-  const [notes, setNotes] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-
-  const grouped = useMemo(() => {
-    const map: Record<string, ReorderAlert[]> = {};
-    items.forEach((item) => {
-      const brand = item.brand || "Unknown";
-      if (!map[brand]) map[brand] = [];
-      map[brand].push(item);
-    });
-    return Object.entries(map).sort(([a], [b]) => a.localeCompare(b));
-  }, [items]);
-
-  const handleSubmit = async () => {
-    setSubmitting(true);
-    setError("");
-    try {
-      const orderItems = items.map((item) => ({
-        product_id: item.product_id,
-        quantity: quantities[item.product_id] || 1,
-      }));
-      const result = await purchaseOrderService.generate(orderItems, notes || undefined);
-      const poNumbers = result.purchase_orders.map((po) => po.po_number).join(", ");
-      onSuccess(
-        `Created ${result.purchase_orders.length} draft PO${result.purchase_orders.length !== 1 ? "s" : ""}: ${poNumbers}`,
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create PO");
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/60" />
-      <div
-        className="relative bg-card border border-border rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto m-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="font-semibold text-foreground">Save as Draft Purchase Order</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          <p className="text-xs text-muted-foreground">
-            {grouped.length} draft PO{grouped.length !== 1 ? "s" : ""} will be created (one per brand). Adjust quantities below.
-          </p>
-
-          {grouped.map(([brand, brandItems]) => (
-            <div key={brand} className="space-y-2">
-              <h4 className="text-sm font-semibold text-foreground">{brand}</h4>
-              <div className="rounded-lg border border-border overflow-hidden">
-                <table className="w-full text-xs">
-                  <thead>
-                    <tr className="bg-muted/30 border-b border-border">
-                      <th className="px-3 py-1.5 text-left font-medium text-muted-foreground">Product</th>
-                      <th className="px-3 py-1.5 text-right font-medium text-muted-foreground">Stock</th>
-                      <th className="px-3 py-1.5 text-right font-medium text-muted-foreground">Velocity</th>
-                      <th className="px-3 py-1.5 text-right font-medium text-muted-foreground">Qty</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {brandItems.map((item) => (
-                      <tr key={item.product_id} className="border-b border-border/50">
-                        <td className="px-3 py-1.5">
-                          <p className="font-medium">{item.name}</p>
-                          <p className="text-muted-foreground">{item.sku}</p>
-                        </td>
-                        <td className="px-3 py-1.5 text-right tabular-nums">{item.stock_on_hand}</td>
-                        <td className="px-3 py-1.5 text-right tabular-nums text-muted-foreground">
-                          {item.daily_velocity}/day
-                        </td>
-                        <td className="px-3 py-1.5 text-right">
-                          <input
-                            type="number"
-                            min={1}
-                            value={quantities[item.product_id] || 1}
-                            onChange={(e) =>
-                              setQuantities((q) => ({
-                                ...q,
-                                [item.product_id]: Math.max(1, parseInt(e.target.value) || 1),
-                              }))
-                            }
-                            className="w-16 text-right rounded border border-input bg-background px-2 py-0.5 text-xs tabular-nums"
-                          />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          ))}
-
-          <div>
-            <label className="text-xs text-muted-foreground block mb-1">Notes (optional)</label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. Urgent restock, delivery by end of month..."
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-              rows={2}
-            />
-          </div>
-
-          {error && <p className="text-xs text-red-400">{error}</p>}
-        </div>
-        <div className="flex items-center justify-end gap-2 p-4 border-t border-border">
-          <Button intent="outline" size="sm" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button
-            size="sm"
-            className="bg-teal-600 hover:bg-teal-700 text-white"
-            onClick={handleSubmit}
-            isDisabled={submitting}
-          >
-            {submitting && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
-            Save Draft ({grouped.length} PO{grouped.length !== 1 ? "s" : ""})
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

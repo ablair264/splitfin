@@ -211,7 +211,7 @@ function ReorderIntelligenceTab({
             onClick={() => onGeneratePO(selectedItems)}
           >
             <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" />
-            Generate PO ({selectedIds.size} items)
+            Save as Draft PO ({selectedIds.size} items)
           </Button>
         )}
       </div>
@@ -378,12 +378,12 @@ function GeneratePOModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="font-semibold text-foreground">Generate Purchase Orders</h3>
+          <h3 className="font-semibold text-foreground">Save as Draft Purchase Order</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
         </div>
         <div className="p-4 space-y-4">
           <p className="text-xs text-muted-foreground">
-            {grouped.length} PO{grouped.length !== 1 ? "s" : ""} will be created (one per brand). Adjust quantities below.
+            {grouped.length} draft PO{grouped.length !== 1 ? "s" : ""} will be saved (one per brand). Adjust quantities below. You can review, export, or email them later.
           </p>
 
           {grouped.map(([brand, brandItems]) => (
@@ -456,7 +456,7 @@ function GeneratePOModal({
             isDisabled={submitting}
           >
             {submitting && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
-            Create {grouped.length} PO{grouped.length !== 1 ? "s" : ""}
+            Save Draft ({grouped.length} PO{grouped.length !== 1 ? "s" : ""})
           </Button>
         </div>
       </div>

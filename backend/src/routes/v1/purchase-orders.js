@@ -422,7 +422,7 @@ router.post('/generate', async (req, res) => {
 
         // Insert purchase order
         const { rows: poRows } = await client.query(
-          `INSERT INTO purchase_orders (po_number, brand, status, agent_id, recipient_email, notes, subtotal, created_at, updated_at)
+          `INSERT INTO purchase_orders (po_number, brand, status, created_by, recipient_email, notes, subtotal, created_at, updated_at)
            VALUES ($1, $2, 'draft', $3, $4, $5, 0, NOW(), NOW())
            RETURNING *`,
           [poNumber, brand, agentId, recipientEmail, notes || null]
