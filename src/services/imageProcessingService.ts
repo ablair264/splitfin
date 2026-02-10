@@ -46,6 +46,11 @@ function normalise(s: string): string {
   return s.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 }
 
+/** True when a string is all digits — numeric SKUs are precise identifiers */
+function isNumeric(s: string): boolean {
+  return /^\d+$/.test(s);
+}
+
 /**
  * Extract candidate tokens from a filename.
  *
@@ -194,8 +199,12 @@ class ImageProcessingService {
 
       // 2-4. Check against all SKUs
       for (const { norm: skuNorm, product } of index.all) {
+        // Purely numeric pairs (e.g. "6302" vs "63042") are precise identifiers —
+        // substring/fuzzy matching produces false positives. Only exact match allowed.
+        const bothNumeric = isNumeric(token) && isNumeric(skuNorm);
+
         // 2. Token contains the SKU
-        if (token.length > skuNorm.length && token.includes(skuNorm) && skuNorm.length >= 3) {
+        if (!bothNumeric && token.length > skuNorm.length && token.includes(skuNorm) && skuNorm.length >= 3) {
           const conf = 0.95;
           if (!bestMatch || conf > bestMatch.confidence || (conf === bestMatch.confidence && skuNorm.length > normalise(bestMatch.sku).length)) {
             bestMatch = { sku: product.sku, confidence: conf, productInfo: product };
@@ -203,7 +212,7 @@ class ImageProcessingService {
         }
 
         // 3. SKU contains the token (token must be substantial)
-        if (skuNorm.length > token.length && skuNorm.includes(token) && token.length >= 4) {
+        if (!bothNumeric && skuNorm.length > token.length && skuNorm.includes(token) && token.length >= 4) {
           const conf = 0.90;
           if (!bestMatch || conf > bestMatch.confidence) {
             bestMatch = { sku: product.sku, confidence: conf, productInfo: product };
@@ -211,7 +220,8 @@ class ImageProcessingService {
         }
 
         // 4. Fuzzy: small edit distance (for typos / minor differences)
-        if (token.length >= 4 && Math.abs(token.length - skuNorm.length) <= 2) {
+        // Same-length only to prevent insertion/deletion false positives
+        if (!bothNumeric && token.length >= 4 && token.length === skuNorm.length) {
           const dist = this.levenshteinDistance(token, skuNorm);
           if (dist <= 2) {
             const conf = dist === 1 ? 0.85 : 0.80;

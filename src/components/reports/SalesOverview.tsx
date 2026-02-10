@@ -39,15 +39,16 @@ export default function SalesOverview({ dateRange }: { dateRange: ReportDateRang
     return () => { cancelled = true; };
   }, [dateRange]);
 
+  // Hooks must run unconditionally — before early returns
+  const revenueData = useMemo(() =>
+    data ? data.monthly_trend.map(m => ({ name: m.month, value: m.revenue })) : [], [data]);
+  const ordersData = useMemo(() =>
+    data ? data.monthly_trend.map(m => ({ name: m.month, value: m.order_count })) : [], [data]);
+
   if (loading) return <Skeleton />;
   if (!data) return <p className="text-muted-foreground p-4">Failed to load report data.</p>;
 
   const { summary, monthly_trend, top_products } = data;
-
-  const revenueData = useMemo(() =>
-    monthly_trend.map(m => ({ name: m.month, value: m.revenue })), [monthly_trend]);
-  const ordersData = useMemo(() =>
-    monthly_trend.map(m => ({ name: m.month, value: m.order_count })), [monthly_trend]);
 
   return (
     <div className="space-y-6 mt-4">
