@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Download, Users, TrendingUp } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { reportService } from '@/services/reportService';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { reportService, type ReportFilters } from '@/services/reportService';
 import type { ReportDateRange, CustomerInsightsData } from '@/types/domain';
 
 const formatGBP = (n: number) =>
@@ -12,20 +10,20 @@ const formatGBP = (n: number) =>
 const formatCompact = (n: number) =>
   new Intl.NumberFormat('en-GB', { notation: 'compact', maximumFractionDigits: 1 }).format(n);
 
-const SEGMENT_COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))', 'hsl(var(--chart-5))'];
+const SEGMENT_COLORS = ['var(--chart-1)', 'var(--chart-2)', 'var(--chart-3)', 'var(--chart-4)', 'var(--chart-5)'];
 
-export default function CustomerInsights({ dateRange }: { dateRange: ReportDateRange }) {
+export default function CustomerInsights({ dateRange, filters }: { dateRange: ReportDateRange; filters?: ReportFilters }) {
   const [data, setData] = useState<CustomerInsightsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    reportService.customerInsights(dateRange).then(result => {
+    reportService.customerInsights(dateRange, filters).then(result => {
       if (!cancelled) { setData(result); setLoading(false); }
     }).catch(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [dateRange]);
+  }, [dateRange, filters]);
 
   if (loading) return <Skeleton />;
   if (!data) return <p className="text-muted-foreground p-4">Failed to load report data.</p>;
@@ -37,15 +35,22 @@ export default function CustomerInsights({ dateRange }: { dateRange: ReportDateR
 
   return (
     <div className="space-y-6 mt-4">
-      {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4">
-        <StatCard label="Active Customers" value={totalCustomers.toLocaleString()} icon={Users} color="blue" />
-        <StatCard label="Avg Revenue / Customer" value={formatGBP(avgRevenue)} icon={TrendingUp} color="emerald" />
+        <Card className="py-4 gap-3">
+          <CardHeader className="px-4 pb-0 gap-1">
+            <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Active Customers</CardDescription>
+            <CardTitle className="text-xl tabular-nums">{totalCustomers.toLocaleString()}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="py-4 gap-3">
+          <CardHeader className="px-4 pb-0 gap-1">
+            <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Avg Revenue / Customer</CardDescription>
+            <CardTitle className="text-xl tabular-nums">{formatGBP(avgRevenue)}</CardTitle>
+          </CardHeader>
+        </Card>
       </div>
 
-      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Segment Pie Chart */}
         {segments.length > 0 && (
           <Card>
             <CardContent className="p-4">
@@ -74,18 +79,17 @@ export default function CustomerInsights({ dateRange }: { dateRange: ReportDateR
           </Card>
         )}
 
-        {/* Region Bar Chart */}
         {regions.length > 0 && (
           <Card>
             <CardContent className="p-4">
               <h3 className="text-sm font-medium text-muted-foreground mb-4">Revenue by Region</h3>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={regions.slice(0, 10)}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="region" tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }} angle={-25} textAnchor="end" height={60} />
-                  <YAxis tickFormatter={(v) => formatCompact(v)} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                  <XAxis dataKey="region" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} angle={-25} textAnchor="end" height={60} />
+                  <YAxis tickFormatter={(v) => formatCompact(v)} tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
                   <Tooltip formatter={(value: number) => [formatGBP(value), 'Revenue']} />
-                  <Bar dataKey="revenue" fill="hsl(var(--chart-4))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="revenue" fill="var(--chart-4)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
@@ -93,15 +97,9 @@ export default function CustomerInsights({ dateRange }: { dateRange: ReportDateR
         )}
       </div>
 
-      {/* Top Customers Table */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-muted-foreground">Top Customers by Revenue</h3>
-            <Button intent="outline" size="sm" onPress={() => reportService.exportCsv('customer-insights', dateRange)}>
-              <Download className="h-3.5 w-3.5 mr-1.5" />Export CSV
-            </Button>
-          </div>
+          <h3 className="text-sm font-medium text-muted-foreground mb-4">Top Customers by Revenue</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -129,26 +127,6 @@ export default function CustomerInsights({ dateRange }: { dateRange: ReportDateR
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: React.ElementType; color: string }) {
-  const colorMap: Record<string, string> = {
-    emerald: 'border-emerald-500/20 text-emerald-400',
-    blue: 'border-blue-500/20 text-blue-400',
-  };
-  const cls = colorMap[color] || 'border-zinc-500/20 text-zinc-400';
-  const [borderCls, iconCls] = cls.split(' ');
-  return (
-    <Card className={borderCls}>
-      <CardContent className="p-4 flex items-center justify-between">
-        <div>
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-2xl font-bold tabular-nums">{value}</p>
-        </div>
-        <Icon className={`h-5 w-5 ${iconCls}`} />
-      </CardContent>
-    </Card>
   );
 }
 

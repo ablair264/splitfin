@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
-import { Download, Users, DollarSign, TrendingUp } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { reportService } from '@/services/reportService';
 import type { ReportDateRange, AgentPerformanceData } from '@/types/domain';
 
@@ -34,40 +32,47 @@ export default function AgentPerformance({ dateRange }: { dateRange: ReportDateR
 
   return (
     <div className="space-y-6 mt-4">
-      {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard label="Active Agents" value={agents.length.toString()} icon={Users} color="blue" />
-        <StatCard label="Combined Revenue" value={formatGBP(totalRevenue)} icon={DollarSign} color="emerald" />
-        <StatCard label="Avg Revenue / Agent" value={formatGBP(avgRevenue)} icon={TrendingUp} color="purple" />
+        <Card className="py-4 gap-3">
+          <CardHeader className="px-4 pb-0 gap-1">
+            <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Active Agents</CardDescription>
+            <CardTitle className="text-xl tabular-nums">{agents.length}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="py-4 gap-3">
+          <CardHeader className="px-4 pb-0 gap-1">
+            <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Combined Revenue</CardDescription>
+            <CardTitle className="text-xl tabular-nums">{formatGBP(totalRevenue)}</CardTitle>
+          </CardHeader>
+        </Card>
+        <Card className="py-4 gap-3">
+          <CardHeader className="px-4 pb-0 gap-1">
+            <CardDescription className="text-[11px] uppercase tracking-wider font-medium">Avg Revenue / Agent</CardDescription>
+            <CardTitle className="text-xl tabular-nums">{formatGBP(avgRevenue)}</CardTitle>
+          </CardHeader>
+        </Card>
       </div>
 
-      {/* Revenue by Agent Chart */}
       {agents.length > 0 && (
         <Card>
           <CardContent className="p-4">
             <h3 className="text-sm font-medium text-muted-foreground mb-4">Revenue by Agent</h3>
             <ResponsiveContainer width="100%" height={Math.max(200, agents.length * 48)}>
               <BarChart data={agents} layout="vertical" margin={{ left: 80 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" horizontal={false} />
-                <XAxis type="number" tickFormatter={(v) => formatCompact(v)} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} width={80} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" horizontal={false} />
+                <XAxis type="number" tickFormatter={(v) => formatCompact(v)} tick={{ fontSize: 11, fill: 'var(--muted-foreground)' }} />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: 'var(--muted-foreground)' }} width={80} />
                 <Tooltip formatter={(value: number) => [formatGBP(value), 'Revenue']} />
-                <Bar dataKey="revenue" fill="hsl(var(--chart-2))" radius={[0, 4, 4, 0]} />
+                <Bar dataKey="revenue" fill="var(--chart-2)" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       )}
 
-      {/* Agent Table */}
       <Card>
         <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-muted-foreground">Agent Breakdown</h3>
-            <Button intent="outline" size="sm" onPress={() => reportService.exportCsv('agent-performance', dateRange)}>
-              <Download className="h-3.5 w-3.5 mr-1.5" />Export CSV
-            </Button>
-          </div>
+          <h3 className="text-sm font-medium text-muted-foreground mb-4">Agent Breakdown</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -95,27 +100,6 @@ export default function AgentPerformance({ dateRange }: { dateRange: ReportDateR
         </CardContent>
       </Card>
     </div>
-  );
-}
-
-function StatCard({ label, value, icon: Icon, color }: { label: string; value: string; icon: React.ElementType; color: string }) {
-  const colorMap: Record<string, string> = {
-    emerald: 'border-emerald-500/20 text-emerald-400',
-    blue: 'border-blue-500/20 text-blue-400',
-    purple: 'border-purple-500/20 text-purple-400',
-  };
-  const cls = colorMap[color] || 'border-zinc-500/20 text-zinc-400';
-  const [borderCls, iconCls] = cls.split(' ');
-  return (
-    <Card className={borderCls}>
-      <CardContent className="p-4 flex items-center justify-between">
-        <div>
-          <p className="text-xs text-muted-foreground">{label}</p>
-          <p className="text-2xl font-bold tabular-nums">{value}</p>
-        </div>
-        <Icon className={`h-5 w-5 ${iconCls}`} />
-      </CardContent>
-    </Card>
   );
 }
 

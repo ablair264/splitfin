@@ -555,3 +555,18 @@ export interface FinancialData {
   summary: { total_invoices: number; total_invoiced: number; total_outstanding: number; overdue_count: number; overdue_amount: number };
   ageing: { bucket: string; invoice_count: number; amount: number }[];
 }
+
+export interface AgentCommissionData {
+  agents: {
+    id: string; name: string; commission_rate: number; order_count: number;
+    revenue: number; avg_order_value: number; customer_count: number; commission_earned: number;
+  }[];
+  totals: { total_revenue: number; total_commission: number; total_orders: number };
+}
+
+export interface ReportFilterOptions {
+  agents: { id: string; name: string }[];
+  brands: string[];
+  regions: string[];
+  statuses: string[];
+}
