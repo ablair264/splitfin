@@ -132,8 +132,6 @@ router.put('/categories/:id', async (req, res) => {
     for (const key of allowed) {
       if (req.body[key] !== undefined) updates[key] = req.body[key];
     }
-    updates.updated_at = new Date().toISOString();
-
     const result = await update('website_categories', category.id, updates);
     res.json({ data: result });
   } catch (err) {
@@ -162,7 +160,7 @@ router.post('/categories/:id/hero-image', async (req, res) => {
     const imageUrl = await uploadToR2(key, processed.buffer, processed.contentType);
 
     await deleteFromR2(category.hero_image_url);
-    await update('website_categories', category.id, { hero_image_url: imageUrl, updated_at: new Date().toISOString() });
+    await update('website_categories', category.id, { hero_image_url: imageUrl });
 
     logger.info(`[SiteContent] Category hero uploaded: ${key} for ${category.name}`);
     res.json({ hero_image_url: imageUrl });
@@ -217,8 +215,6 @@ router.put('/:id', async (req, res) => {
     for (const key of allowed) {
       if (req.body[key] !== undefined) updates[key] = req.body[key];
     }
-    updates.updated_at = new Date().toISOString();
-
     const result = await update('site_sections', req.params.id, updates);
     res.json({ data: result });
   } catch (err) {
@@ -269,7 +265,7 @@ router.post('/:id/image', async (req, res) => {
     // Delete old image from R2 if it was an R2 URL
     await deleteFromR2(section.image_url);
 
-    await update('site_sections', section.id, { image_url: imageUrl, updated_at: new Date().toISOString() });
+    await update('site_sections', section.id, { image_url: imageUrl });
 
     logger.info(`[SiteContent] Image uploaded: ${key} (${processed.width}x${processed.height})`);
     res.json({ image_url: imageUrl, width: processed.width, height: processed.height });
@@ -300,7 +296,7 @@ router.post('/:id/poster', async (req, res) => {
     const posterUrl = await uploadToR2(key, processed.buffer, processed.contentType);
 
     await deleteFromR2(section.poster_url);
-    await update('site_sections', section.id, { poster_url: posterUrl, updated_at: new Date().toISOString() });
+    await update('site_sections', section.id, { poster_url: posterUrl });
 
     logger.info(`[SiteContent] Poster uploaded: ${key}`);
     res.json({ poster_url: posterUrl });
