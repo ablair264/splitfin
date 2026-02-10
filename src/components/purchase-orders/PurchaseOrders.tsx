@@ -211,7 +211,7 @@ function ReorderIntelligenceTab({
             onClick={() => onGeneratePO(selectedItems)}
           >
             <FileSpreadsheet className="h-3.5 w-3.5 mr-1.5" />
-            Save as Draft PO ({selectedIds.size} items)
+            Generate PO ({selectedIds.size} items)
           </Button>
         )}
       </div>
@@ -378,12 +378,12 @@ function GeneratePOModal({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <h3 className="font-semibold text-foreground">Save as Draft Purchase Order</h3>
+          <h3 className="font-semibold text-foreground">Generate Purchase Orders</h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X className="h-4 w-4" /></button>
         </div>
         <div className="p-4 space-y-4">
           <p className="text-xs text-muted-foreground">
-            {grouped.length} draft PO{grouped.length !== 1 ? "s" : ""} will be saved (one per brand). Adjust quantities below. You can review, export, or email them later.
+            {grouped.length} PO{grouped.length !== 1 ? "s" : ""} will be created (one per brand). Adjust quantities below.
           </p>
 
           {grouped.map(([brand, brandItems]) => (
@@ -450,13 +450,22 @@ function GeneratePOModal({
         <div className="flex items-center justify-end gap-2 p-4 border-t border-border">
           <Button intent="outline" size="sm" onClick={onClose}>Cancel</Button>
           <Button
+            intent="outline"
+            size="sm"
+            onClick={handleSubmit}
+            isDisabled={submitting}
+          >
+            {submitting && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+            Save as Draft
+          </Button>
+          <Button
             size="sm"
             className="bg-teal-600 hover:bg-teal-700 text-white"
             onClick={handleSubmit}
             isDisabled={submitting}
           >
             {submitting && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
-            Save Draft ({grouped.length} PO{grouped.length !== 1 ? "s" : ""})
+            Generate PO ({grouped.length})
           </Button>
         </div>
       </div>
