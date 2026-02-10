@@ -37,6 +37,13 @@ export const imageService = {
     return result.data;
   },
 
+  async getSkuPatterns(): Promise<{ brand_name: string; pattern: string; description: string }[]> {
+    const result = await api.get<{ data: { brand_name: string; pattern: string; description: string }[] }>(
+      '/api/v1/images/sku-patterns',
+    );
+    return result.data;
+  },
+
   async upload(
     file: Blob,
     brand: string,

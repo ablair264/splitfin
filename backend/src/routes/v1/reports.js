@@ -740,7 +740,7 @@ router.get('/export/:report', async (req, res) => {
 
           const result = await query(`
             SELECT
-              o.zoho_salesorder_number AS order_number,
+              o.salesorder_number AS order_number,
               o.date::text AS order_date,
               c.company_name AS customer,
               COALESCE(o.total, 0) AS order_total,

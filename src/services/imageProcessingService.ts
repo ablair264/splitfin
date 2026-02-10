@@ -4,12 +4,11 @@
  * AI analysis (product type, color detection) happens server-side during upload
  *
  * SKU Matching Strategy:
- * 1. Extract tokens from filename (split on _ - . space)
- * 2. Build combined tokens from adjacent pairs (e.g. "ABC" + "123" -> "ABC123")
- * 3. Normalize everything (strip non-alphanumeric, uppercase)
- * 4. Match tokens against a normalised SKU index
- * 5. Longest match wins (avoids false positives on short tokens)
- * 6. Falls back to uploading without a match (never rejects an image)
+ * 1. Fetch brand SKU pattern (regex) from brand_sku_patterns table
+ * 2. Extract tokens from filename (split on _ - . space)
+ * 3. If brand has a pattern, filter tokens to those matching the pattern
+ * 4. EXACT match only against normalised SKU index — no fuzzy matching
+ * 5. Falls back to uploading without a match (never rejects an image)
  */
 
 import { productService } from './productService';
@@ -44,11 +43,6 @@ export interface ProductInfo {
 /** Strip everything except letters and digits, then uppercase */
 function normalise(s: string): string {
   return s.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-}
-
-/** True when a string is all digits — numeric SKUs are precise identifiers */
-function isNumeric(s: string): boolean {
-  return /^\d+$/.test(s);
 }
 
 /**
@@ -89,23 +83,43 @@ function extractTokens(filename: string): string[] {
 interface SkuIndex {
   /** normalised SKU string -> original ProductInfo */
   exact: Map<string, ProductInfo>;
-  /** all products for substring search */
-  all: { norm: string; product: ProductInfo }[];
 }
 
 function buildSkuIndex(products: ProductInfo[]): SkuIndex {
   const exact = new Map<string, ProductInfo>();
-  const all: { norm: string; product: ProductInfo }[] = [];
 
   for (const p of products) {
     if (!p.sku) continue;
     const norm = normalise(p.sku);
     if (norm.length === 0) continue;
     exact.set(norm, p);
-    all.push({ norm, product: p });
   }
 
-  return { exact, all };
+  return { exact };
+}
+
+/** Cache of brand SKU patterns (fetched once per session) */
+let patternCache: Map<string, RegExp> | null = null;
+
+async function getBrandPatterns(): Promise<Map<string, RegExp>> {
+  if (patternCache) return patternCache;
+
+  try {
+    const patterns = await imageService.getSkuPatterns();
+    patternCache = new Map();
+    for (const p of patterns) {
+      try {
+        // Wrap pattern with ^ and $ for full-match, case-insensitive
+        patternCache.set(p.brand_name, new RegExp(`^${p.pattern}$`, 'i'));
+      } catch {
+        console.warn(`Invalid SKU pattern for brand "${p.brand_name}":`, p.pattern);
+      }
+    }
+    return patternCache;
+  } catch {
+    console.warn('Failed to fetch brand SKU patterns, using exact-only matching');
+    return new Map();
+  }
 }
 
 class ImageProcessingService {
@@ -165,17 +179,16 @@ class ImageProcessingService {
   /**
    * Smart SKU matching: extract tokens from filename, match against normalised SKU index.
    *
-   * Matching priority:
-   *  1.0  — A token IS the normalised SKU (exact)
-   *  0.95 — A token contains the normalised SKU as a substring
-   *  0.90 — The normalised SKU contains a token as a substring (token >=4 chars)
-   *  0.80 — Levenshtein on token vs SKU (edit distance <= 2 and token >=4 chars)
+   * If the brand has a SKU pattern defined, only tokens matching that pattern are
+   * considered as candidates. This eliminates false positives entirely.
    *
-   * Among ties, the longest matching SKU wins (avoids short false-positive matches).
+   * ALL matching is exact only — no fuzzy/Levenshtein/substring matching.
+   * A token either IS the SKU or it isn't.
    */
   matchSKUFromFilename(
     filename: string,
     availableSKUs: ProductInfo[],
+    brandPattern?: RegExp,
   ): { sku: string; confidence: number; productInfo: ProductInfo } | null {
     if (availableSKUs.length === 0) return null;
 
@@ -187,74 +200,21 @@ class ImageProcessingService {
     for (const token of tokens) {
       if (token.length < 2) continue;
 
-      // 1. Exact normalised match
+      // If brand has a pattern, skip tokens that don't match it
+      if (brandPattern && !brandPattern.test(token)) continue;
+
+      // Exact normalised match only
       const exactProduct = index.exact.get(token);
       if (exactProduct) {
         const conf = 1.0;
-        if (!bestMatch || conf > bestMatch.confidence || (conf === bestMatch.confidence && token.length > normalise(bestMatch.sku).length)) {
+        // Prefer longest matching token (avoids short false positives)
+        if (!bestMatch || token.length > normalise(bestMatch.sku).length) {
           bestMatch = { sku: exactProduct.sku, confidence: conf, productInfo: exactProduct };
-        }
-        continue; // can't do better than 1.0
-      }
-
-      // 2-4. Check against all SKUs
-      for (const { norm: skuNorm, product } of index.all) {
-        // Purely numeric pairs (e.g. "6302" vs "63042") are precise identifiers —
-        // substring/fuzzy matching produces false positives. Only exact match allowed.
-        const bothNumeric = isNumeric(token) && isNumeric(skuNorm);
-
-        // 2. Token contains the SKU
-        if (!bothNumeric && token.length > skuNorm.length && token.includes(skuNorm) && skuNorm.length >= 3) {
-          const conf = 0.95;
-          if (!bestMatch || conf > bestMatch.confidence || (conf === bestMatch.confidence && skuNorm.length > normalise(bestMatch.sku).length)) {
-            bestMatch = { sku: product.sku, confidence: conf, productInfo: product };
-          }
-        }
-
-        // 3. SKU contains the token (token must be substantial)
-        if (!bothNumeric && skuNorm.length > token.length && skuNorm.includes(token) && token.length >= 4) {
-          const conf = 0.90;
-          if (!bestMatch || conf > bestMatch.confidence) {
-            bestMatch = { sku: product.sku, confidence: conf, productInfo: product };
-          }
-        }
-
-        // 4. Fuzzy: small edit distance (for typos / minor differences)
-        // Same-length only to prevent insertion/deletion false positives
-        if (!bothNumeric && token.length >= 4 && token.length === skuNorm.length) {
-          const dist = this.levenshteinDistance(token, skuNorm);
-          if (dist <= 2) {
-            const conf = dist === 1 ? 0.85 : 0.80;
-            if (!bestMatch || conf > bestMatch.confidence) {
-              bestMatch = { sku: product.sku, confidence: conf, productInfo: product };
-            }
-          }
         }
       }
     }
 
     return bestMatch;
-  }
-
-  /**
-   * Levenshtein edit distance between two strings.
-   */
-  private levenshteinDistance(a: string, b: string): number {
-    const m = a.length;
-    const n = b.length;
-    const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
-    for (let i = 0; i <= m; i++) dp[i][0] = i;
-    for (let j = 0; j <= n; j++) dp[0][j] = j;
-    for (let i = 1; i <= m; i++) {
-      for (let j = 1; j <= n; j++) {
-        dp[i][j] = Math.min(
-          dp[i - 1][j] + 1,
-          dp[i][j - 1] + 1,
-          dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
-        );
-      }
-    }
-    return dp[m][n];
   }
 
   /**
@@ -316,7 +276,7 @@ class ImageProcessingService {
 
   /**
    * Process a single image through the pipeline:
-   * 1. SKU match from filename (smart token extraction)
+   * 1. SKU match from filename (pattern extraction + exact match)
    * 2. WebP conversion (0.90 quality)
    * 3. Upload to backend (R2 storage + AI analysis)
    *
@@ -327,12 +287,13 @@ class ImageProcessingService {
     availableSKUs: ProductInfo[],
     existingFilenames: string[],
     brandName: string,
+    brandPattern?: RegExp,
   ): Promise<ImageProcessingResult> {
     try {
       const originalFilename = file.name;
 
-      // Step 1: Match SKU from filename
-      const skuMatch = this.matchSKUFromFilename(originalFilename, availableSKUs);
+      // Step 1: Match SKU from filename (exact only, pattern-filtered)
+      const skuMatch = this.matchSKUFromFilename(originalFilename, availableSKUs, brandPattern);
 
       // Step 2: Convert to WebP (0.90 quality for website display)
       const webpBlob = await this.convertToWebP(file, 0.90);
@@ -383,6 +344,10 @@ class ImageProcessingService {
     // Get ALL available SKUs for the brand (paginated fetch)
     const availableSKUs = await this.getProductSKUs(brandName);
 
+    // Get brand SKU pattern (if defined)
+    const patterns = await getBrandPatterns();
+    const brandPattern = patterns.get(brandName);
+
     const progress: BatchUploadProgress = {
       total: fileArray.length,
       processed: 0,
@@ -406,6 +371,7 @@ class ImageProcessingService {
           availableSKUs,
           existingFilenames,
           brandName,
+          brandPattern,
         );
 
         results.push(result);
@@ -436,6 +402,11 @@ class ImageProcessingService {
     }
 
     return progress;
+  }
+
+  /** Clear the cached patterns (e.g. after editing patterns in settings) */
+  clearPatternCache() {
+    patternCache = null;
   }
 }
 

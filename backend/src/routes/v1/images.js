@@ -186,6 +186,21 @@ router.get('/brands', async (_req, res) => {
 });
 
 // ===========================================================================
+// 2b. GET /sku-patterns — Brand SKU format patterns for frontend matching
+// ===========================================================================
+router.get('/sku-patterns', async (_req, res) => {
+  try {
+    const result = await query(
+      'SELECT brand_name, pattern, description FROM brand_sku_patterns ORDER BY brand_name'
+    );
+    res.json({ data: result.rows });
+  } catch (err) {
+    logger.error('[Images] SKU patterns error:', err);
+    res.status(500).json({ error: 'Failed to fetch SKU patterns' });
+  }
+});
+
+// ===========================================================================
 // 3. GET /stats — Summary statistics
 // ===========================================================================
 router.get('/stats', async (_req, res) => {
