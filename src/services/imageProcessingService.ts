@@ -2,6 +2,14 @@
  * AI-Powered Image Processing Service
  * Handles SKU matching, WebP conversion, and upload to backend
  * AI analysis (product type, color detection) happens server-side during upload
+ *
+ * SKU Matching Strategy:
+ * 1. Extract tokens from filename (split on _ - . space)
+ * 2. Build combined tokens from adjacent pairs (e.g. "ABC" + "123" -> "ABC123")
+ * 3. Normalize everything (strip non-alphanumeric, uppercase)
+ * 4. Match tokens against a normalised SKU index
+ * 5. Longest match wins (avoids false positives on short tokens)
+ * 6. Falls back to uploading without a match (never rejects an image)
  */
 
 import { productService } from './productService';
@@ -33,6 +41,68 @@ export interface ProductInfo {
   brand_name: string;
 }
 
+/** Strip everything except letters and digits, then uppercase */
+function normalise(s: string): string {
+  return s.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+}
+
+/**
+ * Extract candidate tokens from a filename.
+ *
+ * Given "BRAND_ABC-123_Blue_Front.jpg" produces:
+ *   singles:  ["BRAND", "ABC", "123", "BLUE", "FRONT"]
+ *   pairs:    ["BRANDABC", "ABC123", "123BLUE", "BLUEFRONT"]
+ *   triples:  ["BRANDABC123", "ABC123BLUE", "123BLUEFRONT"]
+ *
+ * All values are normalised (uppercase, alphanumeric only).
+ */
+function extractTokens(filename: string): string[] {
+  // Strip file extension
+  const base = filename.replace(/\.[^/.]+$/, '');
+
+  // Split on common delimiters
+  const raw = base.split(/[_\-\.\s]+/).filter(Boolean);
+  const singles = raw.map(normalise).filter(t => t.length > 0);
+
+  const tokens = new Set(singles);
+
+  // Combined adjacent pairs
+  for (let i = 0; i < singles.length - 1; i++) {
+    tokens.add(singles[i] + singles[i + 1]);
+  }
+  // Combined adjacent triples
+  for (let i = 0; i < singles.length - 2; i++) {
+    tokens.add(singles[i] + singles[i + 1] + singles[i + 2]);
+  }
+
+  // Also add the full normalised basename (handles filenames that ARE the SKU)
+  tokens.add(normalise(base));
+
+  return Array.from(tokens);
+}
+
+interface SkuIndex {
+  /** normalised SKU string -> original ProductInfo */
+  exact: Map<string, ProductInfo>;
+  /** all products for substring search */
+  all: { norm: string; product: ProductInfo }[];
+}
+
+function buildSkuIndex(products: ProductInfo[]): SkuIndex {
+  const exact = new Map<string, ProductInfo>();
+  const all: { norm: string; product: ProductInfo }[] = [];
+
+  for (const p of products) {
+    if (!p.sku) continue;
+    const norm = normalise(p.sku);
+    if (norm.length === 0) continue;
+    exact.set(norm, p);
+    all.push({ norm, product: p });
+  }
+
+  return { exact, all };
+}
+
 class ImageProcessingService {
   private canvas: HTMLCanvasElement | null = null;
 
@@ -43,22 +113,44 @@ class ImageProcessingService {
   }
 
   /**
-   * Get all SKUs for a specific brand for matching
+   * Fetch ALL SKUs for a brand, paginating through the full set.
+   * The old code used default pagination (limit ~50), missing most products.
    */
-  async getProductSKUs(brandId?: string): Promise<ProductInfo[]> {
+  async getProductSKUs(brandName?: string): Promise<ProductInfo[]> {
     try {
-      const filters: Record<string, string | number> = { status: 'active' };
-      if (brandId) {
-        filters.brand = brandId;
+      const allProducts: ProductInfo[] = [];
+      const pageSize = 200;
+      let offset = 0;
+      let hasMore = true;
+
+      while (hasMore) {
+        const filters: Record<string, string | number> = {
+          status: 'active',
+          limit: pageSize,
+          offset,
+        };
+        if (brandName) {
+          filters.brand = brandName;
+        }
+
+        const result = await productService.list(filters);
+        const items = result.data || [];
+
+        for (const item of items) {
+          if (item.sku) {
+            allProducts.push({
+              sku: item.sku,
+              name: item.name,
+              brand_name: (item as any).brand || 'Unknown',
+            });
+          }
+        }
+
+        hasMore = result.meta?.has_more ?? items.length === pageSize;
+        offset += pageSize;
       }
 
-      const result = await productService.list(filters);
-
-      return result.data?.map((item: any) => ({
-        sku: item.sku,
-        name: item.name,
-        brand_name: item.brand || 'Unknown'
-      })) || [];
+      return allProducts;
     } catch (error) {
       console.error('Error fetching product SKUs:', error);
       return [];
@@ -66,30 +158,68 @@ class ImageProcessingService {
   }
 
   /**
-   * Advanced SKU matching algorithm
+   * Smart SKU matching: extract tokens from filename, match against normalised SKU index.
+   *
+   * Matching priority:
+   *  1.0  — A token IS the normalised SKU (exact)
+   *  0.95 — A token contains the normalised SKU as a substring
+   *  0.90 — The normalised SKU contains a token as a substring (token >=4 chars)
+   *  0.80 — Levenshtein on token vs SKU (edit distance <= 2 and token >=4 chars)
+   *
+   * Among ties, the longest matching SKU wins (avoids short false-positive matches).
    */
-  matchSKUFromFilename(filename: string, availableSKUs: ProductInfo[]): {
-    sku: string;
-    confidence: number;
-    productInfo: ProductInfo;
-  } | null {
-    const cleanFilename = filename
-      .replace(/\.[^/.]+$/, '')
-      .replace(/[_\-\s]+/g, ' ')
-      .toUpperCase();
+  matchSKUFromFilename(
+    filename: string,
+    availableSKUs: ProductInfo[],
+  ): { sku: string; confidence: number; productInfo: ProductInfo } | null {
+    if (availableSKUs.length === 0) return null;
+
+    const index = buildSkuIndex(availableSKUs);
+    const tokens = extractTokens(filename);
 
     let bestMatch: { sku: string; confidence: number; productInfo: ProductInfo } | null = null;
 
-    for (const product of availableSKUs) {
-      const sku = product.sku.toUpperCase();
-      const confidence = this.calculateSKUMatchConfidence(cleanFilename, sku);
+    for (const token of tokens) {
+      if (token.length < 2) continue;
 
-      if (confidence > 0.7 && (!bestMatch || confidence > bestMatch.confidence)) {
-        bestMatch = {
-          sku: product.sku,
-          confidence,
-          productInfo: product
-        };
+      // 1. Exact normalised match
+      const exactProduct = index.exact.get(token);
+      if (exactProduct) {
+        const conf = 1.0;
+        if (!bestMatch || conf > bestMatch.confidence || (conf === bestMatch.confidence && token.length > normalise(bestMatch.sku).length)) {
+          bestMatch = { sku: exactProduct.sku, confidence: conf, productInfo: exactProduct };
+        }
+        continue; // can't do better than 1.0
+      }
+
+      // 2-4. Check against all SKUs
+      for (const { norm: skuNorm, product } of index.all) {
+        // 2. Token contains the SKU
+        if (token.length > skuNorm.length && token.includes(skuNorm) && skuNorm.length >= 3) {
+          const conf = 0.95;
+          if (!bestMatch || conf > bestMatch.confidence || (conf === bestMatch.confidence && skuNorm.length > normalise(bestMatch.sku).length)) {
+            bestMatch = { sku: product.sku, confidence: conf, productInfo: product };
+          }
+        }
+
+        // 3. SKU contains the token (token must be substantial)
+        if (skuNorm.length > token.length && skuNorm.includes(token) && token.length >= 4) {
+          const conf = 0.90;
+          if (!bestMatch || conf > bestMatch.confidence) {
+            bestMatch = { sku: product.sku, confidence: conf, productInfo: product };
+          }
+        }
+
+        // 4. Fuzzy: small edit distance (for typos / minor differences)
+        if (token.length >= 4 && Math.abs(token.length - skuNorm.length) <= 2) {
+          const dist = this.levenshteinDistance(token, skuNorm);
+          if (dist <= 2) {
+            const conf = dist === 1 ? 0.85 : 0.80;
+            if (!bestMatch || conf > bestMatch.confidence) {
+              bestMatch = { sku: product.sku, confidence: conf, productInfo: product };
+            }
+          }
+        }
       }
     }
 
@@ -97,62 +227,28 @@ class ImageProcessingService {
   }
 
   /**
-   * Calculate confidence score for SKU matching
+   * Levenshtein edit distance between two strings.
    */
-  private calculateSKUMatchConfidence(filename: string, sku: string): number {
-    if (filename.includes(sku)) return 1.0;
-    if (filename.startsWith(sku)) return 0.95;
-    if (filename.endsWith(sku)) return 0.9;
-
-    const skuVariations = [
-      sku,
-      sku.replace(/[^a-zA-Z0-9]/g, ''),
-      sku.replace(/[^a-zA-Z0-9]/g, '').split('').join('[-_\\s]*'),
-    ];
-
-    for (const variation of skuVariations) {
-      try {
-        const regex = new RegExp(variation, 'i');
-        if (regex.test(filename)) return 0.8;
-      } catch {
-        // Skip invalid regex
-      }
-    }
-
-    const similarity = this.calculateStringSimilarity(filename, sku);
-    if (similarity > 0.8) return 0.75;
-
-    return 0;
-  }
-
-  /**
-   * Calculate string similarity using Levenshtein distance
-   */
-  private calculateStringSimilarity(str1: string, str2: string): number {
-    const len1 = str1.length;
-    const len2 = str2.length;
-    const matrix = Array(len1 + 1).fill(null).map(() => Array(len2 + 1).fill(null));
-
-    for (let i = 0; i <= len1; i++) matrix[i][0] = i;
-    for (let j = 0; j <= len2; j++) matrix[0][j] = j;
-
-    for (let i = 1; i <= len1; i++) {
-      for (let j = 1; j <= len2; j++) {
-        const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
-        matrix[i][j] = Math.min(
-          matrix[i - 1][j] + 1,
-          matrix[i][j - 1] + 1,
-          matrix[i - 1][j - 1] + cost
+  private levenshteinDistance(a: string, b: string): number {
+    const m = a.length;
+    const n = b.length;
+    const dp: number[][] = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        dp[i][j] = Math.min(
+          dp[i - 1][j] + 1,
+          dp[i][j - 1] + 1,
+          dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
         );
       }
     }
-
-    const maxLen = Math.max(len1, len2);
-    return maxLen === 0 ? 1 : (maxLen - matrix[len1][len2]) / maxLen;
+    return dp[m][n];
   }
 
   /**
-   * Convert image to WebP format
+   * Convert image to WebP format using canvas.
    */
   async convertToWebP(file: File, quality: number = 0.90): Promise<Blob> {
     return new Promise((resolve, reject) => {
@@ -183,7 +279,7 @@ class ImageProcessingService {
             }
           },
           'image/webp',
-          quality
+          quality,
         );
       };
 
@@ -193,7 +289,7 @@ class ImageProcessingService {
   }
 
   /**
-   * Generate final filename with duplicate handling
+   * Generate final filename with duplicate handling.
    */
   generateFinalFilename(sku: string, existingFilenames: string[], extension: string = 'webp'): string {
     const baseName = sku.toLowerCase();
@@ -210,15 +306,17 @@ class ImageProcessingService {
 
   /**
    * Process a single image through the pipeline:
-   * 1. SKU match from filename
+   * 1. SKU match from filename (smart token extraction)
    * 2. WebP conversion (0.90 quality)
    * 3. Upload to backend (R2 storage + AI analysis)
+   *
+   * If no SKU match is found, the image is still uploaded (unmatched) instead of rejected.
    */
   async processImage(
     file: File,
     availableSKUs: ProductInfo[],
     existingFilenames: string[],
-    brandName: string
+    brandName: string,
   ): Promise<ImageProcessingResult> {
     try {
       const originalFilename = file.name;
@@ -226,25 +324,14 @@ class ImageProcessingService {
       // Step 1: Match SKU from filename
       const skuMatch = this.matchSKUFromFilename(originalFilename, availableSKUs);
 
-      if (!skuMatch) {
-        return {
-          success: false,
-          originalFilename,
-          finalFilename: '',
-          error: 'No matching SKU found in filename'
-        };
-      }
-
       // Step 2: Convert to WebP (0.90 quality for website display)
       const webpBlob = await this.convertToWebP(file, 0.90);
 
       // Step 3: Upload to backend (handles R2 storage + AI analysis)
       const uploaded = await imageService.upload(webpBlob, brandName, {
-        matched_sku: skuMatch.sku,
-        sku_confidence: skuMatch.confidence,
+        matched_sku: skuMatch?.sku,
+        sku_confidence: skuMatch?.confidence,
         original_filename: originalFilename,
-        width: undefined, // canvas dimensions captured server-side
-        height: undefined,
       });
 
       // Track filename to prevent duplicates in batch
@@ -254,10 +341,10 @@ class ImageProcessingService {
         success: true,
         originalFilename,
         finalFilename: uploaded.filename,
-        matchedSku: skuMatch.sku,
+        matchedSku: skuMatch?.sku,
         productType: uploaded.ai_product_type || undefined,
         detectedColor: uploaded.ai_color || undefined,
-        confidence: skuMatch.confidence,
+        confidence: skuMatch?.confidence,
         webpUrl: uploaded.url,
       };
     } catch (error) {
@@ -265,25 +352,25 @@ class ImageProcessingService {
         success: false,
         originalFilename: file.name,
         finalFilename: '',
-        error: error instanceof Error ? error.message : 'Unknown error'
+        error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
 
   /**
-   * Process multiple images in batch
+   * Process multiple images in batch.
    */
   async processBatchImages(
     files: FileList | File[],
     brandName: string,
-    onProgress?: (progress: BatchUploadProgress) => void
+    onProgress?: (progress: BatchUploadProgress) => void,
   ): Promise<BatchUploadProgress> {
     const fileArray = Array.from(files);
     const results: ImageProcessingResult[] = [];
     const errors: string[] = [];
     const existingFilenames: string[] = [];
 
-    // Get available SKUs for the brand
+    // Get ALL available SKUs for the brand (paginated fetch)
     const availableSKUs = await this.getProductSKUs(brandName);
 
     const progress: BatchUploadProgress = {
@@ -291,7 +378,7 @@ class ImageProcessingService {
       processed: 0,
       current: '',
       results,
-      errors
+      errors,
     };
 
     for (let i = 0; i < fileArray.length; i++) {
@@ -308,7 +395,7 @@ class ImageProcessingService {
           file,
           availableSKUs,
           existingFilenames,
-          brandName
+          brandName,
         );
 
         results.push(result);
@@ -326,7 +413,7 @@ class ImageProcessingService {
           success: false,
           originalFilename: file.name,
           finalFilename: '',
-          error: errorMessage
+          error: errorMessage,
         });
       }
     }
