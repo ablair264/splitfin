@@ -13,6 +13,8 @@ export function jwtAuth(req, res, next) {
   try {
     const token = authHeader.slice(7);
     const decoded = jwt.verify(token, JWT_SECRET);
+    // Normalise: JWT payload uses agent_id, routes expect id
+    decoded.id = decoded.id || decoded.agent_id;
     req.agent = decoded;
     next();
   } catch (err) {
