@@ -35,6 +35,11 @@ export const websiteProductService = {
     return result.data;
   },
 
+  async createCategory(name: string): Promise<WebsiteCategory> {
+    const result = await api.post<{ data: WebsiteCategory }>('/api/v1/website-products/categories', { name });
+    return result.data;
+  },
+
   async getBrands(): Promise<{ brand: string; count: number }[]> {
     const result = await api.get<{ data: { brand: string; count: number }[] }>('/api/v1/website-products/brands');
     return result.data;

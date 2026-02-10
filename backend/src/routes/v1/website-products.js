@@ -205,6 +205,35 @@ router.get('/categories', async (_req, res) => {
   }
 });
 
+// POST /api/v1/website-products/categories
+router.post('/categories', async (req, res) => {
+  try {
+    const { name } = req.body;
+    if (!name || !name.trim()) return res.status(400).json({ error: 'name is required' });
+
+    const slug = name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+
+    // Get next display_order
+    const { rows: maxRows } = await query('SELECT COALESCE(MAX(display_order), 0) + 1 AS next_order FROM website_categories');
+    const nextOrder = maxRows[0].next_order;
+
+    const result = await insert('website_categories', {
+      name: name.trim(),
+      slug,
+      is_active: true,
+      display_order: nextOrder,
+    });
+
+    res.status(201).json({ data: result });
+  } catch (err) {
+    if (err.code === '23505') {
+      return res.status(409).json({ error: 'A category with this name or slug already exists' });
+    }
+    logger.error('[WebsiteProducts] Create category error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // GET /api/v1/website-products/brands
 router.get('/brands', async (_req, res) => {
   try {

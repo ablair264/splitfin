@@ -1,46 +1,46 @@
 {
   "running": true,
-  "startedAt": "2026-02-09T20:43:43.553Z",
+  "startedAt": "2026-02-09T22:22:45.882Z",
   "workers": {
     "map": {
       "runCount": 0,
       "successCount": 0,
       "failureCount": 0,
       "averageDurationMs": 0,
-      "nextRun": "2026-02-09T20:43:43.553Z",
-      "isRunning": false
+      "isRunning": false,
+      "nextRun": "2026-02-09T22:22:45.882Z"
     },
     "audit": {
       "runCount": 0,
       "successCount": 0,
       "failureCount": 0,
       "averageDurationMs": 0,
-      "nextRun": "2026-02-09T20:45:43.554Z",
-      "isRunning": false
+      "isRunning": false,
+      "nextRun": "2026-02-09T22:24:45.882Z"
     },
     "optimize": {
       "runCount": 0,
       "successCount": 0,
       "failureCount": 0,
       "averageDurationMs": 0,
-      "nextRun": "2026-02-09T20:47:43.554Z",
-      "isRunning": false
+      "isRunning": false,
+      "nextRun": "2026-02-09T22:26:45.882Z"
     },
     "consolidate": {
       "runCount": 0,
       "successCount": 0,
       "failureCount": 0,
       "averageDurationMs": 0,
-      "nextRun": "2026-02-09T20:49:43.554Z",
-      "isRunning": false
+      "isRunning": false,
+      "nextRun": "2026-02-09T22:28:45.882Z"
     },
     "testgaps": {
       "runCount": 0,
       "successCount": 0,
       "failureCount": 0,
       "averageDurationMs": 0,
-      "nextRun": "2026-02-09T20:51:43.554Z",
-      "isRunning": false
+      "isRunning": false,
+      "nextRun": "2026-02-09T22:30:45.882Z"
     },
     "predict": {
       "runCount": 0,
@@ -59,8 +59,8 @@
   },
   "config": {
     "autoStart": false,
-    "logDir": "/Users/blair/Desktop/Development/Splitfin-New/.claude-flow/logs",
-    "stateFile": "/Users/blair/Desktop/Development/Splitfin-New/.claude-flow/daemon-state.json",
+    "logDir": "/Users/blair/Desktop/Development/Splitfin-New/backend/.claude-flow/logs",
+    "stateFile": "/Users/blair/Desktop/Development/Splitfin-New/backend/.claude-flow/daemon-state.json",
     "maxConcurrent": 2,
     "workerTimeoutMs": 300000,
     "resourceThresholds": {
@@ -126,5 +126,5 @@
       }
     ]
   },
-  "savedAt": "2026-02-09T20:43:43.554Z"
+  "savedAt": "2026-02-09T22:22:45.882Z"
 }
