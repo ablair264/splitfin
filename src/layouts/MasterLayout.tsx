@@ -32,6 +32,7 @@ import ProductIntelligence from '../components/website/ProductIntelligence';
 import SiteContentPage from '../components/website/SiteContentPage';
 import PurchaseOrders from '../components/purchase-orders/PurchaseOrders';
 import ImageManagement from '../components/ImageManagement/ImageManagement';
+import Reports from '../components/Reports';
 import Settings from '../components/Settings/Settings';
 import AgentManagement from '../components/agents/AgentManagement';
 import Messaging from '../components/Messaging/Messaging';
@@ -221,6 +222,9 @@ export default function MasterLayout() {
             <Route path="/website/journal/:id" element={<JournalPostEditor />} />
             <Route path="/website/site-content" element={<SiteContentPage />} />
             <Route path="/website/intelligence" element={<ProductIntelligence />} />
+            {/* Reports */}
+            <Route path="/reports" element={<Reports />} />
+
             {/* Finance */}
             <Route path="/finance/purchase-orders" element={<PurchaseOrders />} />
 

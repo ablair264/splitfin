@@ -520,3 +520,38 @@ export interface NotificationsResponse {
   data: Notification[];
   unread_count: number;
 }
+
+// ── Report Types ────────────────────────────────────────────
+
+export type ReportDateRange = '7_days' | '30_days' | '90_days' | 'this_year' | 'all_time';
+
+export interface SalesOverviewData {
+  summary: { total_orders: number; total_revenue: number; avg_order_value: number; unique_customers: number };
+  monthly_trend: { month: string; order_count: number; revenue: number }[];
+  top_products: { name: string; sku: string; brand: string; units_sold: number; revenue: number }[];
+}
+
+export interface AgentPerformanceData {
+  agents: { id: string; name: string; order_count: number; revenue: number; avg_order_value: number; customer_count: number }[];
+}
+
+export interface BrandAnalysisData {
+  brands: { brand: string; order_count: number; units_sold: number; revenue: number; avg_unit_price: number }[];
+}
+
+export interface CustomerInsightsData {
+  segments: { segment: string; customer_count: number; total_revenue: number; avg_revenue: number }[];
+  regions: { region: string; customer_count: number; revenue: number; order_count: number }[];
+  top_customers: { company_name: string; region: string; segment: string; order_count: number; revenue: number }[];
+}
+
+export interface InventoryHealthData {
+  summary: { active_products: number; out_of_stock: number; low_stock: number; stock_value: number };
+  brands: { brand: string; product_count: number; total_stock: number; out_of_stock: number; stock_value: number }[];
+  slow_movers: { name: string; sku: string; brand: string; stock_on_hand: number; rate: number; last_sold: string | null }[];
+}
+
+export interface FinancialData {
+  summary: { total_invoices: number; total_invoiced: number; total_outstanding: number; overdue_count: number; overdue_amount: number };
+  ageing: { bucket: string; invoice_count: number; amount: number }[];
+}
