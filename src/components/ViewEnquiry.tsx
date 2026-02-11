@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
+import { enquiryService } from '../services/enquiryService';
+import { agentService } from '../services/agentService';
 import { withLoader } from '../hoc/withLoader';
 import {
   MessageSquare,
@@ -127,6 +129,8 @@ function ViewEnquiry() {
   const [userRole, setUserRole] = useState<string>('');
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [assignLoading, setAssignLoading] = useState(false);
+  const [approving, setApproving] = useState(false);
+  const [showApproveConfirm, setShowApproveConfirm] = useState(false);
 
   const fetchEnquiryDetails = useCallback(async () => {
     if (!enquiryId) return;
@@ -139,14 +143,10 @@ function ViewEnquiry() {
         throw new Error('User not authenticated');
       }
 
-      // TODO: Implement enquiries backend API endpoint
-      // For now, return empty data with TODO comment
-      console.warn('TODO: Implement /api/v1/enquiries/:id backend endpoint');
-
-      // Stub - enquiries table doesn't exist in the new backend yet
-      setEnquiry(null);
-      setActivities([]);
-      setError('Enquiries feature is being migrated. Please check back later.');
+      const enquiryData = await enquiryService.getById(enquiryId);
+      setEnquiry(enquiryData as any);
+      const activitiesData = await enquiryService.getActivities(parseInt(enquiryId));
+      setActivities(activitiesData as any[]);
 
     } catch (err) {
       console.error('Error fetching enquiry details:', err);
@@ -170,9 +170,8 @@ function ViewEnquiry() {
       // Set user role for permission checking
       setUserRole(agent.is_admin ? 'admin' : 'user');
 
-      // TODO: Implement /api/v1/agents endpoint to list all agents
-      console.warn('TODO: Implement /api/v1/agents backend endpoint for user listing');
-      setUsers([]);
+      const agentList = await agentService.list();
+      setUsers(agentList);
     } catch (error) {
       console.error('Error loading users:', error);
     }
@@ -191,16 +190,27 @@ function ViewEnquiry() {
 
     setAssignLoading(true);
     try {
-      // TODO: Implement enquiry update via backend API
-      console.warn('TODO: Implement PUT /api/v1/enquiries/:id backend endpoint');
-
-      // Refresh the enquiry data
+      await enquiryService.update(parseInt(enquiry.id), { assigned_to: assignToUserId });
       await fetchEnquiryDetails();
       setShowAssignModal(false);
     } catch (error) {
       console.error('Error in handleAssignSubmit:', error);
     } finally {
       setAssignLoading(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!enquiry) return;
+    setApproving(true);
+    try {
+      await enquiryService.approve(parseInt(enquiryId!));
+      await fetchEnquiryDetails();
+      setShowApproveConfirm(false);
+    } catch (err) {
+      console.error('Error approving enquiry:', err);
+    } finally {
+      setApproving(false);
     }
   };
 
@@ -282,9 +292,7 @@ function ViewEnquiry() {
     if (!editData || !enquiry) return;
 
     try {
-      // TODO: Implement enquiry update via backend API
-      console.warn('TODO: Implement PUT /api/v1/enquiries/:id backend endpoint');
-
+      await enquiryService.update(parseInt(enquiry.id), editData);
       setIsEditing(false);
       setEditData(null);
       await fetchEnquiryDetails();
@@ -310,8 +318,7 @@ function ViewEnquiry() {
     }
 
     try {
-      // TODO: Implement enquiry soft delete via backend API
-      console.warn('TODO: Implement DELETE /api/v1/enquiries/:id backend endpoint');
+      await enquiryService.delete(parseInt(enquiry!.id));
       navigate('/enquiries');
     } catch (err) {
       console.error('Error deleting enquiry:', err);
@@ -333,28 +340,22 @@ function ViewEnquiry() {
       const agent = authService.getCachedAgent();
       if (!agent) throw new Error('User not authenticated');
 
-      // Create a new activity entry locally (since we don't have an activities table yet)
-      const newActivity: EnquiryActivity = {
-        id: Date.now().toString(), // Temporary ID
-        enquiry_id: enquiry.id,
+      const savedActivity = await enquiryService.addActivity(parseInt(enquiry.id), {
         activity_type: 'Note',
-        description: newNote.trim(),
-        created_by: agent.id,
-        created_at: new Date().toISOString(),
+        description: newNote.trim()
+      });
+
+      // Add the saved activity to the list with user info
+      const activityWithUser = {
+        ...savedActivity,
         user: {
           first_name: agent.name.split(' ')[0] || agent.name,
           last_name: agent.name.split(' ').slice(1).join(' ') || ''
         }
       };
 
-      // Add to activities list
-      setActivities(prev => [newActivity, ...prev]);
-
-      // Clear the note
+      setActivities(prev => [activityWithUser as any, ...prev]);
       setNewNote('');
-
-      // TODO: Once activities table is created, save to database via backend API
-      console.warn('TODO: Implement POST /api/v1/enquiry-activities backend endpoint');
 
     } catch (err) {
       console.error('Error adding note:', err);
@@ -366,10 +367,7 @@ function ViewEnquiry() {
 
   const handleStatusChange = async (newStatus: string) => {
     try {
-      // TODO: Implement enquiry status update via backend API
-      console.warn('TODO: Implement PATCH /api/v1/enquiries/:id/status backend endpoint');
-
-      // Refresh enquiry data
+      await enquiryService.updateStatus(parseInt(enquiry!.id), newStatus);
       await fetchEnquiryDetails();
     } catch (err) {
       console.error('Error updating status:', err);
@@ -477,6 +475,15 @@ function ViewEnquiry() {
             {canAssignEnquiries() && (
               <button onClick={handleAssignEnquiry} className={styles.assignButton}>
                 <User size={16} /> Assign
+              </button>
+            )}
+            {enquiry && !enquiry.converted_to_customer && userRole === 'admin' && (
+              <button
+                onClick={() => setShowApproveConfirm(true)}
+                className={styles.primaryButton}
+                style={{ background: 'var(--success)', borderColor: 'var(--success)' }}
+              >
+                <UserPlus size={16} /> Approve as Customer
               </button>
             )}
             <button onClick={isEditing ? handleSaveEdit : handleEditEnquiry} className={styles.primaryButton}>
@@ -939,6 +946,49 @@ function ViewEnquiry() {
                 disabled={assignLoading}
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approve Confirmation Modal */}
+      {showApproveConfirm && enquiry && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <h3>Approve as Customer</h3>
+              <button
+                onClick={() => setShowApproveConfirm(false)}
+                className={styles.modalCloseButton}
+              >
+                x
+              </button>
+            </div>
+            <div className={styles.modalBody}>
+              <p>
+                Are you sure you want to approve <strong>{enquiry.company_name || enquiry.contact_name}</strong> as a customer?
+              </p>
+              <p style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)', marginTop: '0.5rem' }}>
+                This will create a new contact in Zoho Inventory and add them as a customer in the system.
+                The enquiry status will be set to "Won".
+              </p>
+            </div>
+            <div className={styles.modalFooter}>
+              <button
+                onClick={() => setShowApproveConfirm(false)}
+                className={styles.cancelButton}
+                disabled={approving}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleApprove}
+                className={styles.primaryButton}
+                disabled={approving}
+                style={{ background: 'var(--success)', borderColor: 'var(--success)' }}
+              >
+                {approving ? 'Approving...' : 'Confirm Approval'}
               </button>
             </div>
           </div>

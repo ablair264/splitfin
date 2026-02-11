@@ -41,4 +41,12 @@ export const customerService = {
     const result = await api.put<SingleResponse<Customer>>(`/api/v1/customers/${id}`, data);
     return result.data;
   },
+
+  async resetPin(id: number): Promise<{ message: string }> {
+    return api.post<{ message: string }>(`/api/v1/customers/${id}/reset-pin`);
+  },
+
+  async sendMagicLink(id: number): Promise<{ message: string }> {
+    return api.post<{ message: string }>(`/api/v1/customers/${id}/send-magic-link`);
+  },
 };

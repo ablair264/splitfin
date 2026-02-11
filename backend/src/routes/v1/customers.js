@@ -231,4 +231,77 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// POST /api/v1/customers/:id/reset-pin - Reset customer PIN to default
+router.post('/:id/reset-pin', async (req, res) => {
+  try {
+    const customer = await getById('customers', req.params.id);
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    await update('customers', req.params.id, {
+      pin_hash: '$DEFAULT_PIN_1234$',
+      force_change_pin: true,
+      updated_at: new Date().toISOString(),
+    });
+
+    logger.info(`[Customers] PIN reset for customer ${req.params.id} by ${req.agent?.id}`);
+    res.json({ message: 'PIN has been reset. Customer will be prompted to set a new PIN on next login.' });
+  } catch (err) {
+    logger.error('[Customers] Reset PIN error:', err);
+    res.status(500).json({ error: 'Failed to reset PIN' });
+  }
+});
+
+// POST /api/v1/customers/:id/send-magic-link - Send magic link to customer
+router.post('/:id/send-magic-link', async (req, res) => {
+  try {
+    const customer = await getById('customers', req.params.id);
+    if (!customer) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    if (!customer.email) {
+      return res.status(400).json({ error: 'Customer does not have an email address' });
+    }
+
+    // Generate magic link token
+    const crypto = await import('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    await update('customers', req.params.id, {
+      magic_link_token: token,
+      magic_link_expires_at: expiresAt.toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    // Send magic link email via Resend
+    const magicLinkUrl = `https://trade.dmbrands.co.uk/auth/magic-link?token=${token}`;
+
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: process.env.FROM_EMAIL || 'DM Brands <noreply@dmbrands.co.uk>',
+        to: customer.email,
+        subject: 'Your magic link - DM Brands Trade Portal',
+        html: `<p>Hi ${customer.contact_name || 'there'},</p>
+        <p>Click the link below to sign into your DM Brands Trade Portal account. This link expires in 15 minutes.</p>
+        <p><a href="${magicLinkUrl}" style="display:inline-block;background-color:#8B7BB5;color:#fff;padding:12px 40px;text-decoration:none;border-radius:8px;font-weight:600;">Sign in here</a></p>
+        <p>If you didn't request this, you can safely ignore this email.</p>`,
+      }),
+    });
+
+    logger.info(`[Customers] Magic link sent to ${customer.email} for customer ${req.params.id} by ${req.agent?.id}`);
+    res.json({ message: `Magic link sent to ${customer.email}` });
+  } catch (err) {
+    logger.error('[Customers] Send magic link error:', err);
+    res.status(500).json({ error: 'Failed to send magic link' });
+  }
+});
+
 export { router as customersRouter };

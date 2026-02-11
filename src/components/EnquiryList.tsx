@@ -28,6 +28,8 @@ import {
   CheckCircle
 } from 'lucide-react';
 import { authService } from '../services/authService';
+import { enquiryService } from '../services/enquiryService';
+import { agentService } from '../services/agentService';
 import NewEnquiryModal from './NewEnquiry';
 import { useComponentLoader } from '../hoc/withLoader';
 import { cn } from '@/lib/utils';
@@ -52,9 +54,9 @@ interface Enquiry {
   referral_source?: string;
   next_follow_up_date?: string;
   follow_up_notes?: string;
-  company_id: string;
+  company_id?: string;
   assigned_to?: string;
-  created_by: string;
+  created_by?: string;
   created_at: string;
   updated_at: string;
   last_contacted_at?: string;
@@ -134,9 +136,13 @@ function EnquiryList() {
       setUserRole(agent.is_admin ? 'admin' : 'user');
       setProgress(30);
 
-      // TODO: Implement /api/v1/enquiries backend endpoint
-      console.warn('TODO: Implement GET /api/v1/enquiries backend endpoint');
-      setEnquiries([]);
+      const filters: Record<string, string> = {};
+      if (filterStatus !== 'all') filters.status = filterStatus;
+      if (filterPriority !== 'all') filters.priority = filterPriority;
+      if (search) filters.search = search;
+
+      const result = await enquiryService.list(filters);
+      setEnquiries((result.data || []) as any);
       setProgress(100);
 
       await new Promise(resolve => setTimeout(resolve, 300));
@@ -153,8 +159,8 @@ function EnquiryList() {
     try {
       const agent = authService.getCachedAgent();
       if (!agent) return;
-      console.warn('TODO: Implement GET /api/v1/agents backend endpoint for user listing');
-      setUsers([]);
+      const agentList = await agentService.list();
+      setUsers(agentList);
     } catch (error) {
       console.error('Error loading users:', error);
     }
@@ -173,7 +179,7 @@ function EnquiryList() {
     if (!selectedEnquiry) return;
     setAssignLoading(true);
     try {
-      console.warn('TODO: Implement PUT /api/v1/enquiries/:id backend endpoint');
+      await enquiryService.update(parseInt(selectedEnquiry.id), { assigned_to: assignToUserId });
       await fetchEnquiries();
       setShowAssignModal(false);
       setSelectedEnquiry(null);
@@ -501,6 +507,18 @@ function EnquiryList() {
                         <PriorityIcon size={12} />
                         {enquiry.priority}
                       </span>
+                      {enquiry.lead_source && (
+                        <span
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium"
+                          style={{
+                            backgroundColor: enquiry.lead_source === 'trade_portal' ? 'rgba(139, 123, 181, 0.15)' : 'rgba(100, 116, 139, 0.15)',
+                            color: enquiry.lead_source === 'trade_portal' ? '#8B7BB5' : 'var(--muted-foreground)',
+                            border: `1px solid ${enquiry.lead_source === 'trade_portal' ? 'rgba(139, 123, 181, 0.3)' : 'rgba(100, 116, 139, 0.3)'}`,
+                          }}
+                        >
+                          {enquiry.lead_source === 'trade_portal' ? 'Trade Portal' : enquiry.lead_source === 'trade_show' ? 'Trade Show' : enquiry.lead_source.replace(/_/g, ' ')}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -642,7 +660,20 @@ function EnquiryList() {
                   {/* Subject */}
                   <div className="flex items-center">
                     <div className="flex flex-col gap-1">
-                      <span className="text-xs text-muted-foreground font-medium tracking-wider uppercase">#{enquiry.enquiry_number}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground font-medium tracking-wider uppercase">#{enquiry.enquiry_number}</span>
+                        {enquiry.lead_source && (
+                          <span
+                            className="inline-flex items-center px-1.5 py-0 rounded text-[10px] font-medium"
+                            style={{
+                              backgroundColor: enquiry.lead_source === 'trade_portal' ? 'rgba(139, 123, 181, 0.15)' : 'rgba(100, 116, 139, 0.15)',
+                              color: enquiry.lead_source === 'trade_portal' ? '#8B7BB5' : 'var(--muted-foreground)',
+                            }}
+                          >
+                            {enquiry.lead_source === 'trade_portal' ? 'Trade Portal' : enquiry.lead_source === 'trade_show' ? 'Trade Show' : enquiry.lead_source.replace(/_/g, ' ')}
+                          </span>
+                        )}
+                      </div>
                       <span className="text-sm text-foreground/90 font-medium truncate">{enquiry.subject}</span>
                     </div>
                   </div>

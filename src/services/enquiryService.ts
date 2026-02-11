@@ -101,4 +101,9 @@ export const enquiryService = {
     const result = await api.get<ListResponse<EnquiryActivity>>(`/api/v1/enquiries/${enquiryId}/activities`);
     return result.data || [];
   },
+
+  async approve(id: number): Promise<any> {
+    const result = await api.post<SingleResponse<any>>(`/api/v1/enquiries/${id}/approve`);
+    return result.data;
+  },
 };

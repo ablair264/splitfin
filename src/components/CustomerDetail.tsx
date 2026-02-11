@@ -99,6 +99,10 @@ export default function CustomerDetail() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // Login & Access state
+  const [resettingPin, setResettingPin] = useState(false);
+  const [sendingMagicLink, setSendingMagicLink] = useState(false);
+
   const hasDirtyFields = Object.keys(dirtyFields).length > 0;
 
   useEffect(() => {
@@ -212,6 +216,34 @@ export default function CustomerDetail() {
     setDirtyFields({});
     setSaveError(null);
     setDiscardCount(c => c + 1);
+  };
+
+  const handleResetPin = async () => {
+    if (!customerData || !window.confirm('Reset this customer\'s PIN to default? They will need to set a new PIN on next login.')) return;
+    setResettingPin(true);
+    try {
+      const result = await customerService.resetPin(customerData.id);
+      alert(result.message || 'PIN reset successfully');
+    } catch (err) {
+      console.error('Error resetting PIN:', err);
+      alert('Failed to reset PIN');
+    } finally {
+      setResettingPin(false);
+    }
+  };
+
+  const handleSendMagicLink = async () => {
+    if (!customerData || !window.confirm(`Send a magic link to ${customerData.email}?`)) return;
+    setSendingMagicLink(true);
+    try {
+      const result = await customerService.sendMagicLink(customerData.id);
+      alert(result.message || 'Magic link sent');
+    } catch (err) {
+      console.error('Error sending magic link:', err);
+      alert('Failed to send magic link');
+    } finally {
+      setSendingMagicLink(false);
+    }
   };
 
   if (loading) return null;
@@ -707,6 +739,26 @@ export default function CustomerDetail() {
             ) : (
               <p className="text-[13px] text-muted-foreground">No contacts</p>
             )}
+          </motion.div>
+
+          {/* Login & Access */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.22 }}
+            className="bg-card rounded-xl border border-border/60 p-5"
+          >
+            <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-4">Login & Access</h3>
+            <div className="flex gap-2">
+              <Button intent="outline" size="sm" onPress={handleResetPin} isDisabled={resettingPin}>
+                {resettingPin ? <Loader2 size={13} className="animate-spin" /> : null}
+                Reset PIN
+              </Button>
+              <Button intent="outline" size="sm" onPress={handleSendMagicLink} isDisabled={sendingMagicLink || !customerData?.email}>
+                {sendingMagicLink ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
+                Send Magic Link
+              </Button>
+            </div>
           </motion.div>
 
           {/* Addresses — inline editable */}

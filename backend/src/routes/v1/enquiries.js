@@ -1,5 +1,7 @@
 import express from 'express';
+import axios from 'axios';
 import { query, getById, insert, update } from '../../config/database.js';
+import { getAccessToken, ZOHO_CONFIG } from '../../api/zoho.js';
 import { logger } from '../../utils/logger.js';
 
 const router = express.Router();
@@ -213,6 +215,95 @@ router.get('/:id/activities', async (req, res) => {
   } catch (err) {
     logger.error('[Enquiries] Get activities error:', err);
     res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// POST /api/v1/enquiries/:id/approve - Approve enquiry and create customer
+router.post('/:id/approve', async (req, res) => {
+  try {
+    // 1. Fetch enquiry
+    const { rows: enquiryRows } = await query(
+      'SELECT * FROM enquiries WHERE id = $1 AND is_active = true',
+      [req.params.id]
+    );
+    if (enquiryRows.length === 0) {
+      return res.status(404).json({ error: 'Enquiry not found' });
+    }
+    const enquiry = enquiryRows[0];
+
+    if (enquiry.converted_to_customer) {
+      return res.status(400).json({ error: 'Enquiry already converted to customer' });
+    }
+
+    // 2. Create contact in Zoho Inventory
+    const token = await getAccessToken();
+    const zohoPayload = {
+      contact_name: enquiry.company_name || enquiry.contact_name,
+      company_name: enquiry.company_name || enquiry.contact_name,
+      contact_type: 'customer',
+      customer_sub_type: 'business',
+      contact_persons: [{
+        first_name: enquiry.contact_name,
+        email: enquiry.email,
+        phone: enquiry.phone || '',
+        is_primary_contact: true
+      }]
+    };
+
+    const zohoResponse = await axios.post(
+      `${ZOHO_CONFIG.baseUrls.inventory}/contacts`,
+      zohoPayload,
+      {
+        headers: {
+          'Authorization': `Zoho-oauthtoken ${token}`,
+          'Content-Type': 'application/json',
+          'X-com-zoho-inventory-organizationid': ZOHO_CONFIG.orgId,
+        },
+        timeout: 15000,
+      }
+    );
+
+    const zohoContact = zohoResponse.data?.contact;
+    if (!zohoContact?.contact_id) {
+      throw new Error('Failed to create contact in Zoho - no contact_id returned');
+    }
+
+    // 3. Insert into customers table
+    const customerData = {
+      zoho_contact_id: zohoContact.contact_id,
+      company_name: enquiry.company_name || enquiry.contact_name,
+      contact_name: enquiry.contact_name,
+      email: enquiry.email,
+      phone: enquiry.phone,
+      status: 'active',
+      pin_hash: '$DEFAULT_PIN_1234$',
+      force_change_pin: true,
+      sync_status: 'synced',
+    };
+    const customer = await insert('customers', customerData);
+
+    // 4. Update enquiry as converted
+    await update('enquiries', req.params.id, {
+      converted_to_customer: true,
+      converted_customer_id: customer.id,
+      conversion_date: new Date().toISOString().slice(0, 10),
+      status: 'won',
+      updated_at: new Date().toISOString(),
+    });
+
+    // 5. Log activity
+    await insert('enquiry_activities', {
+      enquiry_id: parseInt(req.params.id),
+      activity_type: 'status_change',
+      description: `Approved and converted to customer (Zoho ID: ${zohoContact.contact_id})`,
+      created_by: req.agent?.id,
+    });
+
+    res.json({ data: { customer, zoho_contact_id: zohoContact.contact_id } });
+  } catch (err) {
+    logger.error('[Enquiries] Approve error:', err);
+    const message = err.response?.data?.message || err.message || 'Failed to approve enquiry';
+    res.status(500).json({ error: message });
   }
 });
 
