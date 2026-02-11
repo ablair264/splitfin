@@ -43,11 +43,14 @@ export interface EnquiryActivity {
   created_at: string;
 }
 
-interface EnquiryFilters {
+export interface EnquiryFilters {
   status?: string;
   priority?: string;
   assigned_to?: string;
   search?: string;
+  lead_source?: string;
+  sort_by?: string;
+  sort_order?: string;
   limit?: number;
   offset?: number;
 }
@@ -100,6 +103,11 @@ export const enquiryService = {
   async getActivities(enquiryId: number): Promise<EnquiryActivity[]> {
     const result = await api.get<ListResponse<EnquiryActivity>>(`/api/v1/enquiries/${enquiryId}/activities`);
     return result.data || [];
+  },
+
+  async getLeadSources(): Promise<{ lead_source: string; count: number }[]> {
+    const result = await api.get<{ data: { lead_source: string; count: string }[] }>('/api/v1/enquiries/lead-sources');
+    return (result.data || []).map(r => ({ lead_source: r.lead_source, count: Number(r.count) }));
   },
 
   async approve(id: number): Promise<any> {

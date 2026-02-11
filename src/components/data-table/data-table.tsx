@@ -1,5 +1,5 @@
-import { flexRender, type Table as TanstackTable } from "@tanstack/react-table";
-import type * as React from "react";
+import { flexRender, type Row, type Table as TanstackTable } from "@tanstack/react-table";
+import * as React from "react";
 
 import { DataTablePagination } from "@/components/data-table/data-table-pagination";
 import {
@@ -16,13 +16,15 @@ import { cn } from "@/lib/utils";
 interface DataTableProps<TData> extends React.ComponentProps<"div"> {
   table: TanstackTable<TData>;
   actionBar?: React.ReactNode;
-  onRowClick?: (row: TData) => void;
+  onRowClick?: (data: TData, row: Row<TData>) => void;
+  renderSubComponent?: (props: { row: Row<TData> }) => React.ReactNode;
 }
 
 export function DataTable<TData>({
   table,
   actionBar,
   onRowClick,
+  renderSubComponent,
   children,
   className,
   ...props
@@ -64,30 +66,41 @@ export function DataTable<TData>({
           <TableBody className="bg-card">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                  className={cn(
-                    "border-b border-border bg-card hover:bg-muted/30 data-[state=selected]:bg-primary/10",
-                    onRowClick && "cursor-pointer"
+                <React.Fragment key={row.id}>
+                  <TableRow
+                    data-state={row.getIsSelected() && "selected"}
+                    className={cn(
+                      "border-b border-border bg-card hover:bg-muted/30 data-[state=selected]:bg-primary/10",
+                      onRowClick && "cursor-pointer"
+                    )}
+                    onClick={() => onRowClick?.(row.original, row)}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell
+                        key={cell.id}
+                        style={{
+                          width: cell.column.getSize(),
+                          ...getColumnPinningStyle({ column: cell.column }),
+                        }}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                  {row.getIsExpanded() && renderSubComponent && (
+                    <TableRow className="border-b border-border bg-muted/10 hover:bg-muted/10">
+                      <TableCell
+                        colSpan={row.getVisibleCells().length}
+                        className="p-0"
+                      >
+                        {renderSubComponent({ row })}
+                      </TableCell>
+                    </TableRow>
                   )}
-                  onClick={() => onRowClick?.(row.original)}
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      style={{
-                        width: cell.column.getSize(),
-                        ...getColumnPinningStyle({ column: cell.column }),
-                      }}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
-                </TableRow>
+                </React.Fragment>
               ))
             ) : (
               <TableRow className="bg-card">

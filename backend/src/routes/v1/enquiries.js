@@ -6,47 +6,101 @@ import { logger } from '../../utils/logger.js';
 
 const router = express.Router();
 
+const ENQUIRY_SORT_COLUMNS = {
+  created_at: 'e.created_at',
+  updated_at: 'e.updated_at',
+  contact_name: 'e.contact_name',
+  company_name: 'e.company_name',
+  status: 'e.status',
+  priority: 'e.priority',
+  estimated_value: 'e.estimated_value',
+  lead_source: 'e.lead_source',
+  enquiry_number: 'e.enquiry_number',
+};
+
 // GET /api/v1/enquiries
 router.get('/', async (req, res) => {
   try {
-    const { status, priority, assigned_to, search, limit = 100, offset = 0 } = req.query;
+    const {
+      status, priority, assigned_to, search, lead_source,
+      sort_by = 'created_at', sort_order = 'desc',
+      limit = 50, offset = 0,
+    } = req.query;
 
-    let sql = `SELECT e.*,
-      a1.name as assigned_to_name,
-      a2.name as created_by_name
-      FROM enquiries e
+    const baseSql = `FROM enquiries e
       LEFT JOIN agents a1 ON a1.id = e.assigned_to
       LEFT JOIN agents a2 ON a2.id = e.created_by
       WHERE e.is_active = true`;
+
+    let conditions = '';
     const params = [];
     let paramIdx = 1;
 
     if (status) {
-      sql += ` AND e.status = $${paramIdx++}`;
-      params.push(status);
+      const statuses = status.split(',').map(s => s.trim()).filter(Boolean);
+      if (statuses.length === 1) {
+        conditions += ` AND e.status = $${paramIdx++}`;
+        params.push(statuses[0]);
+      } else if (statuses.length > 1) {
+        conditions += ` AND e.status = ANY($${paramIdx++}::text[])`;
+        params.push(statuses);
+      }
     }
 
     if (priority) {
-      sql += ` AND e.priority = $${paramIdx++}`;
-      params.push(priority);
+      const priorities = priority.split(',').map(s => s.trim()).filter(Boolean);
+      if (priorities.length === 1) {
+        conditions += ` AND e.priority = $${paramIdx++}`;
+        params.push(priorities[0]);
+      } else if (priorities.length > 1) {
+        conditions += ` AND e.priority = ANY($${paramIdx++}::text[])`;
+        params.push(priorities);
+      }
+    }
+
+    if (lead_source) {
+      const sources = lead_source.split(',').map(s => s.trim()).filter(Boolean);
+      if (sources.length === 1) {
+        conditions += ` AND e.lead_source = $${paramIdx++}`;
+        params.push(sources[0]);
+      } else if (sources.length > 1) {
+        conditions += ` AND e.lead_source = ANY($${paramIdx++}::text[])`;
+        params.push(sources);
+      }
     }
 
     if (assigned_to) {
-      sql += ` AND e.assigned_to = $${paramIdx++}`;
+      conditions += ` AND e.assigned_to = $${paramIdx++}`;
       params.push(assigned_to);
     }
 
     if (search) {
-      sql += ` AND (e.contact_name ILIKE $${paramIdx} OR e.company_name ILIKE $${paramIdx} OR e.email ILIKE $${paramIdx} OR e.subject ILIKE $${paramIdx} OR e.enquiry_number ILIKE $${paramIdx})`;
+      conditions += ` AND (e.contact_name ILIKE $${paramIdx} OR e.company_name ILIKE $${paramIdx} OR e.email ILIKE $${paramIdx} OR e.subject ILIKE $${paramIdx} OR e.enquiry_number ILIKE $${paramIdx})`;
       params.push(`%${search}%`);
       paramIdx++;
     }
 
-    sql += ` ORDER BY e.created_at DESC LIMIT $${paramIdx++} OFFSET $${paramIdx++}`;
-    params.push(parseInt(limit), parseInt(offset));
+    const col = ENQUIRY_SORT_COLUMNS[sort_by] || 'e.created_at';
+    const dir = sort_order === 'asc' ? 'ASC' : 'DESC';
+    const lim = Math.min(parseInt(limit) || 50, 200);
+    const off = parseInt(offset) || 0;
 
-    const { rows } = await query(sql, params);
-    res.json({ data: rows, count: rows.length });
+    const countSql = `SELECT COUNT(*) as total ${baseSql}${conditions}`;
+    const dataSql = `SELECT e.*, a1.name as assigned_to_name, a2.name as created_by_name ${baseSql}${conditions} ORDER BY ${col} ${dir} LIMIT $${paramIdx++} OFFSET $${paramIdx++}`;
+    params.push(lim, off);
+
+    const countParams = params.slice(0, -2);
+    const [countResult, dataResult] = await Promise.all([
+      query(countSql, countParams),
+      query(dataSql, params),
+    ]);
+
+    const total = parseInt(countResult.rows[0].total);
+    res.json({
+      data: dataResult.rows,
+      count: dataResult.rows.length,
+      meta: { total, limit: lim, offset: off, has_more: off + lim < total },
+    });
   } catch (err) {
     logger.error('[Enquiries] List error:', err);
     res.status(500).json({ error: 'Internal server error' });
@@ -83,6 +137,21 @@ router.get('/brands', async (req, res) => {
     res.json({ data: rows.map(r => r.brand) });
   } catch (err) {
     logger.error('[Enquiries] Brands error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// GET /api/v1/enquiries/lead-sources
+router.get('/lead-sources', async (req, res) => {
+  try {
+    const { rows } = await query(
+      `SELECT lead_source, COUNT(*) as count
+       FROM enquiries WHERE is_active = true AND lead_source IS NOT NULL
+       GROUP BY lead_source ORDER BY count DESC`
+    );
+    res.json({ data: rows });
+  } catch (err) {
+    logger.error('[Enquiries] Lead sources error:', err);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
