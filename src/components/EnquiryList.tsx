@@ -831,7 +831,7 @@ function EnquiryList() {
                       )}
                     >
                       <User size={16} />
-                      <span>{user.first_name} {user.last_name}</span>
+                      <span>{user.name}</span>
                       {selectedEnquiry.assigned_to === user.id && (
                         <span className="ml-auto px-2 py-0.5 bg-primary/20 border border-primary/30 rounded text-xs font-medium text-primary">
                           Current

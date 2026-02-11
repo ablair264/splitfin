@@ -848,10 +848,7 @@ function ViewEnquiry() {
                 <div className={styles.activityContent}>
                   <div className={styles.activityTitle}>Enquiry Created</div>
                   <div className={styles.activityMeta}>
-                    by {enquiry.created_by_user ?
-                      `${enquiry.created_by_user.first_name} ${enquiry.created_by_user.last_name}` :
-                      'Unknown'
-                    } {formatDateTime(enquiry.created_at)}
+                    by {(enquiry as any).created_by_name || 'Unknown'} {formatDateTime(enquiry.created_at)}
                   </div>
                 </div>
               </div>
@@ -865,10 +862,7 @@ function ViewEnquiry() {
                     <div className={styles.activityTitle}>{activity.activity_type}</div>
                     <div className={styles.activityDescription}>{activity.description}</div>
                     <div className={styles.activityMeta}>
-                      by {activity.user ?
-                        `${activity.user.first_name} ${activity.user.last_name}` :
-                        'Unknown'
-                      } {formatDateTime(activity.created_at)}
+                      by {(activity as any).created_by_name || 'Unknown'} {formatDateTime(activity.created_at)}
                     </div>
                   </div>
                 </div>
@@ -888,11 +882,11 @@ function ViewEnquiry() {
                 <span className={styles.metaLabel}>Last Updated</span>
                 <span className={styles.metaValue}>{formatDateTime(enquiry.updated_at)}</span>
               </div>
-              {enquiry.assigned_to_user && (
+              {(enquiry as any).assigned_to_name && (
                 <div className={styles.metaItem}>
                   <span className={styles.metaLabel}>Assigned To</span>
                   <span className={styles.metaValue}>
-                    {enquiry.assigned_to_user.first_name} {enquiry.assigned_to_user.last_name}
+                    {(enquiry as any).assigned_to_name || 'Unknown'}
                   </span>
                 </div>
               )}
@@ -931,7 +925,7 @@ function ViewEnquiry() {
                     className={`${styles.assigneeButton} ${enquiry.assigned_to === user.id ? styles.currentAssignee : ''}`}
                   >
                     <User size={16} />
-                    <span>{user.first_name} {user.last_name}</span>
+                    <span>{user.name}</span>
                     {enquiry.assigned_to === user.id && (
                       <span className={styles.currentBadge}>Current</span>
                     )}

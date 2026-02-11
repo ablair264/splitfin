@@ -154,7 +154,6 @@ router.patch('/:id/status', async (req, res) => {
     }
     const enquiry = await update('enquiries', req.params.id, {
       status,
-      updated_at: new Date().toISOString()
     });
     if (!enquiry) {
       return res.status(404).json({ error: 'Enquiry not found' });
@@ -288,7 +287,6 @@ router.post('/:id/approve', async (req, res) => {
       converted_customer_id: customer.id,
       conversion_date: new Date().toISOString().slice(0, 10),
       status: 'won',
-      updated_at: new Date().toISOString(),
     });
 
     // 5. Log activity
