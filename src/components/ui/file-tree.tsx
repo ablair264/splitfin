@@ -11,7 +11,6 @@ import { FileIcon, FolderIcon, FolderOpenIcon } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
 
 type TreeViewElement = {
   id: string
@@ -149,9 +148,9 @@ const Tree = forwardRef<HTMLDivElement, TreeViewProps>(
         }}
       >
         <div className={cn("size-full", className)}>
-          <ScrollArea
+          <div
             ref={ref}
-            className="relative h-full px-2"
+            className="relative h-full px-2 overflow-auto"
             dir={dir as Direction}
           >
             <AccordionPrimitive.Root
@@ -167,7 +166,7 @@ const Tree = forwardRef<HTMLDivElement, TreeViewProps>(
             >
               {children}
             </AccordionPrimitive.Root>
-          </ScrollArea>
+          </div>
         </div>
       </TreeContext.Provider>
     )
@@ -366,7 +365,8 @@ const CollapseButton = forwardRef<
 
   return (
     <Button
-      variant={"ghost"}
+      intent="plain"
+      size="sm"
       className="absolute right-2 bottom-1 h-8 w-fit p-1"
       onClick={
         expandedItems && expandedItems.length > 0
