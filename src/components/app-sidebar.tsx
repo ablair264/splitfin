@@ -4,7 +4,7 @@ import { motion, AnimatePresence, useReducedMotion } from "motion/react"
 import {
   ShoppingCart, Users, Settings, ChevronDown,
   Pin, Bell, Mail, Sun, Moon, Globe, BookOpen, TrendingUp,
-  LogOut, Check, LayoutTemplate,
+  LogOut, Check, LayoutTemplate, Cloud,
 } from "lucide-react"
 
 // Animated icons
@@ -36,6 +36,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { authService } from "@/services/authService"
+import { onedriveService } from "@/services/onedriveService"
 import type { Agent, Notification } from "@/types/domain"
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
@@ -314,6 +315,8 @@ export default function AppSidebar({ user, unreadNotifications = 0, unreadMessag
 
   const [commandOpen, setCommandOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [onedriveConnecting, setOnedriveConnecting] = useState(false)
+  const [onedriveStatus, setOnedriveStatus] = useState<{ connected: boolean; expires_at: string | null } | null>(null)
   const [pinnedIds, setPinnedIds] = useState<string[]>(() => {
     try {
       const stored = localStorage.getItem("splitfin_pinned")
@@ -417,6 +420,32 @@ export default function AppSidebar({ user, unreadNotifications = 0, unreadMessag
   const isAdmin = user?.is_admin ?? false
   const userName = user?.name || user?.id || "User"
   const userRole = user?.is_admin ? "Admin" : "Sales Agent"
+  const canConnectOnedrive = user?.id?.toLowerCase() === "sammie"
+
+  useEffect(() => {
+    if (!canConnectOnedrive) return
+    let active = true
+    onedriveService.getStatus()
+      .then((status) => {
+        if (active) setOnedriveStatus(status)
+      })
+      .catch(() => {
+        if (active) setOnedriveStatus({ connected: false, expires_at: null })
+      })
+    return () => { active = false }
+  }, [canConnectOnedrive])
+
+  const handleConnectOnedrive = useCallback(async () => {
+    if (onedriveConnecting) return
+    try {
+      setOnedriveConnecting(true)
+      const { url } = await onedriveService.getAuthUrl()
+      window.location.assign(url)
+    } catch (error) {
+      console.error("Failed to start OneDrive auth:", error)
+      setOnedriveConnecting(false)
+    }
+  }, [onedriveConnecting])
 
   const toggleSection = (id: string) => setOpenSection((prev) => (prev === id ? null : id))
 
@@ -585,6 +614,39 @@ export default function AppSidebar({ user, unreadNotifications = 0, unreadMessag
                         <Settings size={16} className="shrink-0 text-zinc-400 dark:text-zinc-500" />
                         <span>Settings</span>
                       </button>
+
+                      {/* OneDrive Status (sammie only) */}
+                      {canConnectOnedrive && (
+                        <div className="flex items-center gap-3 w-full px-3 h-9 rounded-lg text-[13px] text-zinc-600 dark:text-zinc-400">
+                          <Cloud size={16} className="shrink-0 text-zinc-400 dark:text-zinc-500" />
+                          <span className="flex-1">OneDrive</span>
+                          {onedriveStatus?.connected ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-500">
+                              Connected
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-500/10 text-zinc-500">
+                              Not connected
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Connect OneDrive (sammie only) */}
+                      {canConnectOnedrive && (
+                        <button
+                          onClick={handleConnectOnedrive}
+                          disabled={onedriveConnecting}
+                          className="flex items-center gap-3 w-full px-3 h-9 rounded-lg text-[13px] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800/40 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          <Cloud size={16} className="shrink-0 text-zinc-400 dark:text-zinc-500" />
+                          <span>
+                            {onedriveConnecting
+                              ? 'Connecting OneDrive...'
+                              : (onedriveStatus?.connected ? 'Reconnect OneDrive' : 'Connect OneDrive')}
+                          </span>
+                        </button>
+                      )}
 
                       {/* Divider */}
                       <div className="mx-3 my-1 border-t border-zinc-200 dark:border-zinc-800/60" />

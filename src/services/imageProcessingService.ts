@@ -19,8 +19,6 @@ export interface ImageProcessingResult {
   originalFilename: string;
   finalFilename: string;
   matchedSku?: string;
-  productType?: string;
-  detectedColor?: string;
   confidence?: number;
   webpUrl?: string;
   error?: string;
@@ -313,8 +311,6 @@ class ImageProcessingService {
         originalFilename,
         finalFilename: uploaded.filename,
         matchedSku: skuMatch?.sku,
-        productType: uploaded.ai_product_type || undefined,
-        detectedColor: uploaded.ai_color || undefined,
         confidence: skuMatch?.confidence,
         webpUrl: uploaded.url,
       };

@@ -7,10 +7,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import {
   Images, HardDrive, Layers, LayoutGrid, List, Search,
   Upload, Sparkles, Trash2, Loader2, X, Download, Copy, Check,
-  ImageOff, Eye, Save, Link, RefreshCw,
+  ImageOff, Eye, Save, Link, RefreshCw, Cloud,
 } from 'lucide-react';
 import { imageService, type ImageFilters, type ImageStats } from '@/services/imageService';
 import { productService } from '@/services/productService';
+import { onedriveService } from '@/services/onedriveService';
+import { authService } from '@/services/authService';
+import { imageProcessingService, type BatchUploadProgress } from '@/services/imageProcessingService';
 import type { ProductImage, Product } from '@/types/domain';
 import ImageCard from './ImageCard';
 import BatchImageUpload from './BatchImageUpload';
@@ -60,6 +63,11 @@ export default function ImageManagement() {
   const [showBatchUpload, setShowBatchUpload] = useState(false);
   const [detailImage, setDetailImage] = useState<ProductImage | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [showOneDriveImport, setShowOneDriveImport] = useState(false);
+  const [onedriveStatus, setOnedriveStatus] = useState<{ connected: boolean; expires_at: string | null } | null>(null);
+
+  const currentAgent = authService.getCachedAgent();
+  const isSammie = currentAgent?.id?.toLowerCase() === 'sammie';
 
   // ── Data loading ──
 
@@ -97,6 +105,12 @@ export default function ImageManagement() {
 
   useEffect(() => { loadMeta(); }, [loadMeta]);
   useEffect(() => { loadImages(); }, [loadImages]);
+  useEffect(() => {
+    if (!isSammie) return;
+    onedriveService.getStatus()
+      .then(setOnedriveStatus)
+      .catch(() => setOnedriveStatus({ connected: false, expires_at: null }));
+  }, [isSammie]);
 
   // Debounced search
   const handleSearchChange = (value: string) => {
@@ -201,6 +215,11 @@ export default function ImageManagement() {
         subtitle="images"
         actions={
           <>
+            {isSammie && (
+              <Button intent="outline" size="sm" onPress={() => setShowOneDriveImport(true)}>
+                <Cloud className="size-4 mr-1.5" /> Import OneDrive
+              </Button>
+            )}
             <Button intent="outline" size="sm" onPress={handleRefreshSizes} isDisabled={refreshingSizes}>
               <RefreshCw className={`size-4 mr-1.5 ${refreshingSizes ? 'animate-spin' : ''}`} /> {refreshingSizes ? 'Refreshing...' : 'Refresh Sizes'}
             </Button>
@@ -438,6 +457,15 @@ export default function ImageManagement() {
       {showBatchUpload && (
         <BatchImageUpload
           onClose={() => { setShowBatchUpload(false); loadImages(); loadMeta(); }}
+        />
+      )}
+
+      {/* OneDrive Import Modal */}
+      {showOneDriveImport && (
+        <OneDriveImportModal
+          connected={onedriveStatus?.connected ?? false}
+          onClose={() => setShowOneDriveImport(false)}
+          onImported={() => { loadImages(); loadMeta(); }}
         />
       )}
 
@@ -705,6 +733,284 @@ function ImageDetailModal({ image, onClose, onDelete, onUpdate }: ImageDetailMod
             <Trash2 className="size-3.5 mr-1" /> Delete
           </Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── OneDrive Import Modal ──────────────────────────────────
+
+interface OneDriveImportModalProps {
+  connected: boolean;
+  onClose: () => void;
+  onImported: () => void;
+}
+
+interface OneDriveImageItem {
+  id: string;
+  name: string;
+  size: number;
+  mimeType: string | null;
+  webUrl: string | null;
+  createdDateTime: string | null;
+  lastModifiedDateTime: string | null;
+  downloadUrl: string | null;
+}
+
+function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportModalProps) {
+  const [brands, setBrands] = useState<{ id: string; brand_name: string }[]>([]);
+  const [selectedBrand, setSelectedBrand] = useState<string>('');
+  const [path, setPath] = useState<string>('');
+  const [items, setItems] = useState<OneDriveImageItem[]>([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [step, setStep] = useState<'setup' | 'processing' | 'results'>('setup');
+  const [progress, setProgress] = useState<BatchUploadProgress | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadBrands = async () => {
+      try {
+        const brandsResponse = await productService.getBrands();
+        const transformed = brandsResponse.map((b) => ({
+          id: b.brand.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+          brand_name: b.brand,
+        }));
+        setBrands(transformed);
+      } catch (err) {
+        console.error('Failed to load brands:', err);
+      }
+    };
+    loadBrands();
+  }, []);
+
+  const loadItems = async () => {
+    setLoadingItems(true);
+    setError(null);
+    try {
+      const result = await onedriveService.listImages({
+        path: path.trim() || undefined,
+        limit: 200,
+        includeDownloadUrl: true,
+      });
+      setItems(result.items || []);
+      setSelectedIds(new Set());
+    } catch (err) {
+      console.error('Failed to list OneDrive images:', err);
+      setError('Failed to load OneDrive images.');
+    } finally {
+      setLoadingItems(false);
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === items.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(items.map((i) => i.id)));
+  };
+
+  const handleConnect = async () => {
+    try {
+      const { url } = await onedriveService.getAuthUrl();
+      window.location.assign(url);
+    } catch (err) {
+      console.error('Failed to start OneDrive auth:', err);
+      setError('Failed to start OneDrive authentication.');
+    }
+  };
+
+  const handleImport = async () => {
+    if (!selectedBrand || selectedIds.size === 0) return;
+    setStep('processing');
+    setError(null);
+
+    try {
+      const selectedItems = items.filter((i) => selectedIds.has(i.id));
+      const files: File[] = [];
+
+      for (const item of selectedItems) {
+        if (!item.downloadUrl) {
+          console.warn('Missing download URL for', item.name);
+          continue;
+        }
+        const resp = await fetch(item.downloadUrl);
+        if (!resp.ok) throw new Error(`Failed to download ${item.name}`);
+        const blob = await resp.blob();
+        const file = new File([blob], item.name, { type: item.mimeType || blob.type || 'image/*' });
+        files.push(file);
+      }
+
+      if (files.length === 0) {
+        setError('No downloadable images selected.');
+        setStep('setup');
+        return;
+      }
+
+      const finalProgress = await imageProcessingService.processBatchImages(
+        files,
+        selectedBrand,
+        (p) => setProgress({ ...p }),
+      );
+      setProgress(finalProgress);
+      setStep('results');
+      onImported();
+    } catch (err) {
+      console.error('OneDrive import failed:', err);
+      setError('Import failed. Please try again.');
+      setStep('setup');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-5">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-zinc-900 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.3)] w-full max-w-[1000px] max-h-[90vh] overflow-hidden flex flex-col text-white">
+        <button
+          className="absolute top-4 right-4 bg-none border-none text-2xl cursor-pointer text-zinc-400 z-10 w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 hover:bg-white/10 hover:text-white"
+          onClick={onClose}
+        >
+          x
+        </button>
+
+        {step === 'setup' && (
+          <div className="p-6 space-y-5">
+            <div className="space-y-1">
+              <h2 className="text-xl font-semibold">Import from OneDrive</h2>
+              <p className="text-sm text-zinc-400">Select a brand and choose images to run through the existing batch enhancement pipeline.</p>
+            </div>
+
+            {!connected && (
+              <div className="rounded-lg border border-zinc-700 bg-zinc-800/60 p-4 flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium">OneDrive not connected</div>
+                  <div className="text-xs text-zinc-400">Connect to list and import images.</div>
+                </div>
+                <Button intent="outline" size="sm" onPress={handleConnect}>
+                  Connect OneDrive
+                </Button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
+              <div className="space-y-2">
+                <label className="text-xs text-zinc-400">Brand</label>
+                <select
+                  className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-white"
+                  value={selectedBrand}
+                  onChange={(e) => setSelectedBrand(e.target.value)}
+                >
+                  <option value="">Select a brand</option>
+                  {brands.map((b) => (
+                    <option key={b.id} value={b.brand_name}>{b.brand_name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs text-zinc-400">Folder path (optional)</label>
+                <input
+                  className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-white"
+                  placeholder="e.g. Product Images/2025"
+                  value={path}
+                  onChange={(e) => setPath(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button intent="outline" size="sm" onPress={loadItems} isDisabled={!connected || loadingItems}>
+                {loadingItems ? 'Loading...' : 'Load Images'}
+              </Button>
+              {items.length > 0 && (
+                <Button intent="plain" size="sm" onPress={toggleSelectAll}>
+                  {selectedIds.size === items.length ? 'Clear selection' : 'Select all'}
+                </Button>
+              )}
+            </div>
+
+            {error && (
+              <div className="text-sm text-red-400">{error}</div>
+            )}
+
+            <div className="max-h-[360px] overflow-y-auto border border-zinc-800 rounded-lg">
+              {items.length === 0 ? (
+                <div className="p-4 text-sm text-zinc-500">No images loaded yet.</div>
+              ) : (
+                <div className="divide-y divide-zinc-800">
+                  {items.map((item) => (
+                    <label key={item.id} className="flex items-center gap-3 px-4 py-3 text-sm cursor-pointer hover:bg-zinc-800/60">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(item.id)}
+                        onChange={() => toggleSelect(item.id)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="truncate text-white">{item.name}</div>
+                        <div className="text-xs text-zinc-500">{(item.size / 1024 / 1024).toFixed(2)} MB</div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <Button intent="outline" size="sm" onPress={onClose}>Cancel</Button>
+              <Button
+                intent="primary"
+                size="sm"
+                onPress={handleImport}
+                isDisabled={!connected || !selectedBrand || selectedIds.size === 0}
+              >
+                Import Selected
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {step === 'processing' && (
+          <div className="p-8 space-y-4">
+            <div className="text-lg font-semibold">Processing images</div>
+            <div className="text-sm text-zinc-400">
+              {progress ? `${progress.processed} / ${progress.total}` : 'Starting...'}
+            </div>
+            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-teal-500 transition-all"
+                style={{ width: `${progress && progress.total ? Math.round((progress.processed / progress.total) * 100) : 0}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {step === 'results' && (
+          <div className="p-6 space-y-4 overflow-y-auto">
+            <div className="text-lg font-semibold">Import complete</div>
+            <div className="text-sm text-zinc-400">
+              {progress ? `Processed ${progress.total} images` : 'Done'}
+            </div>
+            <div className="space-y-2">
+              {progress?.results?.map((r, idx) => (
+                <div key={idx} className="flex items-center justify-between text-sm border border-zinc-800 rounded-md px-3 py-2">
+                  <span className="truncate">{r.originalFilename}</span>
+                  <span className={r.success ? 'text-emerald-400' : 'text-red-400'}>
+                    {r.success ? 'Success' : 'Failed'}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <Button intent="primary" size="sm" onPress={onClose}>Close</Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

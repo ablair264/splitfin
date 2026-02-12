@@ -119,10 +119,10 @@ const BatchImageUpload: React.FC<BatchImageUploadProps> = ({
 
   const downloadResults = () => {
     const csvContent = [
-      'Original Filename,Final Filename,Matched SKU,Product Type,Detected Color,Confidence,Success,Error',
+      'Original Filename,Final Filename,Matched SKU,Confidence,Success,Error',
       ...progress.results.map(result =>
-        `"${result.originalFilename}","${result.finalFilename}","${result.matchedSku || ''}","${result.productType || ''}","${result.detectedColor || ''}",${result.confidence || 0},${result.success},"${result.error || ''}"`
-      )
+        `"${result.originalFilename}","${result.finalFilename}","${result.matchedSku || ''}",${result.confidence || 0},${result.success},"${result.error || ''}"`
+      ),
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -375,22 +375,18 @@ const BatchImageUpload: React.FC<BatchImageUploadProps> = ({
         </div>
 
         <div className="bg-slate-700 rounded-lg overflow-hidden mb-8 max-h-[400px] overflow-y-auto">
-          <div className="grid grid-cols-[2fr_2fr_1fr_1fr_1fr_1fr] gap-4 p-4 bg-slate-600 font-semibold text-xs uppercase text-slate-400 tracking-wider border-b border-slate-500 max-md:grid-cols-[2fr_1fr_1fr_1fr] max-md:text-[11px] max-sm:grid-cols-[2fr_1fr_1fr]">
+          <div className="grid grid-cols-[2fr_2fr_1fr_1fr] gap-4 p-4 bg-slate-600 font-semibold text-xs uppercase text-slate-400 tracking-wider border-b border-slate-500 max-md:grid-cols-[2fr_1fr_1fr] max-md:text-[11px] max-sm:grid-cols-[2fr_1fr]">
             <span>Original File</span>
             <span>Final File</span>
             <span>SKU</span>
-            <span>Product Type</span>
-            <span>Color</span>
             <span>Status</span>
           </div>
           <div className="flex flex-col">
             {progress.results.map((result, index) => (
-              <div key={index} className="grid grid-cols-[2fr_2fr_1fr_1fr_1fr_1fr] gap-4 py-3 px-4 border-b border-white/10 text-[13px] items-center hover:bg-white/[0.02] max-md:grid-cols-[2fr_1fr_1fr_1fr] max-md:text-[11px] max-sm:grid-cols-[2fr_1fr_1fr]">
+              <div key={index} className="grid grid-cols-[2fr_2fr_1fr_1fr] gap-4 py-3 px-4 border-b border-white/10 text-[13px] items-center hover:bg-white/[0.02] max-md:grid-cols-[2fr_1fr_1fr] max-md:text-[11px] max-sm:grid-cols-[2fr_1fr]">
                 <span className="text-slate-400 overflow-hidden text-ellipsis whitespace-nowrap">{result.originalFilename}</span>
                 <span className="text-white font-medium overflow-hidden text-ellipsis whitespace-nowrap">{result.finalFilename || '-'}</span>
                 <span className="text-blue-500 font-medium">{result.matchedSku || '-'}</span>
-                <span>{result.productType || '-'}</span>
-                <span>{result.detectedColor || '-'}</span>
                 <div className="flex items-center gap-1.5">
                   {result.success ? (
                     <CheckCircle className="text-emerald-500" size={16} />

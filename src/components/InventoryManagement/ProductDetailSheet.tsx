@@ -149,6 +149,7 @@ export function ProductDetailSheet({
   const [staleProduct, setStaleProduct] = useState<Product | null>(null);
   const [dirtyFields, setDirtyFields] = useState<Record<string, unknown>>({});
   const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [copiedSku, setCopiedSku] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -158,12 +159,15 @@ export function ProductDetailSheet({
   const [dragOver, setDragOver] = useState(false);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const saveSuccessTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (product) setStaleProduct(product);
   }, [product]);
 
-  const p = product || staleProduct;
+  const p = staleProduct && product && staleProduct.id === product.id
+    ? staleProduct
+    : (product || staleProduct);
 
   const hasDirtyFields = Object.keys(dirtyFields).length > 0;
 
@@ -198,12 +202,24 @@ export function ProductDetailSheet({
 
   const handleSave = useCallback(async () => {
     if (!p || !hasDirtyFields) return;
+    if (saveSuccessTimeoutRef.current) {
+      clearTimeout(saveSuccessTimeoutRef.current);
+      saveSuccessTimeoutRef.current = null;
+    }
     setSaving(true);
+    setSaveSuccess(false);
     setSaveError(null);
     try {
-      await productService.update(p.id, dirtyFields as Partial<Product>);
+      const updatedProduct = await productService.update(p.id, dirtyFields as Partial<Product>);
+      const refreshedProduct = await productService.getById(updatedProduct.id);
+      setStaleProduct(refreshedProduct);
       setDirtyFields({});
-      setIsEditing(false);
+      setSaveSuccess(true);
+      saveSuccessTimeoutRef.current = setTimeout(() => {
+        setSaveSuccess(false);
+        setIsEditing(false);
+        saveSuccessTimeoutRef.current = null;
+      }, 1000);
       onUpdated();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to save changes';
@@ -226,7 +242,12 @@ export function ProductDetailSheet({
   }, [p, onOpenChange, onUpdated]);
 
   const handleCancelEdit = useCallback(() => {
+    if (saveSuccessTimeoutRef.current) {
+      clearTimeout(saveSuccessTimeoutRef.current);
+      saveSuccessTimeoutRef.current = null;
+    }
     setDirtyFields({});
+    setSaveSuccess(false);
     setIsEditing(false);
     setSaveError(null);
   }, []);
@@ -240,12 +261,21 @@ export function ProductDetailSheet({
 
   useEffect(() => {
     setDirtyFields({});
+    setSaveSuccess(false);
     setSaveError(null);
     setIsEditing(false);
     setShowDeleteConfirm(false);
     setImageError(null);
     setCurrentImageUrl(product?.image_url || null);
   }, [product?.id]);
+
+  useEffect(() => {
+    return () => {
+      if (saveSuccessTimeoutRef.current) {
+        clearTimeout(saveSuccessTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleImageUpload = useCallback(async (file: File) => {
     if (!p) return;
@@ -306,6 +336,11 @@ export function ProductDetailSheet({
     if (!p) return null;
     return dirtyFields.rate !== undefined ? Number(dirtyFields.rate) : p.rate;
   }, [p, dirtyFields.rate]);
+
+  const effectiveName = useMemo(() => {
+    if (!p) return '';
+    return dirtyFields.name !== undefined ? String(dirtyFields.name) : p.name;
+  }, [p, dirtyFields.name]);
 
   const effectiveCost = useMemo(() => {
     if (!p) return null;
@@ -372,7 +407,7 @@ export function ProductDetailSheet({
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         src={currentImageUrl}
-                        alt={p.name}
+                        alt={effectiveName}
                         className="w-20 h-20 object-contain rounded-xl border border-border bg-background"
                       />
                       {/* Loading overlay */}
@@ -434,7 +469,7 @@ export function ProductDetailSheet({
                 {/* Product identity */}
                 <div className="flex-1 min-w-0">
                   <h2 className="text-lg font-semibold text-foreground leading-tight mb-2 pr-4">
-                    {p.name}
+                    {effectiveName}
                   </h2>
 
                   <div className="flex flex-wrap items-center gap-1.5">
@@ -474,6 +509,23 @@ export function ProductDetailSheet({
                 transition={{ delay: 0.05 }}
                 className="rounded-xl border border-border/40 divide-y divide-border/30"
               >
+                <DetailRow label="Name" editing={isEditing}>
+                  {isEditing ? (
+                    <Editable
+                      key={`name-${pk}`}
+                      defaultValue={p.name}
+                      onSubmit={(val) => handleFieldSubmit('name', val)}
+                    >
+                      <EditableArea>
+                        <EditablePreview className="text-sm text-foreground py-0" />
+                        <EditableInput className="text-sm px-1" />
+                      </EditableArea>
+                    </Editable>
+                  ) : (
+                    <span className="text-sm text-foreground">{effectiveName}</span>
+                  )}
+                </DetailRow>
+
                 <DetailRow label="SKU" editing={isEditing}>
                   {isEditing ? (
                     <Editable
@@ -872,15 +924,26 @@ export function ProductDetailSheet({
                         <X size={13} className="mr-1" />
                         Cancel
                       </Button>
-                      {hasDirtyFields && (
+                      {(hasDirtyFields || saveSuccess) && (
                         <Button
                           intent="primary"
                           size="sm"
                           onPress={handleSave}
-                          isDisabled={saving}
+                          isDisabled={saving || saveSuccess}
                         >
-                          {saving && <Loader2 size={13} className="animate-spin mr-1" />}
-                          Save Changes
+                          {saving ? (
+                            <>
+                              <Loader2 size={13} className="animate-spin mr-1" />
+                              Saving...
+                            </>
+                          ) : saveSuccess ? (
+                            <>
+                              <Check size={13} className="mr-1" />
+                              Saved
+                            </>
+                          ) : (
+                            'Save Changes'
+                          )}
                         </Button>
                       )}
                     </>
