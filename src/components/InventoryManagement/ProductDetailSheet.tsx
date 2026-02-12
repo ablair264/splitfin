@@ -1181,8 +1181,8 @@ export function ProductDetailSheet({
                     </>
                   ) : (
                     <>
-                      <SheetClose>
-                        <Button intent="outline" size="sm">Close</Button>
+                      <SheetClose intent="outline" size="sm">
+                        Close
                       </SheetClose>
                       <Button intent="primary" size="sm" onPress={() => setIsEditing(true)}>
                         <Pencil size={13} className="mr-1" />
