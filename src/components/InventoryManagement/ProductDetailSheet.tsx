@@ -39,6 +39,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { ButtonLoader } from '@/components/ui/button-loader';
 import { cn } from '@/lib/utils';
 import { productService } from '../../services/productService';
 import { imageService } from '../../services/imageService';
@@ -1256,7 +1257,7 @@ export function ProductDetailSheet({
                         >
                           {saving ? (
                             <>
-                              <Loader2 size={13} className="animate-spin mr-1" />
+                              <ButtonLoader className="mr-1" />
                               Saving...
                             </>
                           ) : saveSuccess ? (

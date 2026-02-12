@@ -104,7 +104,7 @@ export const onedriveService = {
     return api.post('/api/v1/onedrive/import', payload);
   },
 
-  async matchMissing(params?: { limit?: number; offset?: number }): Promise<{
+  async matchMissing(params?: { limit?: number; offset?: number; brand?: string }): Promise<{
     data: {
       product: {
         id: number;

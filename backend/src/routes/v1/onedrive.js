@@ -515,12 +515,21 @@ router.get('/match-missing', requireSammie, async (req, res) => {
 
     const limit = Math.min(Number(req.query.limit || 20), 50);
     const offset = Math.max(Number(req.query.offset || 0), 0);
+    const brand = req.query.brand || null;
+
+    const params = [limit, offset];
+    let brandClause = '';
+    if (brand) {
+      params.push(brand);
+      brandClause = `AND p.brand = $${params.length}`;
+    }
 
     const { rows: products } = await query(
       `SELECT p.id, p.sku, p.name, p.brand, p.image_url
        FROM products p
        WHERE p.status = 'active'
          AND (p.image_url IS NULL OR p.image_url = '')
+         ${brandClause}
          AND NOT EXISTS (
            SELECT 1 FROM product_images pi
             WHERE pi.product_id = p.id
@@ -528,7 +537,7 @@ router.get('/match-missing', requireSammie, async (req, res) => {
          )
        ORDER BY p.id DESC
        LIMIT $1 OFFSET $2`,
-      [limit, offset]
+      params
     );
 
     const results = [];

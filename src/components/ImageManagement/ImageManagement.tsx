@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import PageHeader from '@/components/shared/PageHeader';
 import { Button } from '@/components/ui/button';
+import { ButtonLoader } from '@/components/ui/button-loader';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -442,7 +443,7 @@ export default function ImageManagement() {
         {/* Bulk delete */}
         {selected.size > 0 && (
           <Button intent="danger" size="sm" onPress={handleBulkDelete} isDisabled={deleting}>
-            {deleting ? <Loader2 className="size-3.5 mr-1 animate-spin" /> : <Trash2 className="size-3.5 mr-1" />}
+            {deleting ? <ButtonLoader className="mr-1" /> : <Trash2 className="size-3.5 mr-1" />}
             Delete {selected.size}
           </Button>
         )}

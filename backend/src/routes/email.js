@@ -4,11 +4,14 @@ import postmark from 'postmark';
 
 const router = express.Router();
 
-// Initialize Postmark client
-const client = new postmark.ServerClient(process.env.POSTMARK_SERVER_TOKEN || 'be720a82-b526-482d-a9dd-c9a8357999ac');
+const postmarkToken = process.env.POSTMARK_SERVER_TOKEN;
+const client = postmarkToken ? new postmark.ServerClient(postmarkToken) : null;
 
 router.post('/send-login-details', async (req, res) => {
   try {
+    if (!client) {
+      return res.status(503).json({ success: false, error: 'Email service not configured' });
+    }
     const { email, password, customerName } = req.body;
     
     const emailData = {
@@ -83,6 +86,9 @@ router.post('/send-login-details', async (req, res) => {
 // Optional: Send order confirmation email
 router.post('/send-order-confirmation', async (req, res) => {
   try {
+    if (!client) {
+      return res.status(503).json({ success: false, error: 'Email service not configured' });
+    }
     const { email, customerName, orderNumber, orderTotal, items } = req.body;
     
     const itemsHtml = items.map(item => `
@@ -163,6 +169,9 @@ router.post('/send-order-confirmation', async (req, res) => {
 // Catalog Request Email
 router.post('/catalogue-request', async (req, res) => {
   try {
+    if (!client) {
+      return res.status(503).json({ success: false, error: 'Email service not configured' });
+    }
     const { name, company, email, phone, address, city, postcode, country, catalogues, message, submittedAt } = req.body;
     
     // Format catalogues list
@@ -284,6 +293,9 @@ router.post('/catalogue-request', async (req, res) => {
 // DMBrands Order Approved Email
 router.post('/order-approved', async (req, res) => {
   try {
+    if (!client) {
+      return res.status(503).json({ success: false, error: 'Email service not configured' });
+    }
     const {
       to,
       customerName,
@@ -513,6 +525,9 @@ router.post('/order-approved', async (req, res) => {
 // DMBrands Order Confirmation Email
 router.post('/order-confirmation', async (req, res) => {
   try {
+    if (!client) {
+      return res.status(503).json({ success: false, error: 'Email service not configured' });
+    }
     const {
       to,
       customerName,

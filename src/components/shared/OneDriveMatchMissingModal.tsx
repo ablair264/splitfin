@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal, ModalOverlay } from "react-aria-components";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { onedriveService } from "@/services/onedriveService";
+import { productService } from "@/services/productService";
 import { cn } from "@/lib/utils";
+import { Loader2, Search } from "lucide-react";
 
 interface MatchMissingItem {
   product: {
@@ -38,43 +40,64 @@ export function OneDriveMatchMissingModal({
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [offset, setOffset] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMore, setHasMore] = useState(false);
   const [showOnlyMatches, setShowOnlyMatches] = useState(true);
   const [selectedMap, setSelectedMap] = useState<Record<number, Set<string>>>({});
+  const [brands, setBrands] = useState<{ brand: string; count: number }[]>([]);
+  const [brandFilter, setBrandFilter] = useState("");
+  const [started, setStarted] = useState(false);
 
-  const loadItems = useCallback(
-    async (reset = false) => {
-      if (loading) return;
-      setLoading(true);
-      setError(null);
-      try {
-        const nextOffset = reset ? 0 : offset;
-        const result = await onedriveService.matchMissing({
-          limit: 20,
-          offset: nextOffset,
-        });
-        const nextItems = result.data || [];
-        setItems((prev) => (reset ? nextItems : [...prev, ...nextItems]));
-        setOffset(nextOffset + nextItems.length);
-        setHasMore(nextItems.length === 20);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to match missing images.");
-      } finally {
-        setLoading(false);
-      }
-    },
-    [loading, offset]
-  );
+  // Use a ref to track offset so it doesn't cause re-renders / effect loops
+  const offsetRef = useRef(0);
 
+  // Load brands on open
   useEffect(() => {
     if (!open) return;
+    productService.getBrands().then(setBrands).catch(() => {});
+    // Reset state when opening
     setItems([]);
     setSelectedMap({});
-    setOffset(0);
-    setHasMore(true);
-    loadItems(true);
-  }, [open, loadItems]);
+    setError(null);
+    setHasMore(false);
+    setStarted(false);
+    setBrandFilter("");
+    offsetRef.current = 0;
+  }, [open]);
+
+  const doLoad = useCallback(async (reset: boolean, brand: string) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const nextOffset = reset ? 0 : offsetRef.current;
+      const params: { limit: number; offset: number; brand?: string } = {
+        limit: 20,
+        offset: nextOffset,
+      };
+      if (brand) params.brand = brand;
+
+      const result = await onedriveService.matchMissing(params);
+      const nextItems = result.data || [];
+      setItems((prev) => (reset ? nextItems : [...prev, ...nextItems]));
+      offsetRef.current = nextOffset + nextItems.length;
+      setHasMore(nextItems.length === 20);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to match missing images.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleStart = () => {
+    setStarted(true);
+    setItems([]);
+    setSelectedMap({});
+    offsetRef.current = 0;
+    doLoad(true, brandFilter);
+  };
+
+  const handleLoadMore = () => {
+    doLoad(false, brandFilter);
+  };
 
   const filteredItems = useMemo(
     () => (showOnlyMatches ? items.filter((i) => i.matches?.length > 0) : items),
@@ -151,32 +174,84 @@ export function OneDriveMatchMissingModal({
           <DialogHeader>
             <DialogTitle>Match Missing Images (OneDrive)</DialogTitle>
             <DialogDescription>
-              Active products without images are matched by SKU. Select results to import.
+              Find OneDrive images matching products that have no images, by SKU.
             </DialogDescription>
           </DialogHeader>
           <DialogBody className="pt-0">
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                <input
-                  type="checkbox"
-                  checked={showOnlyMatches}
-                  onChange={(e) => setShowOnlyMatches(e.target.checked)}
-                  className="rounded border-border"
-                />
-                Show only products with matches
-              </label>
-              <div className="text-xs text-muted-foreground">
-                Selected: <span className="text-foreground font-medium">{totalSelected}</span>
+            {/* Brand filter + start */}
+            <div className="flex items-end gap-3 mb-4">
+              <div className="flex-1 max-w-xs">
+                <label className="text-xs text-muted-foreground block mb-1">Brand</label>
+                <select
+                  value={brandFilter}
+                  onChange={(e) => setBrandFilter(e.target.value)}
+                  disabled={loading}
+                  className="w-full h-8 px-2 text-sm rounded-md border border-border bg-background text-foreground"
+                >
+                  <option value="">All brands</option>
+                  {brands.map((b) => (
+                    <option key={b.brand} value={b.brand}>
+                      {b.brand} ({b.count})
+                    </option>
+                  ))}
+                </select>
               </div>
+              <Button
+                intent="primary"
+                size="sm"
+                onPress={handleStart}
+                isDisabled={loading}
+              >
+                {loading && !started ? (
+                  <Loader2 className="size-3.5 animate-spin mr-1.5" />
+                ) : (
+                  <Search className="size-3.5 mr-1.5" />
+                )}
+                {started ? "Re-match" : "Start Matching"}
+              </Button>
             </div>
+
+            {/* Controls row */}
+            {started && (
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={showOnlyMatches}
+                    onChange={(e) => setShowOnlyMatches(e.target.checked)}
+                    className="rounded border-border"
+                  />
+                  Show only products with matches
+                </label>
+                <div className="text-xs text-muted-foreground">
+                  {items.length} products checked · Selected: <span className="text-foreground font-medium">{totalSelected}</span>
+                </div>
+              </div>
+            )}
 
             {error && <div className="text-sm text-red-400 mb-3">{error}</div>}
 
-            {loading && items.length === 0 ? (
-              <div className="text-sm text-muted-foreground">Matching products…</div>
-            ) : filteredItems.length === 0 ? (
-              <div className="text-sm text-muted-foreground">No matches found.</div>
-            ) : (
+            {/* Loading state */}
+            {loading && items.length === 0 && (
+              <div className="flex items-center gap-2 py-8 justify-center text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+                Searching OneDrive for SKU matches...
+              </div>
+            )}
+
+            {/* Not started yet */}
+            {!started && !loading && (
+              <div className="text-sm text-muted-foreground py-8 text-center">
+                Select a brand (optional) and click "Start Matching" to find OneDrive images for products without images.
+              </div>
+            )}
+
+            {/* Results */}
+            {started && !loading && items.length === 0 && (
+              <div className="text-sm text-muted-foreground py-4">No products without images found{brandFilter ? ` for ${brandFilter}` : ""}.</div>
+            )}
+
+            {started && filteredItems.length > 0 && (
               <div className="max-h-[420px] overflow-y-auto divide-y divide-border/40 border border-border/60 rounded-lg">
                 {filteredItems.map((item) => {
                   const imageIds = item.matches.map((m) => m.id);
@@ -235,10 +310,18 @@ export function OneDriveMatchMissingModal({
               </div>
             )}
 
-            {hasMore && (
+            {/* Loading more indicator */}
+            {loading && items.length > 0 && (
+              <div className="flex items-center gap-2 py-3 justify-center text-xs text-muted-foreground">
+                <Loader2 className="size-3.5 animate-spin" />
+                Loading more...
+              </div>
+            )}
+
+            {hasMore && !loading && (
               <div className="flex justify-center mt-3">
-                <Button intent="outline" size="sm" onPress={() => loadItems(false)} isDisabled={loading}>
-                  {loading ? "Loading…" : "Load more"}
+                <Button intent="outline" size="sm" onPress={handleLoadMore}>
+                  Load more
                 </Button>
               </div>
             )}
@@ -248,7 +331,7 @@ export function OneDriveMatchMissingModal({
               Close
             </Button>
             <Button intent="primary" size="sm" onPress={handleImport} isDisabled={importing || totalSelected === 0}>
-              {importing ? "Importing…" : "Import Selected"}
+              {importing ? "Importing..." : `Import ${totalSelected > 0 ? totalSelected : ""} Selected`}
             </Button>
           </DialogFooter>
         </Dialog>
