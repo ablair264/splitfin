@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { ShoppingCart, Users, Package } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -112,6 +112,7 @@ const StatusBadge: React.FC<{ status: string }> = ({ status }) => (
 const DashboardContent: React.FC = () => {
   usePageTitle('Dashboard');
   const [dateRange, setDateRange] = useState<DateRange>('30_days');
+  const [showOneDriveConnected, setShowOneDriveConnected] = useState(false);
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     ordersCount: 0,
     ordersRevenue: 0,
@@ -132,10 +133,22 @@ const DashboardContent: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [tablesLoading, setTablesLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     loadDashboardData();
   }, [dateRange]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('onedrive') === 'connected') {
+      setShowOneDriveConnected(true);
+      params.delete('onedrive');
+      const cleaned = params.toString();
+      const nextUrl = cleaned ? `${location.pathname}?${cleaned}` : location.pathname;
+      navigate(nextUrl, { replace: true });
+    }
+  }, [location.pathname, location.search, navigate]);
 
   const loadDashboardData = async () => {
     try {
@@ -287,6 +300,20 @@ const DashboardContent: React.FC = () => {
         transition={{ duration: 0.35, ease: 'easeOut' }}
         className="mb-6"
       >
+        {showOneDriveConnected && (
+          <div className="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-emerald-200 text-sm flex items-center justify-between gap-4">
+            <div>
+              <div className="font-medium text-emerald-100">OneDrive connected</div>
+              <div className="text-emerald-200/80">Your OneDrive is now linked to Splitfin.</div>
+            </div>
+            <button
+              className="text-emerald-200/80 hover:text-emerald-100"
+              onClick={() => setShowOneDriveConnected(false)}
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>

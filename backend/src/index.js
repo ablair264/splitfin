@@ -28,7 +28,7 @@ import { productIntelligenceRouter } from './routes/v1/product-intelligence.js';
 import { purchaseOrdersRouter } from './routes/v1/purchase-orders.js';
 import { imagesRouter } from './routes/v1/images.js';
 import { reportsRouter } from './routes/v1/reports.js';
-import { onedriveRouter } from './routes/v1/onedrive.js';
+import { onedriveRouter, onedrivePublicRouter } from './routes/v1/onedrive.js';
 import { jwtAuth } from './middleware/jwtAuth.js';
 
 // Security middleware (your existing)
@@ -196,6 +196,7 @@ app.use('/api/v1/product-intelligence', jwtAuth, productIntelligenceRouter);
 app.use('/api/v1/purchase-orders', jwtAuth, purchaseOrdersRouter);
 app.use('/api/v1/images', jwtAuth, imagesRouter);
 app.use('/api/v1/reports', jwtAuth, reportsRouter);
+app.use('/api/v1/onedrive', onedrivePublicRouter);
 app.use('/api/v1/onedrive', jwtAuth, onedriveRouter);
 
 // ====================================

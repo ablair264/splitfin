@@ -13,6 +13,7 @@ export default function Settings() {
   const [userEmail, setUserEmail] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
+  const [showOneDriveConnected, setShowOneDriveConnected] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -54,6 +55,17 @@ export default function Settings() {
 
   const currentTab = getCurrentTab();
 
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('onedrive') === 'connected') {
+      setShowOneDriveConnected(true);
+      params.delete('onedrive');
+      const cleaned = params.toString();
+      const nextUrl = cleaned ? `${location.pathname}?${cleaned}` : location.pathname;
+      navigate(nextUrl, { replace: true });
+    }
+  }, [location.pathname, location.search, navigate]);
+
   if (loading) {
     return (
       <ProgressLoader
@@ -66,7 +78,7 @@ export default function Settings() {
 
   // Redirect to general settings if no specific tab is selected
   if (location.pathname === '/settings') {
-    navigate('/settings/general');
+    navigate(`/settings/general${location.search || ''}`);
     return null;
   }
 
@@ -87,6 +99,20 @@ export default function Settings() {
         <div className="flex-1 p-8 md:p-8 max-sm:p-4 overflow-y-auto">
           <div className="max-w-[900px]">
             <div className="bg-card rounded-xl p-8 max-sm:p-6">
+              {showOneDriveConnected && (
+                <div className="mb-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-emerald-200 text-sm flex items-center justify-between gap-4">
+                  <div>
+                    <div className="font-medium text-emerald-100">OneDrive connected</div>
+                    <div className="text-emerald-200/80">Your OneDrive is now linked to Splitfin.</div>
+                  </div>
+                  <button
+                    className="text-emerald-200/80 hover:text-emerald-100"
+                    onClick={() => setShowOneDriveConnected(false)}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              )}
               {currentTab === 'general' && <GeneralSettings userName={userName} userEmail={userEmail} userRole={userRole} />}
               {currentTab === 'profile' && (
                 <ProfileSettings

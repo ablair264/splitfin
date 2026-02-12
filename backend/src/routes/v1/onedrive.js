@@ -6,6 +6,7 @@ import { query } from '../../config/database.js';
 import { logger } from '../../utils/logger.js';
 
 const router = express.Router();
+const publicRouter = express.Router();
 
 const ALLOWED_AGENT_ID = 'sammie';
 const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
@@ -167,7 +168,7 @@ router.get('/auth-url', requireSammie, (req, res) => {
 // ============================================
 // OAuth: Callback to exchange code for token
 // ============================================
-router.get('/callback', async (req, res) => {
+publicRouter.get('/callback', async (req, res) => {
   try {
     ensureConfigured();
     const { code, state, error, error_description } = req.query;
@@ -203,7 +204,7 @@ router.get('/callback', async (req, res) => {
     await saveToken(agentId, data);
 
     const redirectBase = FRONTEND_URL || 'https://splitfin.co.uk';
-    return res.redirect(`${redirectBase}/settings?onedrive=connected`);
+    return res.redirect(`${redirectBase}/dashboard?onedrive=connected`);
   } catch (err) {
     logger.error('[OneDrive] callback error:', err);
     res.status(500).send('OneDrive OAuth failed');
@@ -306,4 +307,4 @@ router.get('/images', requireSammie, async (req, res) => {
   }
 });
 
-export { router as onedriveRouter };
+export { router as onedriveRouter, publicRouter as onedrivePublicRouter };
