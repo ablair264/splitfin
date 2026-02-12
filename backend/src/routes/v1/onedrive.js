@@ -499,8 +499,9 @@ router.get('/search', requireSammie, async (req, res) => {
 
     res.json({ images });
   } catch (err) {
-    logger.error('[OneDrive] search error:', err);
-    res.status(500).json({ error: 'Failed to search OneDrive' });
+    const message = err?.response?.data?.error?.message || err?.message || 'Failed to search OneDrive';
+    logger.error('[OneDrive] search error:', message);
+    res.status(500).json({ error: message });
   }
 });
 
