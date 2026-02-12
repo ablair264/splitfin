@@ -1211,9 +1211,9 @@ export function ProductDetailSheet({
       {showOneDriveSearch && (
         <ModalOverlay
           isDismissable={false}
-          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm"
         >
-          <Modal className="fixed inset-0 flex items-center justify-center p-4">
+          <Modal className="fixed inset-0 z-[120] flex items-center justify-center p-4">
             <Dialog role="alertdialog" className="w-full max-w-3xl rounded-xl border border-border bg-card shadow-xl">
               <DialogHeader>
                 <DialogTitle>Search OneDrive</DialogTitle>
