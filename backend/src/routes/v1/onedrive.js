@@ -319,6 +319,7 @@ router.get('/children', requireSammie, async (req, res) => {
     const limit = Math.min(Number(req.query.limit || 200), 200);
     const foldersOnly = String(req.query.foldersOnly || 'false') === 'true';
     const imagesOnly = String(req.query.imagesOnly || 'false') === 'true';
+    const nextLink = typeof req.query.nextLink === 'string' ? req.query.nextLink : '';
 
     const selectFields = [];
     if (foldersOnly) {
@@ -333,9 +334,13 @@ router.get('/children', requireSammie, async (req, res) => {
       ? `${GRAPH_BASE}/me/drive/items/${encodeURIComponent(parentId)}/children`
       : `${GRAPH_BASE}/me/drive/root/children`;
 
-    const { data } = await axios.get(url, {
+    const requestUrl = nextLink && nextLink.startsWith(GRAPH_BASE)
+      ? nextLink
+      : url;
+
+    const { data } = await axios.get(requestUrl, {
       headers: { Authorization: `Bearer ${accessToken}` },
-      params: { $top: limit, $select: selectFields.join(',') },
+      params: nextLink ? undefined : { $top: limit, $select: selectFields.join(',') },
     });
 
     const items = Array.isArray(data.value) ? data.value : [];

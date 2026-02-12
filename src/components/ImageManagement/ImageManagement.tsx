@@ -764,6 +764,8 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
   const [selectedBrand, setSelectedBrand] = useState<string>('');
   const [foldersByParent, setFoldersByParent] = useState<Record<string, { id: string; name: string; childCount: number | null }[]>>({});
   const [imagesByParent, setImagesByParent] = useState<Record<string, OneDriveImageItem[]>>({});
+  const [folderNextLinkByParent, setFolderNextLinkByParent] = useState<Record<string, string | null>>({});
+  const [imageNextLinkByParent, setImageNextLinkByParent] = useState<Record<string, string | null>>({});
   const [currentFolderId, setCurrentFolderId] = useState<string>(ROOT_ID);
   const [loadingItems, setLoadingItems] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -787,7 +789,7 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
     loadBrands();
   }, []);
 
-  const loadChildren = async (parentId?: string) => {
+  const loadChildren = async (parentId?: string, nextLink?: string | null) => {
     setLoadingItems(true);
     setError(null);
     try {
@@ -795,9 +797,14 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
         parentId,
         limit: 200,
         foldersOnly: true,
+        nextLink: nextLink || undefined,
       });
       const key = parentId || ROOT_ID;
-      setFoldersByParent((prev) => ({ ...prev, [key]: result.folders || [] }));
+      setFoldersByParent((prev) => ({
+        ...prev,
+        [key]: nextLink ? [...(prev[key] || []), ...(result.folders || [])] : (result.folders || []),
+      }));
+      setFolderNextLinkByParent((prev) => ({ ...prev, [key]: result.nextLink || null }));
       setSelectedIds(new Set());
     } catch (err) {
       console.error('Failed to list OneDrive images:', err);
@@ -807,18 +814,24 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
     }
   };
 
-  const loadImages = async (parentId?: string) => {
+  const loadImages = async (parentId?: string, nextLink?: string | null) => {
     const key = parentId || ROOT_ID;
     try {
       const result = await onedriveService.listChildren({
         parentId,
         limit: 200,
         imagesOnly: true,
+        nextLink: nextLink || undefined,
       });
-      setImagesByParent((prev) => ({ ...prev, [key]: result.images || [] }));
+      setImagesByParent((prev) => ({
+        ...prev,
+        [key]: nextLink ? [...(prev[key] || []), ...(result.images || [])] : (result.images || []),
+      }));
+      setImageNextLinkByParent((prev) => ({ ...prev, [key]: result.nextLink || null }));
     } catch (err) {
       console.error('Failed to load OneDrive images:', err);
       setImagesByParent((prev) => ({ ...prev, [key]: [] }));
+      setImageNextLinkByParent((prev) => ({ ...prev, [key]: null }));
     }
   };
 
@@ -969,6 +982,15 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
                   {selectedIds.size === (imagesByParent[currentFolderId]?.length || 0) ? 'Clear selection' : 'Select all'}
                 </Button>
               )}
+              {folderNextLinkByParent[currentFolderId] && (
+                <Button
+                  intent="plain"
+                  size="sm"
+                  onPress={() => loadChildren(currentFolderId === ROOT_ID ? undefined : currentFolderId, folderNextLinkByParent[currentFolderId])}
+                >
+                  Load more folders
+                </Button>
+              )}
             </div>
 
             {error && (
@@ -1011,6 +1033,14 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
                           </div>
                         </label>
                       ))}
+                      {imageNextLinkByParent[currentFolderId] && (
+                        <button
+                          className="w-full px-4 py-3 text-sm text-left text-zinc-300 hover:bg-zinc-800/60"
+                          onClick={() => loadImages(currentFolderId === ROOT_ID ? undefined : currentFolderId, imageNextLinkByParent[currentFolderId])}
+                        >
+                          Load more images
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

@@ -38,6 +38,7 @@ export const onedriveService = {
     limit?: number;
     foldersOnly?: boolean;
     imagesOnly?: boolean;
+    nextLink?: string;
   }): Promise<{
     folders: { id: string; name: string; childCount: number | null }[];
     images: {
