@@ -464,6 +464,47 @@ router.get('/children', requireSammie, async (req, res) => {
 });
 
 // ============================================
+// Search images by name
+// ============================================
+router.get('/search', requireSammie, async (req, res) => {
+  try {
+    const agentId = req.agent.id;
+    const accessToken = await getValidAccessToken(agentId);
+
+    const queryText = typeof req.query.query === 'string' ? req.query.query.trim() : '';
+    if (!queryText) {
+      return res.status(400).json({ error: 'Query is required' });
+    }
+
+    const limit = Math.min(Number(req.query.limit || 50), 200);
+    const searchUrl = `${GRAPH_BASE}/me/drive/root/search(q='${encodeURIComponent(queryText)}')`;
+
+    const { data } = await axios.get(searchUrl, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      params: { $top: limit },
+    });
+
+    const items = Array.isArray(data.value) ? data.value : [];
+    const images = items
+      .filter(item => item?.file?.mimeType?.startsWith('image/'))
+      .map(item => ({
+        id: item.id,
+        name: item.name,
+        size: item.size,
+        mimeType: item.file?.mimeType || null,
+        webUrl: item.webUrl || null,
+        createdDateTime: item.createdDateTime || null,
+        lastModifiedDateTime: item.lastModifiedDateTime || null,
+      }));
+
+    res.json({ images });
+  } catch (err) {
+    logger.error('[OneDrive] search error:', err);
+    res.status(500).json({ error: 'Failed to search OneDrive' });
+  }
+});
+
+// ============================================
 // Import OneDrive images server-side
 // ============================================
 router.post('/import', requireSammie, async (req, res) => {
@@ -471,7 +512,7 @@ router.post('/import', requireSammie, async (req, res) => {
     const agentId = req.agent.id;
     const accessToken = await getValidAccessToken(agentId);
 
-    const { brand, items } = req.body || {};
+    const { brand, items, product_id } = req.body || {};
     if (!brand) {
       return res.status(400).json({ error: 'Brand is required' });
     }
@@ -492,6 +533,7 @@ router.post('/import', requireSammie, async (req, res) => {
       const matchedSku = item?.matched_sku || null;
       const skuConfidence = Number.isFinite(item?.sku_confidence) ? item.sku_confidence : null;
       const originalFilename = item?.original_filename || itemName;
+      const productIdOverride = Number.isFinite(product_id) ? Number(product_id) : null;
 
       if (!itemId) {
         results.push({
@@ -529,8 +571,8 @@ router.post('/import', requireSammie, async (req, res) => {
 
         const publicUrl = `${R2_PUBLIC_URL}/${key}`;
 
-        let productId = null;
-        if (matchedSku) {
+        let productId = productIdOverride;
+        if (!productId && matchedSku) {
           const prodResult = await query('SELECT id FROM products WHERE sku = $1 LIMIT 1', [matchedSku]);
           if (prodResult.rows.length > 0) {
             productId = prodResult.rows[0].id;

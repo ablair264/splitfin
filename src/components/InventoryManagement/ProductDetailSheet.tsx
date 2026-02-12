@@ -42,6 +42,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { productService } from '../../services/productService';
 import { imageService } from '../../services/imageService';
+import { onedriveService } from '../../services/onedriveService';
+import { authService } from '../../services/authService';
 import type { Product } from '../../types/domain';
 import type { ProductImage } from '../../types/domain';
 
@@ -174,6 +176,21 @@ export function ProductDetailSheet({
   const [settingPrimaryId, setSettingPrimaryId] = useState<number | null>(null);
   const [removingImageId, setRemovingImageId] = useState<number | null>(null);
   const [removeTarget, setRemoveTarget] = useState<ProductImage | null>(null);
+  const [showOneDriveSearch, setShowOneDriveSearch] = useState(false);
+  const [oneDriveQuery, setOneDriveQuery] = useState('');
+  const [oneDriveResults, setOneDriveResults] = useState<Array<{
+    id: string;
+    name: string;
+    size: number;
+    mimeType: string | null;
+    webUrl: string | null;
+    createdDateTime: string | null;
+    lastModifiedDateTime: string | null;
+  }>>([]);
+  const [oneDriveLoading, setOneDriveLoading] = useState(false);
+  const [oneDriveSelected, setOneDriveSelected] = useState<Set<string>>(new Set());
+  const [oneDriveImporting, setOneDriveImporting] = useState(false);
+  const [oneDriveError, setOneDriveError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const saveSuccessTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -283,6 +300,10 @@ export function ProductDetailSheet({
     setShowDeleteConfirm(false);
     setImageError(null);
     setCurrentImageUrl(product?.image_url || null);
+    setOneDriveQuery(product?.sku || '');
+    setOneDriveResults([]);
+    setOneDriveSelected(new Set());
+    setOneDriveError(null);
   }, [product?.id]);
 
   const fetchProductImages = useCallback(async (productId?: number) => {
@@ -389,6 +410,58 @@ export function ProductDetailSheet({
     }
   }, [p, currentImageUrl, fetchProductImages, onUpdated]);
 
+  const currentAgent = authService.getCachedAgent();
+  const isSammie = currentAgent?.id?.toLowerCase() === 'sammie';
+
+  const runOneDriveSearch = useCallback(async () => {
+    if (!oneDriveQuery.trim()) return;
+    setOneDriveLoading(true);
+    setOneDriveError(null);
+    try {
+      const result = await onedriveService.searchImages({ query: oneDriveQuery.trim(), limit: 100 });
+      setOneDriveResults(result.images || []);
+      setOneDriveSelected(new Set());
+    } catch (err) {
+      console.error('OneDrive search failed:', err);
+      setOneDriveError('Failed to search OneDrive.');
+      setOneDriveResults([]);
+    } finally {
+      setOneDriveLoading(false);
+    }
+  }, [oneDriveQuery]);
+
+  const handleOneDriveImport = useCallback(async () => {
+    if (!p || oneDriveSelected.size === 0) return;
+    setOneDriveImporting(true);
+    setOneDriveError(null);
+    try {
+      const selectedItems = oneDriveResults.filter((r) => oneDriveSelected.has(r.id));
+      const response = await onedriveService.importImages({
+        brand: p.brand,
+        product_id: p.id,
+        items: selectedItems.map((r) => ({
+          id: r.id,
+          name: r.name,
+          mimeType: r.mimeType,
+          original_filename: r.name,
+        })),
+      });
+
+      if (!currentImageUrl) {
+        const firstSuccess = response.results?.find((r) => r.success && r.webpUrl);
+        if (firstSuccess?.webpUrl) setCurrentImageUrl(firstSuccess.webpUrl);
+      }
+      await fetchProductImages(p.id);
+      onUpdated();
+      setShowOneDriveSearch(false);
+    } catch (err) {
+      console.error('OneDrive import failed:', err);
+      setOneDriveError('Failed to import OneDrive images.');
+    } finally {
+      setOneDriveImporting(false);
+    }
+  }, [p, oneDriveSelected, oneDriveResults, currentImageUrl, fetchProductImages, onUpdated]);
+
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragOver(false);
@@ -455,7 +528,7 @@ export function ProductDetailSheet({
         onOpenChange={onOpenChange}
         side="right"
         isFloat={false}
-        isDismissable={!showDeleteConfirm && !removeTarget}
+        isDismissable={!showDeleteConfirm && !removeTarget && !showOneDriveSearch}
         className="sm:max-w-[720px] w-full backdrop-blur-xl bg-card/95"
         aria-label="Product details"
       >
@@ -557,6 +630,19 @@ export function ProductDetailSheet({
                       <span className="px-2 py-0.5 rounded-md bg-primary/8 border border-primary/15 text-[11px] font-medium text-primary">
                         {p.brand}
                       </span>
+                    )}
+                    {isSammie && p.sku && (
+                      <button
+                        onClick={() => {
+                          setOneDriveQuery(p.sku || '');
+                          setShowOneDriveSearch(true);
+                          setTimeout(() => runOneDriveSearch(), 0);
+                        }}
+                        className="px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/20 text-[11px] font-medium text-sky-300 hover:bg-sky-500/20 transition-colors"
+                        type="button"
+                      >
+                        Search OneDrive
+                      </button>
                     )}
                     <span
                       className={cn(
@@ -1122,6 +1208,88 @@ export function ProductDetailSheet({
           />
         )}
       </AnimatePresence>
+      {showOneDriveSearch && (
+        <ModalOverlay
+          isDismissable={false}
+          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
+        >
+          <Modal className="fixed inset-0 flex items-center justify-center p-4">
+            <Dialog role="alertdialog" className="w-full max-w-3xl rounded-xl border border-border bg-card shadow-xl">
+              <DialogHeader>
+                <DialogTitle>Search OneDrive</DialogTitle>
+                <DialogDescription>
+                  Search for images by SKU or filename and import them to this product.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogBody className="pt-0">
+                <div className="flex items-center gap-2 mb-3">
+                  <input
+                    type="text"
+                    value={oneDriveQuery}
+                    onChange={(e) => setOneDriveQuery(e.target.value)}
+                    placeholder="Search OneDrive..."
+                    className="flex-1 h-9 px-3 rounded-lg bg-background border border-border text-sm"
+                  />
+                  <Button intent="outline" size="sm" onPress={runOneDriveSearch} isDisabled={oneDriveLoading || !oneDriveQuery.trim()}>
+                    {oneDriveLoading ? 'Searching…' : 'Search'}
+                  </Button>
+                </div>
+
+                {oneDriveError && (
+                  <div className="text-sm text-red-400 mb-3">{oneDriveError}</div>
+                )}
+
+                {oneDriveLoading ? (
+                  <div className="text-sm text-muted-foreground">Searching OneDrive…</div>
+                ) : oneDriveResults.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No images found.</div>
+                ) : (
+                  <div className="border border-border/60 rounded-lg overflow-hidden">
+                    <div className="grid grid-cols-[36px_1fr_100px] gap-2 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground bg-muted/30">
+                      <span />
+                      <span>File</span>
+                      <span>Size</span>
+                    </div>
+                    <div className="max-h-[320px] overflow-y-auto divide-y divide-border/40">
+                      {oneDriveResults.map((item) => (
+                        <label key={item.id} className="grid grid-cols-[36px_1fr_100px] gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-muted/20">
+                          <input
+                            type="checkbox"
+                            checked={oneDriveSelected.has(item.id)}
+                            onChange={() => {
+                              setOneDriveSelected((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(item.id)) next.delete(item.id);
+                                else next.add(item.id);
+                                return next;
+                              });
+                            }}
+                          />
+                          <span className="truncate">{item.name}</span>
+                          <span className="text-xs text-muted-foreground">{(item.size / 1024).toFixed(1)} KB</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </DialogBody>
+              <DialogFooter>
+                <Button intent="outline" size="sm" onPress={() => setShowOneDriveSearch(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  intent="primary"
+                  size="sm"
+                  onPress={handleOneDriveImport}
+                  isDisabled={oneDriveImporting || oneDriveSelected.size === 0}
+                >
+                  {oneDriveImporting ? 'Importing…' : `Import ${oneDriveSelected.size || ''}`.trim()}
+                </Button>
+              </DialogFooter>
+            </Dialog>
+          </Modal>
+        </ModalOverlay>
+      )}
       {removeTarget && (
         <ModalOverlay
           isDismissable={false}
