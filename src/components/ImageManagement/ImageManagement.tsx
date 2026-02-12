@@ -323,19 +323,13 @@ export default function ImageManagement() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="start">
                   <DropdownMenuItem
-                    onSelect={(event) => {
-                      event.preventDefault();
-                      setShowOneDriveImport(true);
-                    }}
+                    onSelect={() => setShowOneDriveImport(true)}
                     disabled={onedriveImportRunning}
                   >
                     Import OneDrive
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onSelect={(event) => {
-                      event.preventDefault();
-                      setShowOneDriveMatchMissing(true);
-                    }}
+                    onSelect={() => setShowOneDriveMatchMissing(true)}
                     disabled={onedriveImportRunning}
                   >
                     Match from OneDrive

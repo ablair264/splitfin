@@ -168,7 +168,7 @@ export function OneDriveMatchMissingModal({
   if (!open) return null;
 
   return (
-    <ModalOverlay isDismissable={false} className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm">
+    <ModalOverlay isOpen isDismissable={false} className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm">
       <Modal className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
         <Dialog role="alertdialog" className="w-full max-w-5xl rounded-xl border border-border bg-card shadow-xl">
           <DialogHeader>
