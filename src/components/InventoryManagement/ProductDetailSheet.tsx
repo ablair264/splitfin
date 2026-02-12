@@ -384,6 +384,7 @@ export function ProductDetailSheet({
         onOpenChange={onOpenChange}
         side="right"
         isFloat={false}
+        isDismissable={!showDeleteConfirm}
         className="sm:max-w-[720px] w-full backdrop-blur-xl bg-card/95"
         aria-label="Product details"
       >
