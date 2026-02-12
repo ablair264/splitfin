@@ -2,8 +2,8 @@
 import postmark from 'postmark';
 import { logger } from '../utils/logger.js';
 
-// Initialize Postmark client
-const client = new postmark.ServerClient(process.env.POSTMARK_SERVER_TOKEN);
+const postmarkToken = process.env.POSTMARK_SERVER_TOKEN;
+const client = postmarkToken ? new postmark.ServerClient(postmarkToken) : null;
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'DM Brands <noreply@dmbrands.co.uk>';
 
@@ -84,6 +84,10 @@ export async function sendInvoiceReminder({ to, cc, subject, invoice, customer, 
 }
 
 export const sendEmail = async ({ to, subject, html, text }) => {
+  if (!client) {
+    logger.warn('[Email] POSTMARK_SERVER_TOKEN not configured');
+    return { success: false, error: 'Email service not configured' };
+  }
   try {
     const result = await client.sendEmail({
       From: process.env.EMAIL_FROM || 'sales@dmbrands.co.uk',
@@ -114,6 +118,10 @@ export const sendEmail = async ({ to, subject, html, text }) => {
 
 // Optional: Send with template
 export const sendEmailWithTemplate = async ({ to, templateAlias, templateModel }) => {
+  if (!client) {
+    logger.warn('[Email] POSTMARK_SERVER_TOKEN not configured');
+    return { success: false, error: 'Email service not configured' };
+  }
   try {
     const result = await client.sendEmailWithTemplate({
       From: process.env.EMAIL_FROM || 'sales@dmbrands.co.uk',
