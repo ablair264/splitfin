@@ -5,6 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Images, HardDrive, Layers, LayoutGrid, List, Search,
   Upload, Sparkles, Trash2, Loader2, X, Download, Copy, Check,
   ImageOff, Eye, Save, Link, RefreshCw, Cloud,
@@ -18,6 +24,7 @@ import { Tree, Folder } from '@/components/ui/file-tree';
 import type { ProductImage, Product } from '@/types/domain';
 import ImageCard from './ImageCard';
 import BatchImageUpload from './BatchImageUpload';
+import { OneDriveMatchMissingModal } from '@/components/shared/OneDriveMatchMissingModal';
 
 const PAGE_SIZE = 50;
 
@@ -70,6 +77,7 @@ export default function ImageManagement() {
   const [onedriveImportProgress, setOnedriveImportProgress] = useState<BatchUploadProgress | null>(null);
   const [onedriveImportStage, setOnedriveImportStage] = useState<'idle' | 'matching' | 'uploading' | 'done' | 'error'>('idle');
   const [showOneDriveSummary, setShowOneDriveSummary] = useState(false);
+  const [showOneDriveMatchMissing, setShowOneDriveMatchMissing] = useState(false);
 
   const currentAgent = authService.getCachedAgent();
   const isSammie = currentAgent?.id?.toLowerCase() === 'sammie';
@@ -287,6 +295,12 @@ export default function ImageManagement() {
   // ── Pagination ──
   const from = page * PAGE_SIZE + 1;
   const to = Math.min((page + 1) * PAGE_SIZE, totalCount);
+  const onedriveTriggerLabel =
+    onedriveImportRunning && onedriveImportProgress
+      ? (onedriveImportStage === 'matching'
+        ? `Matching ${onedriveImportProgress.processed}/${onedriveImportProgress.total}`
+        : `Importing ${onedriveImportProgress.processed}/${onedriveImportProgress.total}`)
+      : 'OneDrive';
 
   // ── Render ──
 
@@ -299,14 +313,34 @@ export default function ImageManagement() {
         actions={
           <>
             {isSammie && (
-              <Button intent="outline" size="sm" onPress={() => setShowOneDriveImport(true)} isDisabled={onedriveImportRunning}>
-                <Cloud className={`size-4 mr-1.5 ${onedriveImportRunning ? 'animate-pulse' : ''}`} />
-                {onedriveImportRunning && onedriveImportProgress
-                  ? (onedriveImportStage === 'matching'
-                    ? `Matching ${onedriveImportProgress.processed}/${onedriveImportProgress.total}`
-                    : `Importing ${onedriveImportProgress.processed}/${onedriveImportProgress.total}`)
-                  : 'Import OneDrive'}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button intent="outline" size="sm" isDisabled={onedriveImportRunning}>
+                    <Cloud className={`size-4 mr-1.5 ${onedriveImportRunning ? 'animate-pulse' : ''}`} />
+                    {onedriveTriggerLabel}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      setShowOneDriveImport(true);
+                    }}
+                    disabled={onedriveImportRunning}
+                  >
+                    Import OneDrive
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      setShowOneDriveMatchMissing(true);
+                    }}
+                    disabled={onedriveImportRunning}
+                  >
+                    Match from OneDrive
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
             {isSammie && !onedriveImportRunning && onedriveImportProgress && onedriveImportProgress.processed >= onedriveImportProgress.total && (
               <Button intent="plain" size="sm" onPress={() => setShowOneDriveSummary(true)}>
@@ -560,6 +594,14 @@ export default function ImageManagement() {
           onClose={() => setShowOneDriveImport(false)}
           onImported={() => { loadImages(); loadMeta(); }}
           onStartImport={startOneDriveImport}
+        />
+      )}
+
+      {showOneDriveMatchMissing && (
+        <OneDriveMatchMissingModal
+          open={showOneDriveMatchMissing}
+          onClose={() => setShowOneDriveMatchMissing(false)}
+          onImported={() => { loadImages(); loadMeta(); }}
         />
       )}
 
@@ -859,7 +901,7 @@ interface OneDriveImageItem {
   downloadUrl: string | null;
 }
 
-function OneDriveImportModal({ connected, onClose, onImported, onStartImport }: OneDriveImportModalProps) {
+export function OneDriveImportModal({ connected, onClose, onImported, onStartImport }: OneDriveImportModalProps) {
   const ROOT_ID = 'root';
   const [brands, setBrands] = useState<{ id: string; brand_name: string }[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<string>('');

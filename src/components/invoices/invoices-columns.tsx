@@ -2,6 +2,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Checkbox } from "@/components/ui/checkbox";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import type { Invoice } from "@/types/domain";
+import { Clock, AlertTriangle } from "lucide-react";
 
 function formatCurrency(value: number | null | undefined): string {
   if (value == null) return "-";
@@ -29,7 +30,10 @@ const statusStyles: Record<string, string> = {
   overdue: "bg-red-500/20 text-red-400 border-red-500/30",
   paid: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
   void: "bg-destructive/20 text-destructive border-destructive/30",
+  cancelled: "bg-destructive/20 text-destructive border-destructive/30",
 };
+
+export { statusStyles };
 
 function StatusBadge({ status }: { status: string }) {
   const label = status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -56,7 +60,31 @@ function CustomerAvatar({ name }: { name: string }) {
   );
 }
 
-export function getInvoiceColumns(): ColumnDef<Invoice>[] {
+function isOverdue(invoice: Invoice): boolean {
+  if (!invoice.due_date || invoice.balance <= 0) return false;
+  return new Date(invoice.due_date) < new Date();
+}
+
+interface ColumnOptions {
+  statusOptions?: { label: string; value: string; count?: number }[];
+  salespersonOptions?: { label: string; value: string; count?: number }[];
+}
+
+export function getInvoiceColumns(
+  statusOptions?: ColumnOptions["statusOptions"],
+  salespersonOptions?: ColumnOptions["salespersonOptions"]
+): ColumnDef<Invoice>[] {
+  const defaultStatusOptions = [
+    { label: "Draft", value: "draft" },
+    { label: "Sent", value: "sent" },
+    { label: "Viewed", value: "viewed" },
+    { label: "Unpaid", value: "unpaid" },
+    { label: "Partially Paid", value: "partially_paid" },
+    { label: "Overdue", value: "overdue" },
+    { label: "Paid", value: "paid" },
+    { label: "Void", value: "void" },
+  ];
+
   return [
     {
       id: "select",
@@ -144,12 +172,18 @@ export function getInvoiceColumns(): ColumnDef<Invoice>[] {
       header: ({ column }) => (
         <DataTableColumnHeader column={column} label="Due Date" />
       ),
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground">
-          {formatDate(row.original.due_date)}
-        </span>
-      ),
-      size: 120,
+      cell: ({ row }) => {
+        const overdue = isOverdue(row.original);
+        return (
+          <div className="flex items-center gap-1.5">
+            {overdue && <AlertTriangle size={14} className="text-red-400 shrink-0" />}
+            <span className={`text-sm ${overdue ? "text-red-400 font-medium" : "text-muted-foreground"}`}>
+              {formatDate(row.original.due_date)}
+            </span>
+          </div>
+        );
+      },
+      size: 130,
       enableColumnFilter: false,
       meta: { label: "Due Date" },
     },
@@ -165,16 +199,26 @@ export function getInvoiceColumns(): ColumnDef<Invoice>[] {
       meta: {
         label: "Status",
         variant: "multiSelect" as const,
-        options: [
-          { label: "Draft", value: "draft" },
-          { label: "Sent", value: "sent" },
-          { label: "Viewed", value: "viewed" },
-          { label: "Unpaid", value: "unpaid" },
-          { label: "Partially Paid", value: "partially_paid" },
-          { label: "Overdue", value: "overdue" },
-          { label: "Paid", value: "paid" },
-          { label: "Void", value: "void" },
-        ],
+        options: statusOptions && statusOptions.length > 0 ? statusOptions : defaultStatusOptions,
+      },
+    },
+    {
+      id: "salesperson_name",
+      accessorKey: "salesperson_name",
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} label="Salesperson" />
+      ),
+      cell: ({ row }) => (
+        <span className="text-sm text-muted-foreground truncate">
+          {row.original.salesperson_name || "-"}
+        </span>
+      ),
+      size: 150,
+      enableColumnFilter: true,
+      meta: {
+        label: "Salesperson",
+        variant: "multiSelect" as const,
+        options: salespersonOptions || [],
       },
     },
     {
@@ -198,12 +242,19 @@ export function getInvoiceColumns(): ColumnDef<Invoice>[] {
       header: ({ column }) => (
         <DataTableColumnHeader column={column} label="Balance" />
       ),
-      cell: ({ row }) => (
-        <span className="text-sm text-muted-foreground tabular-nums">
-          {formatCurrency(row.original.balance)}
-        </span>
-      ),
-      size: 110,
+      cell: ({ row }) => {
+        const bal = row.original.balance;
+        const overdue = isOverdue(row.original);
+        return (
+          <div className="flex items-center gap-1.5">
+            {overdue && bal > 0 && <Clock size={13} className="text-red-400 shrink-0" />}
+            <span className={`text-sm tabular-nums ${bal > 0 ? (overdue ? "text-red-400 font-semibold" : "text-orange-400 font-medium") : "text-emerald-400"}`}>
+              {formatCurrency(bal)}
+            </span>
+          </div>
+        );
+      },
+      size: 120,
       enableColumnFilter: false,
       meta: { label: "Balance" },
     },

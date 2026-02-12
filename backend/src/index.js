@@ -29,6 +29,8 @@ import { purchaseOrdersRouter } from './routes/v1/purchase-orders.js';
 import { imagesRouter } from './routes/v1/images.js';
 import { reportsRouter } from './routes/v1/reports.js';
 import { onedriveRouter, onedrivePublicRouter } from './routes/v1/onedrive.js';
+import { invoiceWebhooksRouter } from './routes/v1/invoice-webhooks.js';
+import { processAutoReminders } from './services/invoiceReminderCron.js';
 import { jwtAuth } from './middleware/jwtAuth.js';
 
 // Security middleware (your existing)
@@ -199,6 +201,9 @@ app.use('/api/v1/reports', jwtAuth, reportsRouter);
 app.use('/api/v1/onedrive', onedrivePublicRouter);
 app.use('/api/v1/onedrive', jwtAuth, onedriveRouter);
 
+// Webhooks (use their own auth via X-Webhook-Secret, not JWT)
+app.use('/api/v1/webhooks', invoiceWebhooksRouter);
+
 // ====================================
 // 404 HANDLER (silent + cheap is fine; your JSON is okay too)
 // ====================================
@@ -339,6 +344,23 @@ async function refreshUpsTracking() {
 if (process.env.ENABLE_UPS_REFRESH === 'true') {
   cron.schedule('*/30 * * * *', refreshUpsTracking);
   logger.info('[UPS Refresh] Scheduled every 30 minutes');
+}
+
+// ====================================
+// INVOICE REMINDER CRON (daily at 8am UK time)
+// ====================================
+if (process.env.ENABLE_INVOICE_REMINDERS === 'true') {
+  // 8am UK = 8am Europe/London (handles BST/GMT automatically via server TZ)
+  cron.schedule('0 8 * * *', async () => {
+    logger.info('[Invoice Reminders] Starting daily reminder run');
+    try {
+      const result = await processAutoReminders();
+      logger.info(`[Invoice Reminders] Complete: ${result.sent} sent, ${result.skipped} skipped`);
+    } catch (err) {
+      logger.error('[Invoice Reminders] Cron failed:', err);
+    }
+  }, { timezone: 'Europe/London' });
+  logger.info('[Invoice Reminders] Scheduled daily at 8am UK time');
 }
 
 // ====================================

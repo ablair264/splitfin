@@ -103,4 +103,28 @@ export const onedriveService = {
   }> {
     return api.post('/api/v1/onedrive/import', payload);
   },
+
+  async matchMissing(params?: { limit?: number; offset?: number }): Promise<{
+    data: {
+      product: {
+        id: number;
+        sku: string | null;
+        name: string;
+        brand: string;
+        image_url: string | null;
+      };
+      matches: {
+        id: string;
+        name: string;
+        size: number;
+        mimeType: string | null;
+        webUrl: string | null;
+        createdDateTime: string | null;
+        lastModifiedDateTime: string | null;
+      }[];
+      reason?: string;
+    }[];
+  }> {
+    return api.get('/api/v1/onedrive/match-missing', params as Record<string, string | number | boolean>);
+  },
 };

@@ -166,31 +166,80 @@ export interface Invoice {
   salesorder_number: string | null;
   invoice_date: string;
   due_date: string | null;
+  expected_payment_date: string | null;
+  last_payment_date: string | null;
   status: string;
   sub_total: number;
   tax_total: number;
   discount_total: number;
   shipping_charge: number;
+  adjustment: number;
   total: number;
   balance: number;
   currency_code: string;
+  vat_treatment: string | null;
+  payment_terms: number | null;
+  payment_terms_label: string | null;
+  salesperson_id: string | null;
+  salesperson_name: string | null;
+  notes: string | null;
+  terms: string | null;
   billing_address: Address | null;
   shipping_address: Address | null;
   sync_status: SyncStatus;
   created_at: string;
   updated_at: string;
   line_items?: InvoiceLineItem[];
+  customer_info?: {
+    id: number;
+    email: string | null;
+    phone: string | null;
+    mobile: string | null;
+    contact_name: string | null;
+  };
 }
 
 export interface InvoiceLineItem {
   id: number;
-  zoho_invoice_id: string;
+  invoice_id: number;
+  zoho_line_item_id: string | null;
   zoho_item_id: string;
-  sku: string;
+  sku: string | null;
   name: string;
+  description: string | null;
+  brand: string | null;
   quantity: number;
   rate: number;
   amount: number;
+  discount: number;
+  discount_amount: number;
+  tax_name: string | null;
+  tax_percentage: number;
+  tax_amount: number;
+  sort_order: number;
+}
+
+export interface InvoiceSummary {
+  total_invoiced: number;
+  total_outstanding: number;
+  total_overdue: number;
+  overdue_count: number;
+}
+
+export interface InvoicePayment {
+  id: number;
+  invoice_id: number;
+  zoho_payment_id: string | null;
+  amount: number;
+  payment_date: string;
+  payment_mode: string;
+  reference_number: string | null;
+  description: string | null;
+  recorded_by: string | null;
+  sync_status: SyncStatus;
+  sync_error: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Notification {

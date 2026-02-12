@@ -303,8 +303,29 @@ function ViewOrder() {
 
   const handlePrintOrder = () => { window.print(); };
 
-  const handleCreateInvoice = () => {
-    console.log('Create invoice for order:', orderId);
+  const [creatingInvoice, setCreatingInvoice] = useState(false);
+
+  const handleCreateInvoice = async () => {
+    if (!order?.zoho_salesorder_id) return;
+
+    const confirmed = window.confirm(
+      `Generate invoice for order ${order.salesorder_number || orderId}?\n\nThis will create an invoice in Zoho Inventory.`
+    );
+    if (!confirmed) return;
+
+    setCreatingInvoice(true);
+    try {
+      const agentId = order.agent_id || '';
+      const newInvoice = await invoiceService.createFromOrder(order.zoho_salesorder_id, agentId);
+      setInvoices((prev) => [...prev, newInvoice]);
+      navigate(`/finance/invoices/${newInvoice.id}`);
+    } catch (err: any) {
+      const msg = err?.message || 'Failed to create invoice';
+      alert(`Invoice creation failed: ${msg}`);
+      console.error('Invoice creation error:', err);
+    } finally {
+      setCreatingInvoice(false);
+    }
   };
 
   const handleEditOrder = () => {
@@ -1141,15 +1162,16 @@ function ViewOrder() {
                     </div>
                     <button
                       onClick={handleCreateInvoice}
-                      className="px-3 py-1.5 text-xs font-medium text-primary border border-primary/30 rounded-md hover:bg-primary/10 transition-colors whitespace-nowrap"
+                      disabled={creatingInvoice || !order?.zoho_salesorder_id}
+                      className="px-3 py-1.5 text-xs font-medium text-primary border border-primary/30 rounded-md hover:bg-primary/10 transition-colors whitespace-nowrap disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Generate Invoice
+                      {creatingInvoice ? 'Creating...' : 'Generate Invoice'}
                     </button>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-3">
                     {invoices.map((invoice) => (
-                      <div key={invoice.id} className="flex items-center justify-between gap-4 px-4 py-3 bg-white/[0.03] rounded-lg border border-white/10 hover:bg-white/[0.06] transition-colors">
+                      <div key={invoice.id} onClick={() => navigate(`/finance/invoices/${invoice.id}`)} className="flex items-center justify-between gap-4 px-4 py-3 bg-white/[0.03] rounded-lg border border-white/10 hover:bg-white/[0.06] transition-colors cursor-pointer">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                           <div className="flex flex-col min-w-0">
                             <span className="text-sm font-medium text-white truncate">{invoice.invoice_number || 'Invoice'}</span>

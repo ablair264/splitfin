@@ -444,6 +444,8 @@ export function ProductDetailSheet({
           id: r.id,
           name: r.name,
           mimeType: r.mimeType,
+          matched_sku: p.sku,
+          sku_confidence: 1,
           original_filename: r.name,
         })),
       });

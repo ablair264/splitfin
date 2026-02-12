@@ -39,6 +39,8 @@ import Messaging from '../components/Messaging/Messaging';
 import Warehouse from '../components/Warehouse';
 import Couriers from '../components/Couriers';
 import Deliveries from '../components/Deliveries';
+import InvoicesTable from '../components/invoices/InvoicesTable';
+import ViewInvoice from '../components/invoices/ViewInvoice';
 
 // Dev mode - bypass auth
 const DEV_MODE = import.meta.env.DEV;
@@ -226,6 +228,8 @@ export default function MasterLayout() {
             <Route path="/reports" element={<Reports />} />
 
             {/* Finance */}
+            <Route path="/finance/invoices" element={<InvoicesTable />} />
+            <Route path="/finance/invoices/:invoiceId" element={<ViewInvoice />} />
             <Route path="/finance/purchase-orders" element={<PurchaseOrders />} />
 
             {/* Shipping Routes */}

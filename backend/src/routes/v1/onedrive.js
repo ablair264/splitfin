@@ -506,6 +506,74 @@ router.get('/search', requireSammie, async (req, res) => {
 });
 
 // ============================================
+// Match missing product images (SKU-only)
+// ============================================
+router.get('/match-missing', requireSammie, async (req, res) => {
+  try {
+    const agentId = req.agent.id;
+    const accessToken = await getValidAccessToken(agentId);
+
+    const limit = Math.min(Number(req.query.limit || 20), 50);
+    const offset = Math.max(Number(req.query.offset || 0), 0);
+
+    const { rows: products } = await query(
+      `SELECT p.id, p.sku, p.name, p.brand, p.image_url
+       FROM products p
+       WHERE p.status = 'active'
+         AND (p.image_url IS NULL OR p.image_url = '')
+         AND NOT EXISTS (
+           SELECT 1 FROM product_images pi
+            WHERE pi.product_id = p.id
+               OR (pi.matched_sku IS NOT NULL AND TRIM(pi.matched_sku) = TRIM(p.sku))
+         )
+       ORDER BY p.id DESC
+       LIMIT $1 OFFSET $2`,
+      [limit, offset]
+    );
+
+    const results = [];
+    for (const p of products) {
+      if (!p.sku) {
+        results.push({ product: p, matches: [], reason: 'missing_sku' });
+        continue;
+      }
+
+      const searchUrl = `${GRAPH_BASE}/me/drive/root/search(q='${encodeURIComponent(String(p.sku))}')`;
+      try {
+        const { data } = await axios.get(searchUrl, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          params: { $top: 10 },
+        });
+
+        const items = Array.isArray(data.value) ? data.value : [];
+        const images = items
+          .filter(item => item?.file?.mimeType?.startsWith('image/'))
+          .map(item => ({
+            id: item.id,
+            name: item.name,
+            size: item.size,
+            mimeType: item.file?.mimeType || null,
+            webUrl: item.webUrl || null,
+            createdDateTime: item.createdDateTime || null,
+            lastModifiedDateTime: item.lastModifiedDateTime || null,
+          }));
+
+        results.push({ product: p, matches: images });
+      } catch (err) {
+        const message = err?.response?.data?.error?.message || err?.message || 'search_failed';
+        results.push({ product: p, matches: [], reason: message });
+      }
+    }
+
+    res.json({ data: results, count: results.length, meta: { limit, offset } });
+  } catch (err) {
+    const message = err?.response?.data?.error?.message || err?.message || 'Failed to match missing images';
+    logger.error('[OneDrive] match-missing error:', message);
+    res.status(500).json({ error: message });
+  }
+});
+
+// ============================================
 // Import OneDrive images server-side
 // ============================================
 router.post('/import', requireSammie, async (req, res) => {
