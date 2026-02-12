@@ -13,7 +13,7 @@ import { imageService, type ImageFilters, type ImageStats } from '@/services/ima
 import { productService } from '@/services/productService';
 import { onedriveService } from '@/services/onedriveService';
 import { authService } from '@/services/authService';
-import { imageProcessingService, type BatchUploadProgress } from '@/services/imageProcessingService';
+import { imageProcessingService, type BatchUploadProgress, type ImageProcessingResult } from '@/services/imageProcessingService';
 import { Tree, Folder } from '@/components/ui/file-tree';
 import type { ProductImage, Product } from '@/types/domain';
 import ImageCard from './ImageCard';
@@ -68,6 +68,7 @@ export default function ImageManagement() {
   const [onedriveStatus, setOnedriveStatus] = useState<{ connected: boolean; expires_at: string | null } | null>(null);
   const [onedriveImportRunning, setOnedriveImportRunning] = useState(false);
   const [onedriveImportProgress, setOnedriveImportProgress] = useState<BatchUploadProgress | null>(null);
+  const [onedriveImportStage, setOnedriveImportStage] = useState<'idle' | 'matching' | 'uploading' | 'done' | 'error'>('idle');
   const [showOneDriveSummary, setShowOneDriveSummary] = useState(false);
 
   const currentAgent = authService.getCachedAgent();
@@ -208,37 +209,76 @@ export default function ImageManagement() {
   const startOneDriveImport = async (items: OneDriveImageItem[], brandName: string) => {
     if (onedriveImportRunning) return;
     setOnedriveImportRunning(true);
-    setOnedriveImportProgress({ total: items.length, processed: 0, current: '', results: [], errors: [] });
+    setOnedriveImportStage('matching');
+    setOnedriveImportProgress({ total: items.length, processed: 0, current: 'Matching SKUs', results: [], errors: [] });
 
     try {
-      const files: File[] = [];
-      for (const item of items) {
-        if (!item.downloadUrl) {
-          console.warn('Missing download URL for', item.name);
-          continue;
+      const [availableSKUs, brandPattern] = await Promise.all([
+        imageProcessingService.getProductSKUs(brandName),
+        imageProcessingService.getBrandPattern(brandName),
+      ]);
+
+      const itemsWithMatches = items.map((item) => {
+        const match = imageProcessingService.matchSKUFromFilename(item.name, availableSKUs, brandPattern);
+        return {
+          ...item,
+          matched_sku: match?.sku,
+          sku_confidence: match?.confidence,
+        };
+      });
+
+      setOnedriveImportStage('uploading');
+      const results: ImageProcessingResult[] = [];
+      const errors: string[] = [];
+      const chunkSize = 10;
+
+      for (let i = 0; i < itemsWithMatches.length; i += chunkSize) {
+        const chunk = itemsWithMatches.slice(i, i + chunkSize);
+        setOnedriveImportProgress((prev) => prev ? {
+          ...prev,
+          current: `Uploading ${chunk[0]?.name || ''}`,
+          processed: i,
+        } : prev);
+
+        const response = await onedriveService.importImages({
+          brand: brandName,
+          items: chunk.map((c) => ({
+            id: c.id,
+            name: c.name,
+            mimeType: c.mimeType,
+            matched_sku: c.matched_sku,
+            sku_confidence: c.sku_confidence,
+            original_filename: c.name,
+          })),
+        });
+
+        for (const r of response.results || []) {
+          results.push(r);
+          if (!r.success && r.error) errors.push(`${r.originalFilename}: ${r.error}`);
         }
-        const resp = await fetch(item.downloadUrl);
-        if (!resp.ok) throw new Error(`Failed to download ${item.name}`);
-        const blob = await resp.blob();
-        files.push(new File([blob], item.name, { type: item.mimeType || blob.type || 'image/*' }));
+
+        setOnedriveImportProgress((prev) => prev ? {
+          ...prev,
+          processed: Math.min(i + chunk.length, itemsWithMatches.length),
+          results: [...results],
+          errors: [...errors],
+        } : prev);
       }
 
-      if (files.length === 0) {
-        setOnedriveImportProgress(null);
-        setOnedriveImportRunning(false);
-        return;
-      }
-
-      const finalProgress = await imageProcessingService.processBatchImages(
-        files,
-        brandName,
-        (p) => setOnedriveImportProgress({ ...p }),
-      );
-      setOnedriveImportProgress(finalProgress);
+      setOnedriveImportStage('done');
+      setOnedriveImportProgress((prev) => prev ? {
+        ...prev,
+        total: itemsWithMatches.length,
+        processed: itemsWithMatches.length,
+        current: '',
+        results,
+        errors,
+      } : prev);
       loadImages();
       loadMeta();
     } catch (err) {
       console.error('OneDrive import failed:', err);
+      setOnedriveImportStage('error');
     } finally {
       setOnedriveImportRunning(false);
     }
@@ -262,7 +302,9 @@ export default function ImageManagement() {
               <Button intent="outline" size="sm" onPress={() => setShowOneDriveImport(true)} isDisabled={onedriveImportRunning}>
                 <Cloud className={`size-4 mr-1.5 ${onedriveImportRunning ? 'animate-pulse' : ''}`} />
                 {onedriveImportRunning && onedriveImportProgress
-                  ? `Importing ${onedriveImportProgress.processed}/${onedriveImportProgress.total}`
+                  ? (onedriveImportStage === 'matching'
+                    ? `Matching ${onedriveImportProgress.processed}/${onedriveImportProgress.total}`
+                    : `Importing ${onedriveImportProgress.processed}/${onedriveImportProgress.total}`)
                   : 'Import OneDrive'}
               </Button>
             )}
@@ -888,7 +930,7 @@ function OneDriveImportModal({ connected, onClose, onImported, onStartImport }: 
           parentId,
           limit: 200,
           imagesOnly: true,
-          includeDownloadUrl: true,
+          includeDownloadUrl: false,
           nextLink: nextLink || undefined,
         });
 

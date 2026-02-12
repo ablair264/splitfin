@@ -22,6 +22,66 @@ const {
   FRONTEND_URL,
 } = process.env;
 
+// ---------------------------------------------------------------------------
+// Lazy-loaded R2 + sharp (used for OneDrive server-side import)
+// ---------------------------------------------------------------------------
+let _r2 = null;
+let _s3Sdk = null;
+let _sharp = null;
+
+const R2_BUCKET = process.env.R2_BUCKET_NAME || process.env.R2_BUCKET || 'dmbrands-cdn';
+const R2_PUBLIC_URL = (process.env.R2_PUBLIC_URL || 'https://pub-b1c365d59f294b0fbc4c7362679bbaef.r2.dev').replace(/\/$/, '');
+
+async function getR2Client() {
+  if (!_r2) {
+    const endpoint = process.env.R2_ENDPOINT
+      || (process.env.CLOUDFLARE_ACCOUNT_ID && `https://${process.env.CLOUDFLARE_ACCOUNT_ID}.r2.cloudflarestorage.com`);
+
+    const accessKeyId = process.env.R2_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID;
+    const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY;
+
+    if (!endpoint || !accessKeyId || !secretAccessKey) {
+      throw new Error('R2 not configured — need R2_ENDPOINT (or CLOUDFLARE_ACCOUNT_ID), R2_ACCESS_KEY_ID (or AWS_ACCESS_KEY_ID), R2_SECRET_ACCESS_KEY (or AWS_SECRET_ACCESS_KEY)');
+    }
+    if (!_s3Sdk) _s3Sdk = await import('@aws-sdk/client-s3');
+    _r2 = new _s3Sdk.S3Client({
+      region: 'auto',
+      endpoint: endpoint.replace(/\/$/, ''),
+      credentials: { accessKeyId, secretAccessKey },
+    });
+  }
+  return _r2;
+}
+
+async function getSharp() {
+  if (!_sharp) {
+    const mod = await import('sharp');
+    _sharp = mod.default;
+  }
+  return _sharp;
+}
+
+const MAX_WIDTH = 1200;
+const WEBP_QUALITY = 80;
+
+async function processImage(inputBuffer) {
+  const sharp = await getSharp();
+  const processed = sharp(inputBuffer)
+    .resize({ width: MAX_WIDTH, withoutEnlargement: true })
+    .webp({ quality: WEBP_QUALITY });
+
+  const buffer = await processed.toBuffer();
+  const meta = await sharp(buffer).metadata();
+  return {
+    buffer,
+    width: meta.width,
+    height: meta.height,
+    size: buffer.length,
+    contentType: 'image/webp',
+    ext: 'webp',
+  };
+}
+
 function ensureConfigured() {
   if (!MS_CLIENT_ID || !MS_CLIENT_SECRET || !MS_REDIRECT_URI) {
     throw new Error('Missing OneDrive OAuth environment variables');
@@ -400,6 +460,156 @@ router.get('/children', requireSammie, async (req, res) => {
   } catch (err) {
     logger.error('[OneDrive] children error:', err);
     res.status(500).json({ error: 'Failed to list OneDrive children' });
+  }
+});
+
+// ============================================
+// Import OneDrive images server-side
+// ============================================
+router.post('/import', requireSammie, async (req, res) => {
+  try {
+    const agentId = req.agent.id;
+    const accessToken = await getValidAccessToken(agentId);
+
+    const { brand, items } = req.body || {};
+    if (!brand) {
+      return res.status(400).json({ error: 'Brand is required' });
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: 'Items array is required' });
+    }
+
+    const r2 = await getR2Client();
+    if (!_s3Sdk) _s3Sdk = await import('@aws-sdk/client-s3');
+
+    const results = [];
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const item of items) {
+      const itemId = item?.id;
+      const itemName = item?.name || 'onedrive-image';
+      const matchedSku = item?.matched_sku || null;
+      const skuConfidence = Number.isFinite(item?.sku_confidence) ? item.sku_confidence : null;
+      const originalFilename = item?.original_filename || itemName;
+
+      if (!itemId) {
+        results.push({
+          success: false,
+          originalFilename,
+          finalFilename: '',
+          error: 'Missing item id',
+        });
+        errorCount++;
+        continue;
+      }
+
+      try {
+        const download = await axios.get(
+          `${GRAPH_BASE}/me/drive/items/${encodeURIComponent(itemId)}/content`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            responseType: 'arraybuffer',
+          }
+        );
+
+        const buffer = Buffer.from(download.data);
+        const processed = await processImage(buffer);
+
+        const brandSlug = String(brand).toLowerCase().replace(/\s+/g, '-');
+        const baseName = String(itemName).replace(/\.[^.]+$/, '');
+        const key = `images/${brandSlug}/${baseName}.webp`;
+
+        await r2.send(new _s3Sdk.PutObjectCommand({
+          Bucket: R2_BUCKET,
+          Key: key,
+          Body: processed.buffer,
+          ContentType: processed.contentType,
+        }));
+
+        const publicUrl = `${R2_PUBLIC_URL}/${key}`;
+
+        let productId = null;
+        if (matchedSku) {
+          const prodResult = await query('SELECT id FROM products WHERE sku = $1 LIMIT 1', [matchedSku]);
+          if (prodResult.rows.length > 0) {
+            productId = prodResult.rows[0].id;
+          }
+        }
+
+        const insertParams = [
+          `${baseName}.webp`,
+          publicUrl,
+          key,
+          processed.contentType,
+          processed.size,
+          brand,
+          matchedSku,
+          skuConfidence,
+          productId,
+          processed.width,
+          processed.height,
+          null,
+          null,
+          null,
+          originalFilename,
+        ];
+
+        const insertResult = await query(
+          `INSERT INTO product_images
+            (filename, url, r2_key, content_type, size_bytes, brand,
+             matched_sku, sku_confidence, product_id, width, height,
+             ai_product_type, ai_color, ai_confidence, original_filename)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+           RETURNING *`,
+          insertParams
+        );
+
+        const imageRow = insertResult.rows[0];
+
+        if (productId && imageRow?.url) {
+          try {
+            const prodCheck = await query('SELECT image_url FROM products WHERE id = $1', [productId]);
+            if (prodCheck.rows.length > 0 && !prodCheck.rows[0].image_url) {
+              await query('UPDATE products SET image_url = $1, updated_at = NOW() WHERE id = $2', [imageRow.url, productId]);
+            }
+          } catch (prodErr) {
+            logger.warn('[OneDrive] Failed to update product image_url (non-fatal):', prodErr.message);
+          }
+        }
+
+        results.push({
+          success: true,
+          originalFilename,
+          finalFilename: imageRow?.filename || `${baseName}.webp`,
+          matchedSku: matchedSku || undefined,
+          confidence: skuConfidence || undefined,
+          webpUrl: imageRow?.url || publicUrl,
+        });
+        successCount++;
+      } catch (fileErr) {
+        logger.error(`[OneDrive] Import failed for ${itemName}:`, fileErr);
+        results.push({
+          success: false,
+          originalFilename,
+          finalFilename: '',
+          error: fileErr?.message || 'Import failed',
+        });
+        errorCount++;
+      }
+    }
+
+    res.json({
+      results,
+      summary: {
+        total: items.length,
+        success: successCount,
+        errors: errorCount,
+      },
+    });
+  } catch (err) {
+    logger.error('[OneDrive] import error:', err);
+    res.status(500).json({ error: 'Failed to import OneDrive images' });
   }
 });
 

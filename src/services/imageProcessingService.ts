@@ -174,6 +174,12 @@ class ImageProcessingService {
     }
   }
 
+  async getBrandPattern(brandName?: string): Promise<RegExp | undefined> {
+    if (!brandName) return undefined;
+    const patterns = await getBrandPatterns();
+    return patterns.get(brandName);
+  }
+
   /**
    * Smart SKU matching: extract tokens from filename, match against normalised SKU index.
    *

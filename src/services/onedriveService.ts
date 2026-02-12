@@ -56,4 +56,33 @@ export const onedriveService = {
   }> {
     return api.get('/api/v1/onedrive/children', params as Record<string, string | number | boolean>);
   },
+
+  async importImages(payload: {
+    brand: string;
+    items: {
+      id: string;
+      name: string;
+      mimeType?: string | null;
+      matched_sku?: string;
+      sku_confidence?: number;
+      original_filename?: string;
+    }[];
+  }): Promise<{
+    results: {
+      success: boolean;
+      originalFilename: string;
+      finalFilename: string;
+      matchedSku?: string;
+      confidence?: number;
+      webpUrl?: string;
+      error?: string;
+    }[];
+    summary: {
+      total: number;
+      success: number;
+      errors: number;
+    };
+  }> {
+    return api.post('/api/v1/onedrive/import', payload);
+  },
 };
