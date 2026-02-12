@@ -423,7 +423,10 @@ export default function EnquiriesTable() {
     async (id: number) => {
       setActionLoading(id);
       try {
-        await enquiryService.approve(id);
+        const result = await enquiryService.approve(id);
+        if (!result.magic_link_sent) {
+          alert(`Customer approved, but magic link was not sent (${result.magic_link_reason || 'unknown'}).`);
+        }
         refetch();
       } catch (err) {
         console.error("Failed to approve enquiry:", err);

@@ -6,6 +6,50 @@ import { logger } from '../../utils/logger.js';
 
 const router = express.Router();
 
+async function sendMagicLink(customer, createdBy) {
+  if (!customer?.email) {
+    logger.warn('[Enquiries] Magic link not sent: customer has no email');
+    return { sent: false, reason: 'missing_email' };
+  }
+
+  const crypto = await import('crypto');
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours
+
+  await update('customers', customer.id, {
+    magic_link_token: token,
+    magic_link_expires_at: expiresAt.toISOString(),
+    updated_at: new Date().toISOString(),
+  });
+
+  const magicLinkUrl = `https://trade.dmbrands.co.uk/auth/magic-link?token=${token}`;
+
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: process.env.FROM_EMAIL || 'DM Brands <noreply@dmbrands.co.uk>',
+        to: customer.email,
+        subject: 'Your magic link - DM Brands Trade Portal',
+        html: `<p>Hi ${customer.contact_name || 'there'},</p>
+        <p>Click the link below to sign into your DM Brands Trade Portal account. This link expires in 8 hours.</p>
+        <p><a href="${magicLinkUrl}" style="display:inline-block;background-color:#8B7BB5;color:#fff;padding:12px 40px;text-decoration:none;border-radius:8px;font-weight:600;">Sign in here</a></p>
+        <p>If you didn't request this, you can safely ignore this email.</p>`,
+      }),
+    });
+
+    logger.info(`[Enquiries] Magic link sent to ${customer.email} for customer ${customer.id} by ${createdBy || 'system'}`);
+    return { sent: true };
+  } catch (err) {
+    logger.error('[Enquiries] Magic link send error:', err);
+    return { sent: false, reason: err.message || 'send_failed' };
+  }
+}
+
 const ENQUIRY_SORT_COLUMNS = {
   created_at: 'e.created_at',
   updated_at: 'e.updated_at',
@@ -366,7 +410,32 @@ router.post('/:id/approve', async (req, res) => {
       created_by: req.agent?.id,
     });
 
-    res.json({ data: { customer, zoho_contact_id: zohoContact.contact_id } });
+    // 6. Send magic link (best effort)
+    const magicLinkResult = await sendMagicLink(customer, req.agent?.id);
+    if (!magicLinkResult.sent) {
+      await insert('enquiry_activities', {
+        enquiry_id: parseInt(req.params.id),
+        activity_type: 'note',
+        description: `Magic link not sent (${magicLinkResult.reason || 'unknown'})`,
+        created_by: req.agent?.id,
+      });
+    } else {
+      await insert('enquiry_activities', {
+        enquiry_id: parseInt(req.params.id),
+        activity_type: 'note',
+        description: 'Magic link sent to customer for Trade Portal access.',
+        created_by: req.agent?.id,
+      });
+    }
+
+    res.json({
+      data: {
+        customer,
+        zoho_contact_id: zohoContact.contact_id,
+        magic_link_sent: magicLinkResult.sent,
+        magic_link_reason: magicLinkResult.sent ? null : magicLinkResult.reason || 'unknown',
+      },
+    });
   } catch (err) {
     logger.error('[Enquiries] Approve error:', err);
     const message = err.response?.data?.message || err.message || 'Failed to approve enquiry';

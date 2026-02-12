@@ -268,7 +268,7 @@ router.post('/:id/send-magic-link', async (req, res) => {
     // Generate magic link token
     const crypto = await import('crypto');
     const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours
 
     await update('customers', req.params.id, {
       magic_link_token: token,
@@ -290,7 +290,7 @@ router.post('/:id/send-magic-link', async (req, res) => {
         to: customer.email,
         subject: 'Your magic link - DM Brands Trade Portal',
         html: `<p>Hi ${customer.contact_name || 'there'},</p>
-        <p>Click the link below to sign into your DM Brands Trade Portal account. This link expires in 15 minutes.</p>
+        <p>Click the link below to sign into your DM Brands Trade Portal account. This link expires in 8 hours.</p>
         <p><a href="${magicLinkUrl}" style="display:inline-block;background-color:#8B7BB5;color:#fff;padding:12px 40px;text-decoration:none;border-radius:8px;font-weight:600;">Sign in here</a></p>
         <p>If you didn't request this, you can safely ignore this email.</p>`,
       }),

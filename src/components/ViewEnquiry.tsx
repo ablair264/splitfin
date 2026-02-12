@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { authService } from '../services/authService';
 import { enquiryService } from '../services/enquiryService';
+import { customerService } from '../services/customerService';
 import { agentService } from '../services/agentService';
 import { withLoader } from '../hoc/withLoader';
 import {
@@ -27,7 +28,8 @@ import {
   UserPlus,
   TrendingUp,
   Star,
-  Package
+  Package,
+  Loader2
 } from 'lucide-react';
 import styles from './ViewEnquiry.module.css';
 
@@ -200,17 +202,36 @@ function ViewEnquiry() {
     }
   };
 
+  const [sendingMagicLink, setSendingMagicLink] = useState(false);
   const handleApprove = async () => {
     if (!enquiry) return;
     setApproving(true);
     try {
-      await enquiryService.approve(parseInt(enquiryId!));
+      const result = await enquiryService.approve(parseInt(enquiryId!));
+      if (!result.magic_link_sent) {
+        alert(`Customer approved, but magic link was not sent (${result.magic_link_reason || 'unknown'}).`);
+      }
       await fetchEnquiryDetails();
       setShowApproveConfirm(false);
     } catch (err) {
       console.error('Error approving enquiry:', err);
     } finally {
       setApproving(false);
+    }
+  };
+
+  const handleSendMagicLink = async () => {
+    if (!enquiry?.converted_customer_id) return;
+    if (!window.confirm(`Send a magic link to ${enquiry.email}?`)) return;
+    setSendingMagicLink(true);
+    try {
+      const result = await customerService.sendMagicLink(enquiry.converted_customer_id);
+      alert(result.message || 'Magic link sent');
+    } catch (err) {
+      console.error('Error sending magic link:', err);
+      alert('Failed to send magic link');
+    } finally {
+      setSendingMagicLink(false);
     }
   };
 
@@ -484,6 +505,16 @@ function ViewEnquiry() {
                 style={{ background: 'var(--success)', borderColor: 'var(--success)' }}
               >
                 <UserPlus size={16} /> Approve as Customer
+              </button>
+            )}
+            {enquiry?.converted_to_customer && enquiry.converted_customer_id && (
+              <button
+                onClick={handleSendMagicLink}
+                className={styles.primaryButton}
+                disabled={sendingMagicLink}
+              >
+                {sendingMagicLink ? <Loader2 size={16} className="animate-spin" /> : <Mail size={16} />}
+                Send Magic Link
               </button>
             )}
             <button onClick={isEditing ? handleSaveEdit : handleEditEnquiry} className={styles.primaryButton}>

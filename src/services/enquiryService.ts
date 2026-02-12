@@ -43,6 +43,13 @@ export interface EnquiryActivity {
   created_at: string;
 }
 
+export interface EnquiryApprovalResult {
+  customer: any;
+  zoho_contact_id: string;
+  magic_link_sent: boolean;
+  magic_link_reason?: string | null;
+}
+
 export interface EnquiryFilters {
   status?: string;
   priority?: string;
@@ -110,8 +117,8 @@ export const enquiryService = {
     return (result.data || []).map(r => ({ lead_source: r.lead_source, count: Number(r.count) }));
   },
 
-  async approve(id: number): Promise<any> {
-    const result = await api.post<SingleResponse<any>>(`/api/v1/enquiries/${id}/approve`);
+  async approve(id: number): Promise<EnquiryApprovalResult> {
+    const result = await api.post<SingleResponse<EnquiryApprovalResult>>(`/api/v1/enquiries/${id}/approve`);
     return result.data;
   },
 };
