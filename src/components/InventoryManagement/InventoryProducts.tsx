@@ -31,9 +31,13 @@ import {
   AlertTriangle,
   PackageX,
   Command,
+  Cloud,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { productService } from '../../services/productService';
+import { onedriveService } from '../../services/onedriveService';
+import { authService } from '../../services/authService';
+import { imageProcessingService, type BatchUploadProgress, type ImageProcessingResult } from '@/services/imageProcessingService';
 import { useLoader } from '../../contexts/LoaderContext';
 import AddProductSheet from './AddProductModal';
 import { ProductDetailSheet } from './ProductDetailSheet';
@@ -47,6 +51,12 @@ import { DataTableColumnHeader } from '@/components/data-table/data-table-column
 import { DataTableSkeleton } from '@/components/data-table/data-table-skeleton';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -64,6 +74,8 @@ import {
 } from '@/components/ui/table';
 import { flexRender } from '@tanstack/react-table';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { OneDriveMatchMissingModal } from '@/components/shared/OneDriveMatchMissingModal';
+import { OneDriveImportModal } from '@/components/ImageManagement/ImageManagement';
 
 const ITEMS_PER_PAGE = 50;
 
@@ -341,6 +353,15 @@ const InventoryProducts: React.FC = () => {
   const [showAIEnrichModal, setShowAIEnrichModal] = useState(false);
   const [showPricelistUpload, setShowPricelistUpload] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showOneDriveImport, setShowOneDriveImport] = useState(false);
+  const [showOneDriveMatchMissing, setShowOneDriveMatchMissing] = useState(false);
+  const [onedriveStatus, setOnedriveStatus] = useState<{ connected: boolean; expires_at: string | null } | null>(null);
+  const [onedriveImportRunning, setOnedriveImportRunning] = useState(false);
+  const [onedriveImportProgress, setOnedriveImportProgress] = useState<BatchUploadProgress | null>(null);
+  const [onedriveImportStage, setOnedriveImportStage] = useState<'idle' | 'matching' | 'uploading' | 'done' | 'error'>('idle');
+
+  const currentAgent = authService.getCachedAgent();
+  const isSammie = currentAgent?.id?.toLowerCase() === 'sammie';
 
   // Density-specific styling
   const densityConfig = useMemo(() => {
@@ -608,6 +629,82 @@ const InventoryProducts: React.FC = () => {
     }
   }, [filters, pagination.pageSize, showLoader, hideLoader]);
 
+  const startOneDriveImport = async (items: any[], brandName: string) => {
+    if (onedriveImportRunning) return;
+    setOnedriveImportRunning(true);
+    setOnedriveImportStage('matching');
+    setOnedriveImportProgress({ total: items.length, processed: 0, current: 'Matching SKUs', results: [], errors: [] });
+
+    try {
+      const [availableSKUs, brandPattern] = await Promise.all([
+        imageProcessingService.getProductSKUs(brandName),
+        imageProcessingService.getBrandPattern(brandName),
+      ]);
+
+      const itemsWithMatches = items.map((item) => {
+        const match = imageProcessingService.matchSKUFromFilename(item.name, availableSKUs, brandPattern, brandName);
+        return {
+          ...item,
+          matched_sku: match?.sku,
+          sku_confidence: match?.confidence,
+        };
+      });
+
+      setOnedriveImportStage('uploading');
+      const results: ImageProcessingResult[] = [];
+      const errors: string[] = [];
+      const chunkSize = 10;
+
+      for (let i = 0; i < itemsWithMatches.length; i += chunkSize) {
+        const chunk = itemsWithMatches.slice(i, i + chunkSize);
+        setOnedriveImportProgress((prev) => prev ? {
+          ...prev,
+          current: `Uploading ${chunk[0]?.name || ''}`,
+          processed: i,
+        } : prev);
+
+        const response = await onedriveService.importImages({
+          brand: brandName,
+          items: chunk.map((c) => ({
+            id: c.id,
+            name: c.name,
+            mimeType: c.mimeType,
+            matched_sku: c.matched_sku,
+            sku_confidence: c.sku_confidence,
+            original_filename: c.name,
+          })),
+        });
+
+        for (const r of response.results || []) {
+          results.push(r);
+          if (!r.success && r.error) errors.push(`${r.originalFilename}: ${r.error}`);
+        }
+
+        setOnedriveImportProgress((prev) => prev ? {
+          ...prev,
+          processed: Math.min(i + chunk.length, itemsWithMatches.length),
+          results: [...results],
+          errors: [...errors],
+        } : prev);
+      }
+
+      setOnedriveImportStage('done');
+      setOnedriveImportProgress((prev) => prev ? {
+        ...prev,
+        total: itemsWithMatches.length,
+        processed: itemsWithMatches.length,
+        current: '',
+        results,
+        errors,
+      } : prev);
+    } catch (err) {
+      console.error('OneDrive import failed:', err);
+      setOnedriveImportStage('error');
+    } finally {
+      setOnedriveImportRunning(false);
+    }
+  };
+
   const table = useReactTable({
     data: items,
     columns,
@@ -639,6 +736,13 @@ const InventoryProducts: React.FC = () => {
   useEffect(() => {
     loadItems(pagination.pageIndex + 1, items.length === 0);
   }, [filters, pagination.pageIndex, pagination.pageSize]);
+
+  useEffect(() => {
+    if (!isSammie) return;
+    onedriveService.getStatus()
+      .then(setOnedriveStatus)
+      .catch(() => setOnedriveStatus({ connected: false, expires_at: null }));
+  }, [isSammie]);
 
   // Keyboard navigation: Cmd+K for search focus, arrow keys for rows
   useEffect(() => {
@@ -785,6 +889,12 @@ const InventoryProducts: React.FC = () => {
   }
 
   const totalPages = Math.ceil(totalItems / pagination.pageSize);
+  const onedriveTriggerLabel =
+    onedriveImportRunning && onedriveImportProgress
+      ? (onedriveImportStage === 'matching'
+        ? `Matching ${onedriveImportProgress.processed}/${onedriveImportProgress.total}`
+        : `Importing ${onedriveImportProgress.processed}/${onedriveImportProgress.total}`)
+      : 'OneDrive';
 
   return (
     <div className="min-h-screen p-6 space-y-3">
@@ -794,6 +904,35 @@ const InventoryProducts: React.FC = () => {
         subtitle="products"
         actions={
           <>
+            {isSammie && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button intent="outline" size="sm" isDisabled={onedriveImportRunning}>
+                    <Cloud data-slot="icon" size={14} className={`${onedriveImportRunning ? 'animate-pulse' : ''}`} /> {onedriveTriggerLabel}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      setShowOneDriveImport(true);
+                    }}
+                    disabled={onedriveImportRunning}
+                  >
+                    Import OneDrive
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={(event) => {
+                      event.preventDefault();
+                      setShowOneDriveMatchMissing(true);
+                    }}
+                    disabled={onedriveImportRunning}
+                  >
+                    Match from OneDrive
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <Button intent="outline" size="sm" onPress={() => setShowPricelistUpload(true)}>
               <Upload data-slot="icon" size={14} /> Pricelists
             </Button>
@@ -1169,6 +1308,22 @@ const InventoryProducts: React.FC = () => {
         onOpenChange={setShowPricelistUpload}
         onApplied={() => loadItems(pagination.pageIndex + 1, false)}
       />
+
+      {showOneDriveImport && (
+        <OneDriveImportModal
+          connected={onedriveStatus?.connected ?? false}
+          onClose={() => setShowOneDriveImport(false)}
+          onImported={() => {}}
+          onStartImport={startOneDriveImport}
+        />
+      )}
+
+      {showOneDriveMatchMissing && (
+        <OneDriveMatchMissingModal
+          open={showOneDriveMatchMissing}
+          onClose={() => setShowOneDriveMatchMissing(false)}
+        />
+      )}
 
       <CommandPalette
         open={showCommandPalette}

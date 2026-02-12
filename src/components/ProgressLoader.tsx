@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Lottie from 'lottie-react';
 import { useLocation } from 'react-router-dom';
 import loaderAnimation from '../splitload.json';
@@ -34,6 +34,9 @@ export const ProgressLoader: React.FC<ProgressLoaderProps> = ({
 }) => {
   const location = useLocation();
   const [displayProgress, setDisplayProgress] = useState(0);
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
+  const [lightAnimation, setLightAnimation] = useState<any | null>(null);
+  const [darkAnimation, setDarkAnimation] = useState<any | null>(null);
   
   
   // Get dynamic message based on current route
@@ -91,6 +94,41 @@ export const ProgressLoader: React.FC<ProgressLoaderProps> = ({
     }
   }, [isVisible]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const updateTheme = () => setIsDark(root.classList.contains('dark'));
+    updateTheme();
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+    const loadAnimations = async () => {
+      try {
+        const [lightResponse, darkResponse] = await Promise.all([
+          fetch('/light.json'),
+          fetch('/dark.json'),
+        ]);
+        if (!isActive) return;
+        if (lightResponse.ok) setLightAnimation(await lightResponse.json());
+        if (darkResponse.ok) setDarkAnimation(await darkResponse.json());
+      } catch {
+        // Fallback to bundled animation
+      }
+    };
+    loadAnimations();
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const animationData = useMemo(
+    () => (isDark ? darkAnimation : lightAnimation) ?? loaderAnimation,
+    [isDark, darkAnimation, lightAnimation]
+  );
+
   if (!isVisible) return null;
 
   return (
@@ -100,7 +138,7 @@ export const ProgressLoader: React.FC<ProgressLoaderProps> = ({
         <div className="progress-loader-content">
           <div className="progress-loader-animation">
             <Lottie 
-              animationData={loaderAnimation}
+              animationData={animationData}
               loop={true}
               autoplay={true}
               style={{ width: 120, height: 120 }}

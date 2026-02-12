@@ -29,7 +29,6 @@ import { purchaseOrdersRouter } from './routes/v1/purchase-orders.js';
 import { imagesRouter } from './routes/v1/images.js';
 import { reportsRouter } from './routes/v1/reports.js';
 import { onedriveRouter, onedrivePublicRouter } from './routes/v1/onedrive.js';
-import { invoiceWebhooksRouter } from './routes/v1/invoice-webhooks.js';
 import { processAutoReminders } from './services/invoiceReminderCron.js';
 import { jwtAuth } from './middleware/jwtAuth.js';
 
@@ -200,9 +199,6 @@ app.use('/api/v1/images', jwtAuth, imagesRouter);
 app.use('/api/v1/reports', jwtAuth, reportsRouter);
 app.use('/api/v1/onedrive', onedrivePublicRouter);
 app.use('/api/v1/onedrive', jwtAuth, onedriveRouter);
-
-// Webhooks (use their own auth via X-Webhook-Secret, not JWT)
-app.use('/api/v1/webhooks', invoiceWebhooksRouter);
 
 // ====================================
 // 404 HANDLER (silent + cheap is fine; your JSON is okay too)
