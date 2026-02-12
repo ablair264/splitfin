@@ -319,6 +319,7 @@ router.get('/children', requireSammie, async (req, res) => {
     const limit = Math.min(Number(req.query.limit || 200), 200);
     const foldersOnly = String(req.query.foldersOnly || 'false') === 'true';
     const imagesOnly = String(req.query.imagesOnly || 'false') === 'true';
+    const includeDownloadUrl = String(req.query.includeDownloadUrl || 'true') !== 'false';
     const nextLink = typeof req.query.nextLink === 'string' ? req.query.nextLink : '';
 
     const selectFields = [];
@@ -354,7 +355,7 @@ router.get('/children', requireSammie, async (req, res) => {
           }))
       : [];
 
-    const images = imagesOnly || !foldersOnly
+    let images = imagesOnly || !foldersOnly
       ? items
           .filter(item => item?.file?.mimeType?.startsWith('image/'))
           .map(item => ({
@@ -368,6 +369,28 @@ router.get('/children', requireSammie, async (req, res) => {
             downloadUrl: item['@microsoft.graph.downloadUrl'] || null,
           }))
       : [];
+
+    if (includeDownloadUrl && images.length > 0) {
+      const missing = images.filter(item => !item.downloadUrl);
+      if (missing.length > 0) {
+        const fetched = await Promise.all(
+          missing.map(async (item) => {
+            const detail = await axios.get(`${GRAPH_BASE}/me/drive/items/${item.id}`, {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            return {
+              id: item.id,
+              downloadUrl: detail.data['@microsoft.graph.downloadUrl'] || null,
+            };
+          })
+        );
+        const map = new Map(fetched.map(r => [r.id, r.downloadUrl]));
+        images = images.map(item => ({
+          ...item,
+          downloadUrl: item.downloadUrl || map.get(item.id) || null,
+        }));
+      }
+    }
 
     res.json({
       folders,

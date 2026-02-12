@@ -39,6 +39,7 @@ export const onedriveService = {
     foldersOnly?: boolean;
     imagesOnly?: boolean;
     nextLink?: string;
+    includeDownloadUrl?: boolean;
   }): Promise<{
     folders: { id: string; name: string; childCount: number | null }[];
     images: {

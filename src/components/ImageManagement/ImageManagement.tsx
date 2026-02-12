@@ -66,6 +66,9 @@ export default function ImageManagement() {
   const [deleting, setDeleting] = useState(false);
   const [showOneDriveImport, setShowOneDriveImport] = useState(false);
   const [onedriveStatus, setOnedriveStatus] = useState<{ connected: boolean; expires_at: string | null } | null>(null);
+  const [onedriveImportRunning, setOnedriveImportRunning] = useState(false);
+  const [onedriveImportProgress, setOnedriveImportProgress] = useState<BatchUploadProgress | null>(null);
+  const [showOneDriveSummary, setShowOneDriveSummary] = useState(false);
 
   const currentAgent = authService.getCachedAgent();
   const isSammie = currentAgent?.id?.toLowerCase() === 'sammie';
@@ -202,6 +205,45 @@ export default function ImageManagement() {
     }
   };
 
+  const startOneDriveImport = async (items: OneDriveImageItem[], brandName: string) => {
+    if (onedriveImportRunning) return;
+    setOnedriveImportRunning(true);
+    setOnedriveImportProgress({ total: items.length, processed: 0, current: '', results: [], errors: [] });
+
+    try {
+      const files: File[] = [];
+      for (const item of items) {
+        if (!item.downloadUrl) {
+          console.warn('Missing download URL for', item.name);
+          continue;
+        }
+        const resp = await fetch(item.downloadUrl);
+        if (!resp.ok) throw new Error(`Failed to download ${item.name}`);
+        const blob = await resp.blob();
+        files.push(new File([blob], item.name, { type: item.mimeType || blob.type || 'image/*' }));
+      }
+
+      if (files.length === 0) {
+        setOnedriveImportProgress(null);
+        setOnedriveImportRunning(false);
+        return;
+      }
+
+      const finalProgress = await imageProcessingService.processBatchImages(
+        files,
+        brandName,
+        (p) => setOnedriveImportProgress({ ...p }),
+      );
+      setOnedriveImportProgress(finalProgress);
+      loadImages();
+      loadMeta();
+    } catch (err) {
+      console.error('OneDrive import failed:', err);
+    } finally {
+      setOnedriveImportRunning(false);
+    }
+  };
+
   // ── Pagination ──
   const from = page * PAGE_SIZE + 1;
   const to = Math.min((page + 1) * PAGE_SIZE, totalCount);
@@ -217,8 +259,16 @@ export default function ImageManagement() {
         actions={
           <>
             {isSammie && (
-              <Button intent="outline" size="sm" onPress={() => setShowOneDriveImport(true)}>
-                <Cloud className="size-4 mr-1.5" /> Import OneDrive
+              <Button intent="outline" size="sm" onPress={() => setShowOneDriveImport(true)} isDisabled={onedriveImportRunning}>
+                <Cloud className={`size-4 mr-1.5 ${onedriveImportRunning ? 'animate-pulse' : ''}`} />
+                {onedriveImportRunning && onedriveImportProgress
+                  ? `Importing ${onedriveImportProgress.processed}/${onedriveImportProgress.total}`
+                  : 'Import OneDrive'}
+              </Button>
+            )}
+            {isSammie && !onedriveImportRunning && onedriveImportProgress && onedriveImportProgress.processed >= onedriveImportProgress.total && (
+              <Button intent="plain" size="sm" onPress={() => setShowOneDriveSummary(true)}>
+                View Import Summary
               </Button>
             )}
             <Button intent="outline" size="sm" onPress={handleRefreshSizes} isDisabled={refreshingSizes}>
@@ -467,6 +517,14 @@ export default function ImageManagement() {
           connected={onedriveStatus?.connected ?? false}
           onClose={() => setShowOneDriveImport(false)}
           onImported={() => { loadImages(); loadMeta(); }}
+          onStartImport={startOneDriveImport}
+        />
+      )}
+
+      {showOneDriveSummary && onedriveImportProgress && (
+        <OneDriveImportSummaryModal
+          progress={onedriveImportProgress}
+          onClose={() => setShowOneDriveSummary(false)}
         />
       )}
 
@@ -745,6 +803,7 @@ interface OneDriveImportModalProps {
   connected: boolean;
   onClose: () => void;
   onImported: () => void;
+  onStartImport: (items: OneDriveImageItem[], brandName: string) => void;
 }
 
 interface OneDriveImageItem {
@@ -758,7 +817,7 @@ interface OneDriveImageItem {
   downloadUrl: string | null;
 }
 
-function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportModalProps) {
+function OneDriveImportModal({ connected, onClose, onImported, onStartImport }: OneDriveImportModalProps) {
   const ROOT_ID = 'root';
   const [brands, setBrands] = useState<{ id: string; brand_name: string }[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<string>('');
@@ -766,11 +825,12 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
   const [imagesByParent, setImagesByParent] = useState<Record<string, OneDriveImageItem[]>>({});
   const [folderNextLinkByParent, setFolderNextLinkByParent] = useState<Record<string, string | null>>({});
   const [imageNextLinkByParent, setImageNextLinkByParent] = useState<Record<string, string | null>>({});
+  const [imagesLoading, setImagesLoading] = useState(false);
+  const [imagesLoadedCount, setImagesLoadedCount] = useState(0);
+  const imagesLoadIdRef = useRef(0);
   const [currentFolderId, setCurrentFolderId] = useState<string>(ROOT_ID);
   const [loadingItems, setLoadingItems] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [step, setStep] = useState<'setup' | 'processing' | 'results'>('setup');
-  const [progress, setProgress] = useState<BatchUploadProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -814,24 +874,43 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
     }
   };
 
-  const loadImages = async (parentId?: string, nextLink?: string | null) => {
+  const loadImages = async (parentId?: string) => {
     const key = parentId || ROOT_ID;
+    const loadId = ++imagesLoadIdRef.current;
+    setImagesLoading(true);
+    setImagesLoadedCount(0);
     try {
-      const result = await onedriveService.listChildren({
-        parentId,
-        limit: 200,
-        imagesOnly: true,
-        nextLink: nextLink || undefined,
-      });
-      setImagesByParent((prev) => ({
-        ...prev,
-        [key]: nextLink ? [...(prev[key] || []), ...(result.images || [])] : (result.images || []),
-      }));
-      setImageNextLinkByParent((prev) => ({ ...prev, [key]: result.nextLink || null }));
+      let nextLink: string | null | undefined = undefined;
+      let allImages: OneDriveImageItem[] = [];
+
+      do {
+        const result = await onedriveService.listChildren({
+          parentId,
+          limit: 200,
+          imagesOnly: true,
+          includeDownloadUrl: true,
+          nextLink: nextLink || undefined,
+        });
+
+        if (imagesLoadIdRef.current !== loadId) return;
+
+        allImages = [...allImages, ...(result.images || [])];
+        setImagesLoadedCount(allImages.length);
+        nextLink = result.nextLink || null;
+      } while (nextLink);
+
+      if (imagesLoadIdRef.current !== loadId) return;
+      setImagesByParent((prev) => ({ ...prev, [key]: allImages }));
+      setImageNextLinkByParent((prev) => ({ ...prev, [key]: null }));
     } catch (err) {
       console.error('Failed to load OneDrive images:', err);
+      if (imagesLoadIdRef.current !== loadId) return;
       setImagesByParent((prev) => ({ ...prev, [key]: [] }));
       setImageNextLinkByParent((prev) => ({ ...prev, [key]: null }));
+    } finally {
+      if (imagesLoadIdRef.current === loadId) {
+        setImagesLoading(false);
+      }
     }
   };
 
@@ -868,47 +947,13 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
     }
   };
 
-  const handleImport = async () => {
+  const handleImport = () => {
     if (!selectedBrand || selectedIds.size === 0) return;
-    setStep('processing');
-    setError(null);
-
-    try {
-      const currentImages = imagesByParent[currentFolderId] || [];
-      const selectedItems = currentImages.filter((i) => selectedIds.has(i.id));
-      const files: File[] = [];
-
-      for (const item of selectedItems) {
-        if (!item.downloadUrl) {
-          console.warn('Missing download URL for', item.name);
-          continue;
-        }
-        const resp = await fetch(item.downloadUrl);
-        if (!resp.ok) throw new Error(`Failed to download ${item.name}`);
-        const blob = await resp.blob();
-        const file = new File([blob], item.name, { type: item.mimeType || blob.type || 'image/*' });
-        files.push(file);
-      }
-
-      if (files.length === 0) {
-        setError('No downloadable images selected.');
-        setStep('setup');
-        return;
-      }
-
-      const finalProgress = await imageProcessingService.processBatchImages(
-        files,
-        selectedBrand,
-        (p) => setProgress({ ...p }),
-      );
-      setProgress(finalProgress);
-      setStep('results');
-      onImported();
-    } catch (err) {
-      console.error('OneDrive import failed:', err);
-      setError('Import failed. Please try again.');
-      setStep('setup');
-    }
+    const currentImages = imagesByParent[currentFolderId] || [];
+    const selectedItems = currentImages.filter((i) => selectedIds.has(i.id));
+    onStartImport(selectedItems, selectedBrand);
+    onImported();
+    onClose();
   };
 
   const renderFolderNode = (folder: { id: string; name: string; childCount: number | null }) => (
@@ -920,7 +965,7 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
         setCurrentFolderId(id);
         setSelectedIds(new Set());
         if (!foldersByParent[id]) loadChildren(id);
-        if (!imagesByParent[id]) loadImages(id);
+        loadImages(id);
       }}
     >
       {(foldersByParent[folder.id] || []).map(renderFolderNode)}
@@ -938,12 +983,11 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
           x
         </button>
 
-        {step === 'setup' && (
-          <div className="p-6 space-y-5">
-            <div className="space-y-1">
-              <h2 className="text-xl font-semibold">Import from OneDrive</h2>
-              <p className="text-sm text-zinc-400">Select a brand and choose images to run through the existing batch enhancement pipeline.</p>
-            </div>
+        <div className="p-6 space-y-5">
+          <div className="space-y-1">
+            <h2 className="text-xl font-semibold">Import from OneDrive</h2>
+            <p className="text-sm text-zinc-400">Select a brand and choose images to run through the existing batch enhancement pipeline.</p>
+          </div>
 
             {!connected && (
               <div className="rounded-lg border border-zinc-700 bg-zinc-800/60 p-4 flex items-center justify-between">
@@ -1007,7 +1051,7 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
                       setCurrentFolderId(id);
                       setSelectedIds(new Set());
                       if (!foldersByParent[id]) loadChildren();
-                      if (!imagesByParent[id]) loadImages();
+                      loadImages();
                     }}
                   >
                     {(foldersByParent[ROOT_ID] || []).map(renderFolderNode)}
@@ -1016,7 +1060,9 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
               </div>
               <div className="col-span-2 max-md:col-span-1">
                 <div className="max-h-[360px] overflow-y-auto border border-zinc-800 rounded-lg">
-                  {(imagesByParent[currentFolderId]?.length || 0) === 0 ? (
+                  {imagesLoading && (imagesByParent[currentFolderId]?.length || 0) === 0 ? (
+                    <div className="p-4 text-sm text-zinc-500">Loading images... {imagesLoadedCount > 0 ? `(${imagesLoadedCount})` : ''}</div>
+                  ) : (imagesByParent[currentFolderId]?.length || 0) === 0 ? (
                     <div className="p-4 text-sm text-zinc-500">No images in this folder.</div>
                   ) : (
                     <div className="divide-y divide-zinc-800">
@@ -1033,13 +1079,10 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
                           </div>
                         </label>
                       ))}
-                      {imageNextLinkByParent[currentFolderId] && (
-                        <button
-                          className="w-full px-4 py-3 text-sm text-left text-zinc-300 hover:bg-zinc-800/60"
-                          onClick={() => loadImages(currentFolderId === ROOT_ID ? undefined : currentFolderId, imageNextLinkByParent[currentFolderId])}
-                        >
-                          Load more images
-                        </button>
+                      {imagesLoading && (
+                        <div className="px-4 py-3 text-xs text-zinc-500">
+                          Loading more images... {imagesLoadedCount > 0 ? `(${imagesLoadedCount})` : ''}
+                        </div>
                       )}
                     </div>
                   )}
@@ -1059,32 +1102,59 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
               </Button>
             </div>
           </div>
-        )}
+      </div>
+    </div>
+  );
+}
 
-        {step === 'processing' && (
-          <div className="p-8 space-y-4">
-            <div className="text-lg font-semibold">Processing images</div>
-            <div className="text-sm text-zinc-400">
-              {progress ? `${progress.processed} / ${progress.total}` : 'Starting...'}
+// ── OneDrive Summary Modal ─────────────────────────────────
+
+function OneDriveImportSummaryModal({
+  progress,
+  onClose,
+}: {
+  progress: BatchUploadProgress;
+  onClose: () => void;
+}) {
+  const successCount = progress.results.filter(r => r.success).length;
+  const failureCount = progress.results.filter(r => !r.success).length;
+
+  return (
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-5">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-zinc-900 rounded-2xl shadow-[0_20px_40px_rgba(0,0,0,0.3)] w-full max-w-[900px] max-h-[90vh] overflow-hidden flex flex-col text-white">
+        <button
+          className="absolute top-4 right-4 bg-none border-none text-2xl cursor-pointer text-zinc-400 z-10 w-8 h-8 flex items-center justify-center rounded-full transition-all duration-200 hover:bg-white/10 hover:text-white"
+          onClick={onClose}
+        >
+          x
+        </button>
+
+        <div className="p-6 space-y-4 overflow-y-auto">
+          <div>
+            <h2 className="text-xl font-semibold">OneDrive import summary</h2>
+            <p className="text-sm text-zinc-400">Processed {progress.total} images.</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 max-md:grid-cols-1">
+            <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-4">
+              <div className="text-2xl font-semibold text-emerald-300">{successCount}</div>
+              <div className="text-xs text-emerald-200/80 uppercase tracking-wider">Successful</div>
             </div>
-            <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-teal-500 transition-all"
-                style={{ width: `${progress && progress.total ? Math.round((progress.processed / progress.total) * 100) : 0}%` }}
-              />
+            <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-4">
+              <div className="text-2xl font-semibold text-red-300">{failureCount}</div>
+              <div className="text-xs text-red-200/80 uppercase tracking-wider">Failed</div>
             </div>
           </div>
-        )}
 
-        {step === 'results' && (
-          <div className="p-6 space-y-4 overflow-y-auto">
-            <div className="text-lg font-semibold">Import complete</div>
-            <div className="text-sm text-zinc-400">
-              {progress ? `Processed ${progress.total} images` : 'Done'}
+          <div className="border border-zinc-800 rounded-lg overflow-hidden">
+            <div className="grid grid-cols-[2fr_1fr] gap-4 p-3 bg-zinc-800 text-xs uppercase text-zinc-400 tracking-wider">
+              <span>File</span>
+              <span>Status</span>
             </div>
-            <div className="space-y-2">
-              {progress?.results?.map((r, idx) => (
-                <div key={idx} className="flex items-center justify-between text-sm border border-zinc-800 rounded-md px-3 py-2">
+            <div className="max-h-[380px] overflow-y-auto">
+              {progress.results.map((r, idx) => (
+                <div key={idx} className="grid grid-cols-[2fr_1fr] gap-4 px-3 py-2 text-sm border-t border-zinc-800">
                   <span className="truncate">{r.originalFilename}</span>
                   <span className={r.success ? 'text-emerald-400' : 'text-red-400'}>
                     {r.success ? 'Success' : 'Failed'}
@@ -1092,11 +1162,14 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
                 </div>
               ))}
             </div>
-            <div className="flex justify-end">
-              <Button intent="primary" size="sm" onPress={onClose}>Close</Button>
-            </div>
           </div>
-        )}
+
+          <div className="flex justify-end">
+            <Button intent="primary" size="sm" onPress={onClose}>
+              Close
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
