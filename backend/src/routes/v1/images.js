@@ -238,7 +238,8 @@ router.get('/by-product/:id', async (req, res) => {
     const params = [productId, sku];
     const dataResult = await query(
       `SELECT * FROM product_images
-       WHERE product_id = $1 OR ($2 IS NOT NULL AND matched_sku = $2)
+       WHERE product_id = $1
+          OR ($2 IS NOT NULL AND TRIM(matched_sku) = TRIM($2))
        ORDER BY created_at DESC`,
       params
     );
