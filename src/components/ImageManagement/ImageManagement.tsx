@@ -14,6 +14,7 @@ import { productService } from '@/services/productService';
 import { onedriveService } from '@/services/onedriveService';
 import { authService } from '@/services/authService';
 import { imageProcessingService, type BatchUploadProgress } from '@/services/imageProcessingService';
+import { Tree, Folder } from '@/components/ui/file-tree';
 import type { ProductImage, Product } from '@/types/domain';
 import ImageCard from './ImageCard';
 import BatchImageUpload from './BatchImageUpload';
@@ -758,10 +759,12 @@ interface OneDriveImageItem {
 }
 
 function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportModalProps) {
+  const ROOT_ID = 'root';
   const [brands, setBrands] = useState<{ id: string; brand_name: string }[]>([]);
   const [selectedBrand, setSelectedBrand] = useState<string>('');
-  const [path, setPath] = useState<string>('');
-  const [items, setItems] = useState<OneDriveImageItem[]>([]);
+  const [foldersByParent, setFoldersByParent] = useState<Record<string, { id: string; name: string; childCount: number | null }[]>>({});
+  const [imagesByParent, setImagesByParent] = useState<Record<string, OneDriveImageItem[]>>({});
+  const [currentFolderId, setCurrentFolderId] = useState<string>(ROOT_ID);
   const [loadingItems, setLoadingItems] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [step, setStep] = useState<'setup' | 'processing' | 'results'>('setup');
@@ -784,16 +787,17 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
     loadBrands();
   }, []);
 
-  const loadItems = async () => {
+  const loadChildren = async (parentId?: string) => {
     setLoadingItems(true);
     setError(null);
     try {
-      const result = await onedriveService.listImages({
-        path: path.trim() || undefined,
+      const result = await onedriveService.listChildren({
+        parentId,
         limit: 200,
-        includeDownloadUrl: true,
       });
-      setItems(result.items || []);
+      const key = parentId || ROOT_ID;
+      setFoldersByParent((prev) => ({ ...prev, [key]: result.folders || [] }));
+      setImagesByParent((prev) => ({ ...prev, [key]: result.images || [] }));
       setSelectedIds(new Set());
     } catch (err) {
       console.error('Failed to list OneDrive images:', err);
@@ -802,6 +806,13 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
       setLoadingItems(false);
     }
   };
+
+  useEffect(() => {
+    if (!connected) return;
+    loadChildren();
+    setCurrentFolderId(ROOT_ID);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected]);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) => {
@@ -813,8 +824,9 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === items.length) setSelectedIds(new Set());
-    else setSelectedIds(new Set(items.map((i) => i.id)));
+    const currentImages = imagesByParent[currentFolderId] || [];
+    if (selectedIds.size === currentImages.length) setSelectedIds(new Set());
+    else setSelectedIds(new Set(currentImages.map((i) => i.id)));
   };
 
   const handleConnect = async () => {
@@ -833,7 +845,8 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
     setError(null);
 
     try {
-      const selectedItems = items.filter((i) => selectedIds.has(i.id));
+      const currentImages = imagesByParent[currentFolderId] || [];
+      const selectedItems = currentImages.filter((i) => selectedIds.has(i.id));
       const files: File[] = [];
 
       for (const item of selectedItems) {
@@ -868,6 +881,21 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
       setStep('setup');
     }
   };
+
+  const renderFolderNode = (folder: { id: string; name: string; childCount: number | null }) => (
+    <Folder
+      key={folder.id}
+      value={folder.id}
+      element={folder.name}
+      onToggle={(id) => {
+        setCurrentFolderId(id);
+        setSelectedIds(new Set());
+        if (!foldersByParent[id]) loadChildren(id);
+      }}
+    >
+      {(foldersByParent[folder.id] || []).map(renderFolderNode)}
+    </Folder>
+  );
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center p-5">
@@ -913,24 +941,15 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
                   ))}
                 </select>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs text-zinc-400">Folder path (optional)</label>
-                <input
-                  className="w-full rounded-md bg-zinc-800 border border-zinc-700 px-3 py-2 text-sm text-white"
-                  placeholder="e.g. Product Images/2025"
-                  value={path}
-                  onChange={(e) => setPath(e.target.value)}
-                />
-              </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <Button intent="outline" size="sm" onPress={loadItems} isDisabled={!connected || loadingItems}>
-                {loadingItems ? 'Loading...' : 'Load Images'}
+              <Button intent="outline" size="sm" onPress={() => loadChildren(currentFolderId === ROOT_ID ? undefined : currentFolderId)} isDisabled={!connected || loadingItems}>
+                {loadingItems ? 'Loading...' : 'Refresh'}
               </Button>
-              {items.length > 0 && (
+              {(imagesByParent[currentFolderId]?.length || 0) > 0 && (
                 <Button intent="plain" size="sm" onPress={toggleSelectAll}>
-                  {selectedIds.size === items.length ? 'Clear selection' : 'Select all'}
+                  {selectedIds.size === (imagesByParent[currentFolderId]?.length || 0) ? 'Clear selection' : 'Select all'}
                 </Button>
               )}
             </div>
@@ -939,26 +958,45 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
               <div className="text-sm text-red-400">{error}</div>
             )}
 
-            <div className="max-h-[360px] overflow-y-auto border border-zinc-800 rounded-lg">
-              {items.length === 0 ? (
-                <div className="p-4 text-sm text-zinc-500">No images loaded yet.</div>
-              ) : (
-                <div className="divide-y divide-zinc-800">
-                  {items.map((item) => (
-                    <label key={item.id} className="flex items-center gap-3 px-4 py-3 text-sm cursor-pointer hover:bg-zinc-800/60">
-                      <input
-                        type="checkbox"
-                        checked={selectedIds.has(item.id)}
-                        onChange={() => toggleSelect(item.id)}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="truncate text-white">{item.name}</div>
-                        <div className="text-xs text-zinc-500">{(item.size / 1024 / 1024).toFixed(2)} MB</div>
-                      </div>
-                    </label>
-                  ))}
+            <div className="grid grid-cols-3 gap-4 max-md:grid-cols-1">
+              <div className="col-span-1 border border-zinc-800 rounded-lg bg-zinc-900/40 h-[360px]">
+                <Tree className="h-full" initialExpandedItems={[ROOT_ID]}>
+                  <Folder
+                    value={ROOT_ID}
+                    element="My files"
+                    onToggle={(id) => {
+                      setCurrentFolderId(id);
+                      setSelectedIds(new Set());
+                      if (!foldersByParent[id]) loadChildren();
+                    }}
+                  >
+                    {(foldersByParent[ROOT_ID] || []).map(renderFolderNode)}
+                  </Folder>
+                </Tree>
+              </div>
+              <div className="col-span-2 max-md:col-span-1">
+                <div className="max-h-[360px] overflow-y-auto border border-zinc-800 rounded-lg">
+                  {(imagesByParent[currentFolderId]?.length || 0) === 0 ? (
+                    <div className="p-4 text-sm text-zinc-500">No images in this folder.</div>
+                  ) : (
+                    <div className="divide-y divide-zinc-800">
+                      {(imagesByParent[currentFolderId] || []).map((item) => (
+                        <label key={item.id} className="flex items-center gap-3 px-4 py-3 text-sm cursor-pointer hover:bg-zinc-800/60">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(item.id)}
+                            onChange={() => toggleSelect(item.id)}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="truncate text-white">{item.name}</div>
+                            <div className="text-xs text-zinc-500">{(item.size / 1024 / 1024).toFixed(2)} MB</div>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
             <div className="flex justify-end gap-2">

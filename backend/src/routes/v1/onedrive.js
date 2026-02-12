@@ -307,4 +307,57 @@ router.get('/images', requireSammie, async (req, res) => {
   }
 });
 
+// ============================================
+// List children (folders + image files)
+// ============================================
+router.get('/children', requireSammie, async (req, res) => {
+  try {
+    const agentId = req.agent.id;
+    const accessToken = await getValidAccessToken(agentId);
+
+    const parentId = typeof req.query.parentId === 'string' ? req.query.parentId : '';
+    const limit = Math.min(Number(req.query.limit || 200), 200);
+
+    const url = parentId
+      ? `${GRAPH_BASE}/me/drive/items/${encodeURIComponent(parentId)}/children`
+      : `${GRAPH_BASE}/me/drive/root/children`;
+
+    const { data } = await axios.get(url, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      params: { $top: limit },
+    });
+
+    const items = Array.isArray(data.value) ? data.value : [];
+    const folders = items
+      .filter(item => item?.folder)
+      .map(item => ({
+        id: item.id,
+        name: item.name,
+        childCount: item.folder?.childCount ?? null,
+      }));
+
+    const images = items
+      .filter(item => item?.file?.mimeType?.startsWith('image/'))
+      .map(item => ({
+        id: item.id,
+        name: item.name,
+        size: item.size,
+        mimeType: item.file?.mimeType || null,
+        webUrl: item.webUrl || null,
+        createdDateTime: item.createdDateTime || null,
+        lastModifiedDateTime: item.lastModifiedDateTime || null,
+        downloadUrl: item['@microsoft.graph.downloadUrl'] || null,
+      }));
+
+    res.json({
+      folders,
+      images,
+      nextLink: data['@odata.nextLink'] || null,
+    });
+  } catch (err) {
+    logger.error('[OneDrive] children error:', err);
+    res.status(500).json({ error: 'Failed to list OneDrive children' });
+  }
+});
+
 export { router as onedriveRouter, publicRouter as onedrivePublicRouter };

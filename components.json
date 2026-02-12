@@ -23,6 +23,7 @@
     "@diceui": "https://diceui.com/r/{name}.json",
     "@intentui": "https://intentui.com/r/{name}",
     "@animate-ui": "https://animate-ui.com/r/{name}.json",
-    "@kokonutui": "https://kokonutui.com/r/{name}.json"
+    "@kokonutui": "https://kokonutui.com/r/{name}.json",
+    "@magicui": "https://magicui.design/r/{name}"
   }
 }
