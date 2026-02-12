@@ -85,6 +85,11 @@ export const imageService = {
     return result.data;
   },
 
+  async listByProduct(productId: number): Promise<ProductImage[]> {
+    const result = await api.get<{ data: ProductImage[] }>(`/api/v1/images/by-product/${productId}`);
+    return result.data;
+  },
+
   async delete(id: number): Promise<void> {
     await api.delete(`/api/v1/images/${id}`);
   },

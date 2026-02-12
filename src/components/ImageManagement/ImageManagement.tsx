@@ -219,7 +219,7 @@ export default function ImageManagement() {
       ]);
 
       const itemsWithMatches = items.map((item) => {
-        const match = imageProcessingService.matchSKUFromFilename(item.name, availableSKUs, brandPattern);
+        const match = imageProcessingService.matchSKUFromFilename(item.name, availableSKUs, brandPattern, brandName);
         return {
           ...item,
           matched_sku: match?.sku,

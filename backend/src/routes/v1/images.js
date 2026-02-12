@@ -220,6 +220,37 @@ router.get('/stats', async (_req, res) => {
 });
 
 // ===========================================================================
+// 3a. GET /by-product/:id — List images for a product
+// ===========================================================================
+router.get('/by-product/:id', async (req, res) => {
+  try {
+    const productId = Number(req.params.id);
+    if (!Number.isFinite(productId)) {
+      return res.status(400).json({ error: 'Invalid product id' });
+    }
+
+    const productResult = await query('SELECT id, sku FROM products WHERE id = $1 LIMIT 1', [productId]);
+    if (productResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    const sku = productResult.rows[0].sku || null;
+
+    const params = [productId, sku];
+    const dataResult = await query(
+      `SELECT * FROM product_images
+       WHERE product_id = $1 OR ($2 IS NOT NULL AND matched_sku = $2)
+       ORDER BY created_at DESC`,
+      params
+    );
+
+    res.json({ data: dataResult.rows });
+  } catch (err) {
+    logger.error('[Images] by-product error:', err);
+    res.status(500).json({ error: 'Failed to fetch product images' });
+  }
+});
+
+// ===========================================================================
 // 4. POST /upload — Single image upload
 // ===========================================================================
 router.post('/upload', async (req, res) => {

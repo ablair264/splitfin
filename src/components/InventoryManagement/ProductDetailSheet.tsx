@@ -16,6 +16,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { Modal, ModalOverlay } from 'react-aria-components';
 import {
   SheetContent,
   SheetHeader,
@@ -29,10 +30,20 @@ import {
   EditablePreview,
   EditableInput,
 } from '@/components/ui/editable';
+import {
+  Dialog,
+  DialogHeader,
+  DialogBody,
+  DialogFooter,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { productService } from '../../services/productService';
+import { imageService } from '../../services/imageService';
 import type { Product } from '../../types/domain';
+import type { ProductImage } from '../../types/domain';
 
 const getProductField = (product: Product, field: string): unknown => {
   return (product as unknown as Record<string, unknown>)[field];
@@ -158,6 +169,11 @@ export function ProductDetailSheet({
   const [imageError, setImageError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | null>(null);
+  const [productImages, setProductImages] = useState<ProductImage[]>([]);
+  const [imagesLoading, setImagesLoading] = useState(false);
+  const [settingPrimaryId, setSettingPrimaryId] = useState<number | null>(null);
+  const [removingImageId, setRemovingImageId] = useState<number | null>(null);
+  const [removeTarget, setRemoveTarget] = useState<ProductImage | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const saveSuccessTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -269,6 +285,27 @@ export function ProductDetailSheet({
     setCurrentImageUrl(product?.image_url || null);
   }, [product?.id]);
 
+  const fetchProductImages = useCallback(async (productId?: number) => {
+    if (!productId) {
+      setProductImages([]);
+      return;
+    }
+    setImagesLoading(true);
+    try {
+      const images = await imageService.listByProduct(productId);
+      setProductImages(images);
+    } catch (err) {
+      console.error('Failed to load product images:', err);
+      setProductImages([]);
+    } finally {
+      setImagesLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchProductImages(product?.id);
+  }, [product?.id, fetchProductImages]);
+
   useEffect(() => {
     return () => {
       if (saveSuccessTimeoutRef.current) {
@@ -293,6 +330,7 @@ export function ProductDetailSheet({
     try {
       const imageUrl = await productService.uploadImage(p.id, file);
       setCurrentImageUrl(imageUrl);
+      fetchProductImages(p.id);
       onUpdated();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Upload failed';
@@ -300,7 +338,7 @@ export function ProductDetailSheet({
     } finally {
       setImageUploading(false);
     }
-  }, [p, onUpdated]);
+  }, [p, onUpdated, fetchProductImages]);
 
   const handleImageDelete = useCallback(async () => {
     if (!p) return;
@@ -309,6 +347,7 @@ export function ProductDetailSheet({
     try {
       await productService.deleteImage(p.id);
       setCurrentImageUrl(null);
+      fetchProductImages(p.id);
       onUpdated();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to remove image';
@@ -316,7 +355,39 @@ export function ProductDetailSheet({
     } finally {
       setImageUploading(false);
     }
+  }, [p, onUpdated, fetchProductImages]);
+
+  const handleSetPrimary = useCallback(async (image: ProductImage) => {
+    if (!p || !image?.url) return;
+    setSettingPrimaryId(image.id);
+    try {
+      await productService.update(p.id, { image_url: image.url });
+      setCurrentImageUrl(image.url);
+      onUpdated();
+    } catch (err) {
+      console.error('Failed to set primary image:', err);
+    } finally {
+      setSettingPrimaryId(null);
+    }
   }, [p, onUpdated]);
+
+  const handleRemoveFromProduct = useCallback(async (image: ProductImage) => {
+    if (!p) return;
+    setRemovingImageId(image.id);
+    try {
+      if (currentImageUrl && image.url === currentImageUrl) {
+        await productService.update(p.id, { image_url: null });
+        setCurrentImageUrl(null);
+      }
+      await imageService.update(image.id, { product_id: null, matched_sku: null });
+      await fetchProductImages(p.id);
+      onUpdated();
+    } catch (err) {
+      console.error('Failed to remove image association:', err);
+    } finally {
+      setRemovingImageId(null);
+    }
+  }, [p, currentImageUrl, fetchProductImages, onUpdated]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -384,7 +455,7 @@ export function ProductDetailSheet({
         onOpenChange={onOpenChange}
         side="right"
         isFloat={false}
-        isDismissable={!showDeleteConfirm}
+        isDismissable={!showDeleteConfirm && !removeTarget}
         className="sm:max-w-[720px] w-full backdrop-blur-xl bg-card/95"
         aria-label="Product details"
       >
@@ -503,6 +574,80 @@ export function ProductDetailSheet({
             </SheetHeader>
 
             <SheetBody className="px-5 py-4 space-y-4 overflow-y-auto">
+              {/* Product Images */}
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.04 }}
+                className="rounded-xl border border-border/40 p-4 space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
+                    Product Images
+                  </h3>
+                  <span className="text-xs text-muted-foreground">
+                    {imagesLoading ? 'Loading…' : `${productImages.length} image${productImages.length === 1 ? '' : 's'}`}
+                  </span>
+                </div>
+
+                {imagesLoading ? (
+                  <div className="grid grid-cols-4 gap-2 max-md:grid-cols-2">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="h-20 rounded-lg bg-muted/40 animate-pulse" />
+                    ))}
+                  </div>
+                ) : productImages.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">No images linked to this product yet.</div>
+                ) : (
+                  <div className="grid grid-cols-4 gap-3 max-md:grid-cols-2">
+                    {productImages.map((img) => {
+                      const isPrimary = !!currentImageUrl && img.url === currentImageUrl;
+                      return (
+                        <div
+                          key={img.id}
+                          className={cn(
+                            'group relative rounded-lg border border-border/40 bg-muted/10 overflow-hidden',
+                            isPrimary && 'ring-1 ring-primary/40'
+                          )}
+                        >
+                          <img
+                            src={img.url}
+                            alt={img.filename}
+                            className="w-full h-20 object-contain bg-background"
+                          />
+                          <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 px-2 py-1 bg-black/55 text-white text-[10px]">
+                            <span className="truncate">{img.filename}</span>
+                            {isPrimary && (
+                              <span className="px-1.5 py-0.5 rounded bg-primary/80 text-[9px] uppercase tracking-wider">
+                                Primary
+                              </span>
+                            )}
+                          </div>
+                          <div className="absolute top-1 right-1 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {!isPrimary && (
+                              <button
+                                onClick={() => handleSetPrimary(img)}
+                                disabled={settingPrimaryId === img.id}
+                                className="px-2 py-0.5 rounded bg-white/90 text-[10px] text-black shadow-sm"
+                              >
+                                {settingPrimaryId === img.id ? 'Setting…' : 'Set primary'}
+                              </button>
+                            )}
+                            <button
+                              onClick={() => setRemoveTarget(img)}
+                              disabled={removingImageId === img.id}
+                              className="px-2 py-0.5 rounded bg-red-500/90 text-[10px] text-white shadow-sm"
+                            >
+                              {removingImageId === img.id ? 'Removing…' : 'Remove'}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </motion.div>
+
               {/* Product Details — always visible */}
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
@@ -977,6 +1122,54 @@ export function ProductDetailSheet({
           />
         )}
       </AnimatePresence>
+      {removeTarget && (
+        <ModalOverlay
+          isDismissable={false}
+          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
+        >
+          <Modal className="fixed inset-0 flex items-center justify-center p-4">
+            <Dialog role="alertdialog" className="w-full max-w-md rounded-xl border border-border bg-card shadow-xl">
+              <DialogHeader>
+                <DialogTitle>Remove image from product</DialogTitle>
+                <DialogDescription>
+                  This will unlink <span className="font-medium">{removeTarget.filename}</span> from this product.
+                  The image will stay in Image Management.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogBody className="pt-0">
+                <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-muted/20 p-3 text-sm">
+                  <img
+                    src={removeTarget.url}
+                    alt={removeTarget.filename}
+                    className="h-12 w-12 rounded-md object-contain bg-background"
+                  />
+                  <div className="min-w-0">
+                    <div className="truncate text-foreground">{removeTarget.filename}</div>
+                    <div className="text-xs text-muted-foreground">SKU match: {removeTarget.matched_sku || '—'}</div>
+                  </div>
+                </div>
+              </DialogBody>
+              <DialogFooter>
+                <Button intent="outline" size="sm" onPress={() => setRemoveTarget(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  intent="destructive"
+                  size="sm"
+                  onPress={async () => {
+                    const target = removeTarget;
+                    setRemoveTarget(null);
+                    if (target) await handleRemoveFromProduct(target);
+                  }}
+                  isDisabled={removingImageId === removeTarget.id}
+                >
+                  {removingImageId === removeTarget.id ? 'Removing…' : 'Remove'}
+                </Button>
+              </DialogFooter>
+            </Dialog>
+          </Modal>
+        </ModalOverlay>
+      )}
     </>
   );
 }

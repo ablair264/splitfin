@@ -167,6 +167,11 @@ class ImageProcessingService {
         offset += pageSize;
       }
 
+      if (brandName && allProducts.length === 0) {
+        // Fallback: brand filter may not match stored brand casing/spaces.
+        return this.getProductSKUs();
+      }
+
       return allProducts;
     } catch (error) {
       console.error('Error fetching product SKUs:', error);
@@ -193,6 +198,7 @@ class ImageProcessingService {
     filename: string,
     availableSKUs: ProductInfo[],
     brandPattern?: RegExp,
+    brandName?: string,
   ): { sku: string; confidence: number; productInfo: ProductInfo } | null {
     if (availableSKUs.length === 0) return null;
 
@@ -201,19 +207,46 @@ class ImageProcessingService {
 
     let bestMatch: { sku: string; confidence: number; productInfo: ProductInfo } | null = null;
 
-    for (const token of tokens) {
-      if (token.length < 2) continue;
+    const tryMatch = (pattern?: RegExp) => {
+      for (const token of tokens) {
+        if (token.length < 2) continue;
+        if (pattern && !pattern.test(token)) continue;
+        const exactProduct = index.exact.get(token);
+        if (exactProduct) {
+          const conf = 1.0;
+          if (!bestMatch || token.length > normalise(bestMatch.sku).length) {
+            bestMatch = { sku: exactProduct.sku, confidence: conf, productInfo: exactProduct };
+          }
+        }
+      }
+    };
 
-      // If brand has a pattern, skip tokens that don't match it
-      if (brandPattern && !brandPattern.test(token)) continue;
+    tryMatch(brandPattern);
+    if (!bestMatch && brandPattern) {
+      // Fallback to patternless match if pattern is too strict.
+      tryMatch();
+    }
 
-      // Exact normalised match only
-      const exactProduct = index.exact.get(token);
-      if (exactProduct) {
-        const conf = 1.0;
-        // Prefer longest matching token (avoids short false positives)
-        if (!bestMatch || token.length > normalise(bestMatch.sku).length) {
-          bestMatch = { sku: exactProduct.sku, confidence: conf, productInfo: exactProduct };
+    if (!bestMatch && brandName?.toLowerCase() === 'rader') {
+      // Numeric SKU fallback (e.g. filenames like _MG_5514.jpg -> SKU "5514")
+      const digitTokens = filename.match(/\d{3,}/g) || [];
+      if (digitTokens.length > 0) {
+        const exactNumericIndex = new Map<string, ProductInfo>();
+        for (const p of availableSKUs) {
+          const rawSku = (p.sku || '').trim();
+          if (!rawSku) continue;
+          if (/^\d+$/.test(rawSku)) {
+            exactNumericIndex.set(rawSku.replace(/^0+/, '') || '0', p);
+          }
+        }
+
+        for (const token of digitTokens) {
+          const key = token.replace(/^0+/, '') || '0';
+          const match = exactNumericIndex.get(key);
+          if (match) {
+            bestMatch = { sku: match.sku, confidence: 0.95, productInfo: match };
+            break;
+          }
         }
       }
     }
@@ -297,7 +330,7 @@ class ImageProcessingService {
       const originalFilename = file.name;
 
       // Step 1: Match SKU from filename (exact only, pattern-filtered)
-      const skuMatch = this.matchSKUFromFilename(originalFilename, availableSKUs, brandPattern);
+      const skuMatch = this.matchSKUFromFilename(originalFilename, availableSKUs, brandPattern, brandName);
 
       // Step 2: Convert to WebP (0.90 quality for website display)
       const webpBlob = await this.convertToWebP(file, 0.90);
