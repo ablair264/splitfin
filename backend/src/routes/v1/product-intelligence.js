@@ -1,6 +1,5 @@
 import express from 'express';
 import { query } from '../../config/database.js';
-import { callOpenAI } from '../ai.js';
 import { logger } from '../../utils/logger.js';
 
 const router = express.Router();
@@ -46,6 +45,7 @@ router.get('/popularity', async (req, res) => {
       limit = 50,
       offset = 0,
       website_only,
+      website_not_live,
     } = req.query;
 
     const dateFrom = dateFromRange(date_range);
@@ -81,6 +81,8 @@ router.get('/popularity', async (req, res) => {
 
     if (website_only === 'true') {
       conditions.push('wp.id IS NOT NULL AND wp.is_active = true');
+    } else if (website_not_live === 'true') {
+      conditions.push('(wp.id IS NULL OR wp.is_active = false)');
     }
 
     const where = conditions.join(' AND ');
@@ -405,7 +407,6 @@ router.post('/price-check', async (req, res) => {
       return res.status(400).json({ error: 'Maximum 25 products per price check' });
     }
 
-    // Fetch product details including website retail price
     const { rows: products } = await query(`
       SELECT p.id, p.name, p.brand, p.rate AS wholesale_price,
              wp.retail_price
@@ -418,91 +419,60 @@ router.post('/price-check', async (req, res) => {
       return res.json({ results: [] });
     }
 
-    // Search the web for each product in parallel
-    const searchResults = await Promise.all(
+    // Extract £XX.XX prices from text
+    const priceRegex = /£\s?(\d{1,6}(?:[.,]\d{2})?)/g;
+
+    function extractPrices(text) {
+      const prices = [];
+      let match;
+      while ((match = priceRegex.exec(text)) !== null) {
+        const val = parseFloat(match[1].replace(',', ''));
+        if (val > 0 && val < 100000) prices.push(val);
+      }
+      priceRegex.lastIndex = 0;
+      return prices;
+    }
+
+    // Search for each product in parallel, extract prices from snippets
+    const results = await Promise.all(
       products.map(async (p) => {
-        const searchQuery = `"${p.brand}" "${p.name}" price buy UK`;
-        const results = await searchWeb(searchQuery, 5);
-        return { product: p, results };
+        const searchQuery = `${p.name} ${p.brand} buy price UK`;
+        const searchHits = await searchWeb(searchQuery, 8);
+
+        const foundPrices = [];
+        for (const hit of searchHits) {
+          const text = `${hit.title} ${hit.snippet}`;
+          const prices = extractPrices(text);
+          for (const price of prices) {
+            foundPrices.push({
+              retailer: extractDomain(hit.url) || hit.title.slice(0, 40),
+              price,
+              url: hit.url,
+            });
+          }
+        }
+
+        // Dedupe by retailer+price
+        const seen = new Set();
+        const unique = foundPrices.filter((fp) => {
+          const key = `${fp.retailer}:${fp.price}`;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+
+        // Sort by price ascending
+        unique.sort((a, b) => a.price - b.price);
+
+        return {
+          product_id: p.id,
+          name: p.name,
+          brand: p.brand,
+          our_price: parseFloat(p.retail_price) || parseFloat(p.wholesale_price) || 0,
+          found_prices: unique,
+        };
       })
     );
-
-    // Build prompt for AI analysis
-    const productLines = searchResults.map((sr, i) => {
-      const p = sr.product;
-      const snippets = sr.results.map(r => `- ${r.title}: ${r.snippet}`).join('\n');
-      return `Product ${i + 1}: "${p.name}" by ${p.brand}. Our retail price: £${p.retail_price || 'N/A'}. Wholesale: £${p.wholesale_price || 'N/A'}.
-Search results:
-${snippets || '- No results found'}`;
-    }).join('\n\n');
-
-    const system = {
-      role: 'system',
-      content: 'You are a UK retail pricing analyst. Analyse web search results to estimate market prices. Always return valid JSON.',
-    };
-    const user = {
-      role: 'user',
-      content: `For each product below, analyse the search results and estimate the average UK retail price. Look for actual prices mentioned in snippets (£XX.XX patterns). If no clear pricing data is found, say so.
-
-${productLines}
-
-Return ONLY JSON:
-{
-  "products": [
-    {
-      "product_id": <number>,
-      "market_avg": <number or null>,
-      "market_low": <number or null>,
-      "market_high": <number or null>,
-      "our_position": "cheaper" | "competitive" | "expensive" | "unknown",
-      "confidence": "high" | "medium" | "low",
-      "sources": ["retailer name", ...],
-      "notes": "brief analysis"
-    }
-  ]
-}`
-    };
-
-    let aiResults;
-    try {
-      aiResults = await callOpenAI([system, user], 'gpt-4o', { max_tokens: 2000, temperature: 0.1 });
-    } catch (aiErr) {
-      logger.warn('[ProductIntelligence] AI price analysis failed:', aiErr.message);
-      // Return basic results without AI analysis
-      const fallback = products.map(p => ({
-        product_id: p.id,
-        name: p.name,
-        brand: p.brand,
-        our_price: parseFloat(p.retail_price) || 0,
-        market_avg: null,
-        market_low: null,
-        market_high: null,
-        our_position: 'unknown',
-        confidence: 'low',
-        sources: [],
-        notes: 'AI analysis unavailable — search results collected but could not be analysed.',
-      }));
-      return res.json({ results: fallback });
-    }
-
-    // Map AI results back to our product IDs
-    const aiProducts = Array.isArray(aiResults.products) ? aiResults.products : [];
-    const results = products.map((p, i) => {
-      const ai = aiProducts[i] || {};
-      return {
-        product_id: p.id,
-        name: p.name,
-        brand: p.brand,
-        our_price: parseFloat(p.retail_price) || 0,
-        market_avg: ai.market_avg ?? null,
-        market_low: ai.market_low ?? null,
-        market_high: ai.market_high ?? null,
-        our_position: ai.our_position || 'unknown',
-        confidence: ai.confidence || 'low',
-        sources: Array.isArray(ai.sources) ? ai.sources : [],
-        notes: ai.notes || '',
-      };
-    });
 
     res.json({ results });
   } catch (err) {
@@ -510,6 +480,15 @@ Return ONLY JSON:
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+function extractDomain(url) {
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./, '');
+    return hostname;
+  } catch {
+    return null;
+  }
+}
 
 // ── GET /brands ──────────────────────────────────────────────
 

@@ -10,6 +10,7 @@ export interface PopularityFilters {
   limit?: number;
   offset?: number;
   website_only?: string;
+  website_not_live?: string;
 }
 
 export interface ReorderFilters {

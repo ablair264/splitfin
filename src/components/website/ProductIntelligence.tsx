@@ -58,7 +58,7 @@ function PopularityTab() {
   const [totalCount, setTotalCount] = useState(0);
   const [dateRange, setDateRange] = useState("90d");
   const [brandFilter, setBrandFilter] = useState("");
-  const [websiteOnly, setWebsiteOnly] = useState(false);
+  const [websiteFilter, setWebsiteFilter] = useState<"all" | "live" | "not_live">("all");
   const [sortBy, setSortBy] = useState("unique_customers");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(0);
@@ -92,7 +92,8 @@ function PopularityTab() {
       sort_order: sortOrder,
       limit: PAGE_SIZE,
       offset: page * PAGE_SIZE,
-      website_only: websiteOnly ? "true" : undefined,
+      website_only: websiteFilter === "live" ? "true" : undefined,
+      website_not_live: websiteFilter === "not_live" ? "true" : undefined,
     };
 
     productIntelligenceService
@@ -112,7 +113,7 @@ function PopularityTab() {
     return () => {
       cancelled = true;
     };
-  }, [dateRange, brandFilter, websiteOnly, sortBy, sortOrder, page, refreshKey]);
+  }, [dateRange, brandFilter, websiteFilter, sortBy, sortOrder, page, refreshKey]);
 
   const toggleSort = useCallback(
     (col: string) => {
@@ -132,6 +133,21 @@ function PopularityTab() {
     data.forEach((row) => map.set(row.product_id, !!row.on_website));
     return map;
   }, [data]);
+
+  const selectableIds = useMemo(
+    () => data.filter((row) => !row.on_website).map((row) => row.product_id),
+    [data]
+  );
+
+  const allSelected = selectableIds.length > 0 && selectableIds.every((id) => selectedIds.has(id));
+
+  const toggleSelectAll = useCallback(() => {
+    if (allSelected) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(selectableIds));
+    }
+  }, [allSelected, selectableIds]);
 
   const toggleSelect = useCallback((id: number) => {
     if (onWebsiteMap.get(id)) return;
@@ -259,18 +275,18 @@ function PopularityTab() {
           ))}
         </select>
 
-        <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <input
-            type="checkbox"
-            checked={websiteOnly}
-            onChange={(e) => {
-              setWebsiteOnly(e.target.checked);
-              setPage(0);
-            }}
-            className="rounded border-border"
-          />
-          Website only
-        </label>
+        <select
+          value={websiteFilter}
+          onChange={(e) => {
+            setWebsiteFilter(e.target.value as "all" | "live" | "not_live");
+            setPage(0);
+          }}
+          className="rounded-md border border-border bg-card px-2 py-1 text-xs text-foreground"
+        >
+          <option value="all">All products</option>
+          <option value="live">On website</option>
+          <option value="not_live">Not on website</option>
+        </select>
 
         {selectedIds.size > 0 && (
           <Button
@@ -327,7 +343,15 @@ function PopularityTab() {
           <table className="w-full text-sm">
             <thead className="bg-secondary">
               <tr>
-                <th className="w-10 px-3 py-2" />
+                <th className="w-10 px-3 py-2">
+                  <input
+                    type="checkbox"
+                    checked={allSelected}
+                    onChange={toggleSelectAll}
+                    disabled={selectableIds.length === 0}
+                    className="rounded border-border"
+                  />
+                </th>
                 <SortHeader col="name">Product</SortHeader>
                 <SortHeader col="unique_customers">Customers</SortHeader>
                 <SortHeader col="total_orders">Orders</SortHeader>
@@ -480,6 +504,7 @@ function PopularityTab() {
 
       {showPublishConfirm && (
         <ModalOverlay
+          isOpen
           isDismissable={false}
           className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
         >
@@ -904,13 +929,6 @@ function PriorityBadge({ priority }: { priority: string }) {
 }
 
 function PriceCheckCard({ result }: { result: PriceCheckResult }) {
-  const positionColor = {
-    cheaper: "text-emerald-400 border-emerald-500/30 bg-emerald-500/20",
-    competitive: "text-primary border-primary/30 bg-primary/20",
-    expensive: "text-red-400 border-red-500/30 bg-red-500/20",
-    unknown: "text-muted-foreground border-border bg-muted",
-  };
-
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -921,51 +939,35 @@ function PriceCheckCard({ result }: { result: PriceCheckResult }) {
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground">Our price</span>
           <span className="font-semibold text-foreground">
-            {formatCurrency(result.our_price)}
+            {result.our_price > 0 ? formatCurrency(result.our_price) : <span className="text-muted-foreground font-normal">Not set</span>}
           </span>
         </div>
-        {result.market_avg != null && (
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Market avg</span>
-            <span className="font-medium text-foreground">
-              {formatCurrency(result.market_avg)}
-            </span>
-          </div>
-        )}
-        {(result.market_low != null || result.market_high != null) && (
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">Range</span>
-            <span className="text-xs text-muted-foreground">
-              {formatCurrency(result.market_low)} – {formatCurrency(result.market_high)}
-            </span>
-          </div>
-        )}
-        <div className="flex items-center justify-between pt-1">
-          <span
-            className={cn(
-              "inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium capitalize",
-              positionColor[result.our_position]
-            )}
-          >
-            {result.our_position}
-          </span>
-          <span className="text-[10px] text-muted-foreground">
-            {result.confidence} confidence
-          </span>
-        </div>
-        {result.notes && (
-          <p className="text-xs text-muted-foreground pt-1">{result.notes}</p>
-        )}
-        {result.sources.length > 0 && (
-          <div className="flex flex-wrap gap-1 pt-1">
-            {result.sources.map((s, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-0.5 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground"
-              >
-                <ExternalLink size={8} /> {s}
-              </span>
+
+        {result.found_prices.length > 0 ? (
+          <div className="space-y-1 pt-1 border-t border-border/40">
+            <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide pt-1">
+              Found online
+            </div>
+            {result.found_prices.map((fp, i) => (
+              <div key={i} className="flex items-center justify-between text-xs">
+                <a
+                  href={fp.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-foreground truncate max-w-[60%] inline-flex items-center gap-1"
+                >
+                  <ExternalLink size={10} className="shrink-0" />
+                  {fp.retailer}
+                </a>
+                <span className="font-medium text-foreground tabular-nums">
+                  {formatCurrency(fp.price)}
+                </span>
+              </div>
             ))}
+          </div>
+        ) : (
+          <div className="text-xs text-muted-foreground pt-1">
+            No prices found online.
           </div>
         )}
       </CardContent>

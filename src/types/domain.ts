@@ -425,18 +425,18 @@ export interface ReorderAlert {
   is_active: boolean;
 }
 
+export interface FoundPrice {
+  retailer: string;
+  price: number;
+  url: string;
+}
+
 export interface PriceCheckResult {
   product_id: number;
   name: string;
   brand: string;
   our_price: number;
-  market_avg: number | null;
-  market_low: number | null;
-  market_high: number | null;
-  our_position: 'cheaper' | 'competitive' | 'expensive' | 'unknown';
-  confidence: 'high' | 'medium' | 'low';
-  sources: string[];
-  notes: string;
+  found_prices: FoundPrice[];
 }
 
 // Purchase Orders
