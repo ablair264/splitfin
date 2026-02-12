@@ -401,8 +401,8 @@ router.post('/price-check', async (req, res) => {
     if (!Array.isArray(product_ids) || product_ids.length === 0) {
       return res.status(400).json({ error: 'product_ids array is required' });
     }
-    if (product_ids.length > 10) {
-      return res.status(400).json({ error: 'Maximum 10 products per price check' });
+    if (product_ids.length > 25) {
+      return res.status(400).json({ error: 'Maximum 25 products per price check' });
     }
 
     // Fetch product details including website retail price

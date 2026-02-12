@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { Modal, ModalOverlay } from "react-aria-components";
 import {
   TrendingUp,
   TrendingDown,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import { productIntelligenceService } from "@/services/productIntelligenceService";
 import { purchaseOrderService } from "@/services/purchaseOrderService";
+import { websiteProductService } from "@/services/websiteProductService";
 import type {
   ProductPopularity,
   ReorderAlert,
@@ -28,6 +30,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogBody, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 function formatCurrency(value: number | null | undefined): string {
@@ -65,6 +68,11 @@ function PopularityTab() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
   const [priceResults, setPriceResults] = useState<PriceCheckResult[]>([]);
   const [priceChecking, setPriceChecking] = useState(false);
+  const [priceCheckError, setPriceCheckError] = useState<string | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishMessage, setPublishMessage] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [showPublishConfirm, setShowPublishConfirm] = useState(false);
 
   const PAGE_SIZE = 50;
 
@@ -104,7 +112,7 @@ function PopularityTab() {
     return () => {
       cancelled = true;
     };
-  }, [dateRange, brandFilter, websiteOnly, sortBy, sortOrder, page]);
+  }, [dateRange, brandFilter, websiteOnly, sortBy, sortOrder, page, refreshKey]);
 
   const toggleSort = useCallback(
     (col: string) => {
@@ -119,29 +127,77 @@ function PopularityTab() {
     [sortBy]
   );
 
+  const onWebsiteMap = useMemo(() => {
+    const map = new Map<number, boolean>();
+    data.forEach((row) => map.set(row.product_id, !!row.on_website));
+    return map;
+  }, [data]);
+
   const toggleSelect = useCallback((id: number) => {
+    if (onWebsiteMap.get(id)) return;
     setSelectedIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  }, []);
+  }, [onWebsiteMap]);
+
+  useEffect(() => {
+    setPriceCheckError(null);
+    setPublishMessage(null);
+  }, [selectedIds]);
 
   const runPriceCheck = useCallback(async () => {
     if (selectedIds.size === 0) return;
+    if (selectedIds.size > 25) {
+      setPriceCheckError("Price check supports a maximum of 25 products at a time.");
+      return;
+    }
     setPriceChecking(true);
+    setPriceCheckError(null);
     try {
       const results = await productIntelligenceService.runPriceCheck(
         Array.from(selectedIds)
       );
       setPriceResults(results);
+      if (!results || results.length === 0) {
+        setPriceCheckError("No price data found for the selected products.");
+      }
     } catch (err) {
       console.error("Price check error:", err);
+      setPriceCheckError(err instanceof Error ? err.message : "Price check failed.");
     } finally {
       setPriceChecking(false);
     }
   }, [selectedIds]);
+
+  const makeLiveOnWebsite = useCallback(async () => {
+    if (selectedIds.size === 0) return;
+    const eligibleIds = Array.from(selectedIds).filter((id) => !onWebsiteMap.get(id));
+    if (eligibleIds.length === 0) {
+      setPublishMessage("All selected products are already live.");
+      return;
+    }
+    setPublishing(true);
+    setPublishMessage(null);
+    try {
+      const result = await websiteProductService.batchCreate({
+        product_ids: eligibleIds,
+        defaults: { is_active: true },
+      });
+      const alreadyLive = selectedIds.size - eligibleIds.length;
+      const skippedText = alreadyLive > 0 ? `, ${alreadyLive} already live` : "";
+      setPublishMessage(`Published ${result.created} products (skipped ${result.skipped}${skippedText}).`);
+      setSelectedIds(new Set());
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      console.error("Publish error:", err);
+      setPublishMessage(err instanceof Error ? err.message : "Failed to publish products.");
+    } finally {
+      setPublishing(false);
+    }
+  }, [selectedIds, onWebsiteMap]);
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
@@ -231,7 +287,30 @@ function PopularityTab() {
             Price Check ({selectedIds.size})
           </Button>
         )}
+        {selectedIds.size > 0 && (
+          <Button
+            intent="primary"
+            size="sm"
+            onPress={() => setShowPublishConfirm(true)}
+            isDisabled={publishing}
+          >
+            {publishing ? (
+              <Loader2 size={14} className="mr-1.5 animate-spin" />
+            ) : (
+              <Globe size={14} className="mr-1.5" />
+            )}
+            Make Live ({selectedIds.size})
+          </Button>
+        )}
       </div>
+
+      {publishMessage && (
+        <div className="text-sm text-muted-foreground">{publishMessage}</div>
+      )}
+
+      {priceCheckError && (
+        <div className="text-sm text-amber-400">{priceCheckError}</div>
+      )}
 
       {/* Price Check Results */}
       {priceResults.length > 0 && (
@@ -292,6 +371,7 @@ function PopularityTab() {
                         type="checkbox"
                         checked={selectedIds.has(row.product_id)}
                         onChange={() => toggleSelect(row.product_id)}
+                        disabled={row.on_website}
                         className="rounded border-border"
                       />
                     </td>
@@ -396,6 +476,45 @@ function PopularityTab() {
             </Button>
           </div>
         </div>
+      )}
+
+      {showPublishConfirm && (
+        <ModalOverlay
+          isDismissable={false}
+          className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
+        >
+          <Modal className="fixed inset-0 flex items-center justify-center p-4">
+            <Dialog role="alertdialog" className="w-full max-w-md rounded-xl border border-border bg-card shadow-xl">
+              <DialogHeader>
+                <DialogTitle>Make products live?</DialogTitle>
+                <DialogDescription>
+                  This will publish the selected products to the website. Products already live will be ignored.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogBody className="pt-0">
+                <div className="text-sm text-muted-foreground">
+                  Selected: <span className="font-medium text-foreground">{selectedIds.size}</span>
+                </div>
+              </DialogBody>
+              <DialogFooter>
+                <Button intent="outline" size="sm" onPress={() => setShowPublishConfirm(false)}>
+                  Cancel
+                </Button>
+                <Button
+                  intent="primary"
+                  size="sm"
+                  onPress={async () => {
+                    setShowPublishConfirm(false);
+                    await makeLiveOnWebsite();
+                  }}
+                  isDisabled={publishing}
+                >
+                  {publishing ? "Publishing…" : "Publish now"}
+                </Button>
+              </DialogFooter>
+            </Dialog>
+          </Modal>
+        </ModalOverlay>
       )}
     </div>
   );

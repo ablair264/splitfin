@@ -225,7 +225,7 @@ function ViewEnquiry() {
     if (!window.confirm(`Send a magic link to ${enquiry.email}?`)) return;
     setSendingMagicLink(true);
     try {
-      const result = await customerService.sendMagicLink(enquiry.converted_customer_id);
+      const result = await customerService.sendMagicLink(Number(enquiry.converted_customer_id));
       alert(result.message || 'Magic link sent');
     } catch (err) {
       console.error('Error sending magic link:', err);

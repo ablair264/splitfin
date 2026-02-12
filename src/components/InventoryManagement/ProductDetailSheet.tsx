@@ -1322,7 +1322,7 @@ export function ProductDetailSheet({
                   Cancel
                 </Button>
                 <Button
-                  intent="destructive"
+                  intent="danger"
                   size="sm"
                   onPress={async () => {
                     const target = removeTarget;
