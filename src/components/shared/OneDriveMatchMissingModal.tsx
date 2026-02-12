@@ -4,8 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogBody, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { onedriveService } from "@/services/onedriveService";
 import { productService } from "@/services/productService";
-import { cn } from "@/lib/utils";
-import { Loader2, Search } from "lucide-react";
+import { Check, CircleAlert, Loader2, Search, X } from "lucide-react";
 
 interface MatchMissingItem {
   product: {
@@ -27,6 +26,28 @@ interface MatchMissingItem {
   reason?: string;
 }
 
+// Flat row for the table view
+interface FlatRow {
+  productId: number;
+  productName: string;
+  brand: string;
+  sku: string;
+  imageId: string;
+  fileName: string;
+  fileSize: number;
+}
+
+// Import progress entry per product
+interface ImportProgress {
+  productId: number;
+  productName: string;
+  imageCount: number;
+  status: "pending" | "importing" | "done" | "error";
+  error?: string;
+}
+
+type ModalStep = "select" | "importing" | "done";
+
 export function OneDriveMatchMissingModal({
   open,
   onClose,
@@ -38,29 +59,33 @@ export function OneDriveMatchMissingModal({
 }) {
   const [items, setItems] = useState<MatchMissingItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [showOnlyMatches, setShowOnlyMatches] = useState(true);
-  const [selectedMap, setSelectedMap] = useState<Record<number, Set<string>>>({});
+  const [selected, setSelected] = useState<Set<string>>(new Set()); // "productId:imageId"
   const [brands, setBrands] = useState<{ brand: string; count: number }[]>([]);
   const [brandFilter, setBrandFilter] = useState("");
   const [started, setStarted] = useState(false);
 
-  // Use a ref to track offset so it doesn't cause re-renders / effect loops
+  // Import progress state
+  const [step, setStep] = useState<ModalStep>("select");
+  const [progress, setProgress] = useState<ImportProgress[]>([]);
+  const [importSummary, setImportSummary] = useState<{ total: number; success: number; errors: number } | null>(null);
+
   const offsetRef = useRef(0);
 
-  // Load brands on open
   useEffect(() => {
     if (!open) return;
     productService.getBrands().then(setBrands).catch(() => {});
-    // Reset state when opening
     setItems([]);
-    setSelectedMap({});
+    setSelected(new Set());
     setError(null);
     setHasMore(false);
     setStarted(false);
     setBrandFilter("");
+    setStep("select");
+    setProgress([]);
+    setImportSummary(null);
     offsetRef.current = 0;
   }, [open]);
 
@@ -74,7 +99,6 @@ export function OneDriveMatchMissingModal({
         offset: nextOffset,
       };
       if (brand) params.brand = brand;
-
       const result = await onedriveService.matchMissing(params);
       const nextItems = result.data || [];
       setItems((prev) => (reset ? nextItems : [...prev, ...nextItems]));
@@ -90,59 +114,101 @@ export function OneDriveMatchMissingModal({
   const handleStart = () => {
     setStarted(true);
     setItems([]);
-    setSelectedMap({});
+    setSelected(new Set());
     offsetRef.current = 0;
     doLoad(true, brandFilter);
   };
 
-  const handleLoadMore = () => {
-    doLoad(false, brandFilter);
-  };
-
-  const filteredItems = useMemo(
-    () => (showOnlyMatches ? items.filter((i) => i.matches?.length > 0) : items),
-    [items, showOnlyMatches]
-  );
-
-  const totalSelected = useMemo(
-    () => Object.values(selectedMap).reduce((sum, set) => sum + set.size, 0),
-    [selectedMap]
-  );
-
-  const toggleSelect = (productId: number, imageId: string) => {
-    setSelectedMap((prev) => {
-      const next = { ...prev };
-      const set = new Set(next[productId] || []);
-      if (set.has(imageId)) set.delete(imageId);
-      else set.add(imageId);
-      next[productId] = set;
-      return next;
-    });
-  };
-
-  const toggleSelectAllForProduct = (productId: number, imageIds: string[]) => {
-    setSelectedMap((prev) => {
-      const next = { ...prev };
-      const set = new Set(next[productId] || []);
-      if (set.size === imageIds.length) {
-        next[productId] = new Set();
-      } else {
-        next[productId] = new Set(imageIds);
+  // Flatten items into rows
+  const rows = useMemo(() => {
+    const filtered = showOnlyMatches ? items.filter((i) => i.matches?.length > 0) : items;
+    const flat: FlatRow[] = [];
+    for (const item of filtered) {
+      for (const m of item.matches) {
+        flat.push({
+          productId: item.product.id,
+          productName: item.product.name,
+          brand: item.product.brand,
+          sku: item.product.sku || "",
+          imageId: m.id,
+          fileName: m.name,
+          fileSize: m.size,
+        });
       }
+    }
+    return flat;
+  }, [items, showOnlyMatches]);
+
+  const makeKey = (productId: number, imageId: string) => `${productId}:${imageId}`;
+
+  const toggleRow = (row: FlatRow) => {
+    const key = makeKey(row.productId, row.imageId);
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
+  };
+
+  const allSelected = rows.length > 0 && rows.every((r) => selected.has(makeKey(r.productId, r.imageId)));
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(rows.map((r) => makeKey(r.productId, r.imageId))));
+    }
   };
 
   const handleImport = async () => {
-    if (importing || totalSelected === 0) return;
-    setImporting(true);
-    setError(null);
-    try {
-      for (const item of filteredItems) {
-        const selected = selectedMap[item.product.id];
-        if (!selected || selected.size === 0) continue;
-        const selectedImages = item.matches.filter((m) => selected.has(m.id));
-        if (selectedImages.length === 0) continue;
+    if (selected.size === 0) return;
+
+    // Group selected by product
+    const byProduct = new Map<number, { item: MatchMissingItem; imageIds: Set<string> }>();
+    for (const key of selected) {
+      const [pidStr, imageId] = key.split(":");
+      const pid = Number(pidStr);
+      if (!byProduct.has(pid)) {
+        const item = items.find((i) => i.product.id === pid);
+        if (!item) continue;
+        byProduct.set(pid, { item, imageIds: new Set() });
+      }
+      byProduct.get(pid)!.imageIds.add(imageId);
+    }
+
+    // Build progress list
+    const progressList: ImportProgress[] = [];
+    for (const [pid, { item, imageIds }] of byProduct) {
+      progressList.push({
+        productId: pid,
+        productName: item.product.name,
+        imageCount: imageIds.size,
+        status: "pending",
+      });
+    }
+
+    setProgress(progressList);
+    setStep("importing");
+
+    let successCount = 0;
+    let errorCount = 0;
+
+    const entries = Array.from(byProduct.entries());
+    for (let i = 0; i < entries.length; i++) {
+      const [pid, { item, imageIds }] = entries[i];
+
+      // Mark current as importing
+      setProgress((prev) => prev.map((p) => (p.productId === pid ? { ...p, status: "importing" } : p)));
+
+      try {
+        const selectedImages = item.matches.filter((m) => imageIds.has(m.id));
+        if (selectedImages.length === 0) {
+          setProgress((prev) => prev.map((p) => (p.productId === pid ? { ...p, status: "done" } : p)));
+          successCount++;
+          continue;
+        }
+
         await onedriveService.importImages({
           brand: item.product.brand,
           product_id: item.product.id,
@@ -155,14 +221,23 @@ export function OneDriveMatchMissingModal({
             original_filename: m.name,
           })),
         });
+
+        setProgress((prev) => prev.map((p) => (p.productId === pid ? { ...p, status: "done" } : p)));
+        successCount++;
+      } catch (err) {
+        const errMsg = err instanceof Error ? err.message : "Failed";
+        setProgress((prev) => prev.map((p) => (p.productId === pid ? { ...p, status: "error", error: errMsg } : p)));
+        errorCount++;
       }
-      onImported?.();
-      onClose();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Import failed.");
-    } finally {
-      setImporting(false);
     }
+
+    setImportSummary({ total: entries.length, success: successCount, errors: errorCount });
+    setStep("done");
+    if (successCount > 0) onImported?.();
+  };
+
+  const handleClose = () => {
+    onClose();
   };
 
   if (!open) return null;
@@ -171,171 +246,301 @@ export function OneDriveMatchMissingModal({
     <ModalOverlay isOpen isDismissable={false} className="fixed inset-0 z-[1000] bg-black/60 backdrop-blur-sm">
       <Modal className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
         <Dialog role="alertdialog" className="w-full max-w-5xl rounded-xl border border-border bg-card shadow-xl">
-          <DialogHeader>
-            <DialogTitle>Match Missing Images (OneDrive)</DialogTitle>
-            <DialogDescription>
-              Find OneDrive images matching products that have no images, by SKU.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogBody className="pt-0">
-            {/* Brand filter + start */}
-            <div className="flex items-end gap-3 mb-4">
-              <div className="flex-1 max-w-xs">
-                <label className="text-xs text-muted-foreground block mb-1">Brand</label>
-                <select
-                  value={brandFilter}
-                  onChange={(e) => setBrandFilter(e.target.value)}
-                  disabled={loading}
-                  className="w-full h-8 px-2 text-sm rounded-md border border-border bg-background text-foreground"
-                >
-                  <option value="">All brands</option>
-                  {brands.map((b) => (
-                    <option key={b.brand} value={b.brand}>
-                      {b.brand} ({b.count})
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <Button
-                intent="primary"
-                size="sm"
-                onPress={handleStart}
-                isDisabled={loading}
-              >
-                {loading && !started ? (
-                  <Loader2 className="size-3.5 animate-spin mr-1.5" />
-                ) : (
-                  <Search className="size-3.5 mr-1.5" />
-                )}
-                {started ? "Re-match" : "Start Matching"}
-              </Button>
-            </div>
-
-            {/* Controls row */}
-            {started && (
-              <div className="flex items-center justify-between gap-3 mb-3">
-                <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={showOnlyMatches}
-                    onChange={(e) => setShowOnlyMatches(e.target.checked)}
-                    className="rounded border-border"
-                  />
-                  Show only products with matches
-                </label>
-                <div className="text-xs text-muted-foreground">
-                  {items.length} products checked · Selected: <span className="text-foreground font-medium">{totalSelected}</span>
+          {/* ───── STEP 1: Select ───── */}
+          {step === "select" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Match Missing Images</DialogTitle>
+                <DialogDescription>
+                  Products without images matched by SKU against OneDrive.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogBody className="pt-0">
+                {/* Toolbar */}
+                <div className="flex items-end gap-3 mb-3">
+                  <div className="min-w-[180px]">
+                    <label className="text-xs text-muted-foreground block mb-1">Brand</label>
+                    <select
+                      value={brandFilter}
+                      onChange={(e) => setBrandFilter(e.target.value)}
+                      disabled={loading}
+                      className="w-full h-8 px-2 text-sm rounded-md border border-border bg-background text-foreground"
+                    >
+                      <option value="">All brands</option>
+                      {brands.map((b) => (
+                        <option key={b.brand} value={b.brand}>
+                          {b.brand} ({b.count})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <Button intent="primary" size="sm" onPress={handleStart} isDisabled={loading}>
+                    {loading ? <Loader2 className="size-3.5 animate-spin mr-1.5" /> : <Search className="size-3.5 mr-1.5" />}
+                    {started ? "Re-match" : "Start Matching"}
+                  </Button>
+                  {started && (
+                    <label className="flex items-center gap-2 text-xs text-muted-foreground ml-auto">
+                      <input
+                        type="checkbox"
+                        checked={showOnlyMatches}
+                        onChange={(e) => setShowOnlyMatches(e.target.checked)}
+                        className="rounded border-border"
+                      />
+                      Only with matches
+                    </label>
+                  )}
                 </div>
-              </div>
-            )}
 
-            {error && <div className="text-sm text-red-400 mb-3">{error}</div>}
+                {error && <div className="text-sm text-red-400 mb-3">{error}</div>}
 
-            {/* Loading state */}
-            {loading && items.length === 0 && (
-              <div className="flex items-center gap-2 py-8 justify-center text-sm text-muted-foreground">
-                <Loader2 className="size-4 animate-spin" />
-                Searching OneDrive for SKU matches...
-              </div>
-            )}
+                {/* Loading */}
+                {loading && items.length === 0 && (
+                  <div className="flex items-center gap-2 py-12 justify-center text-sm text-muted-foreground">
+                    <Loader2 className="size-4 animate-spin" />
+                    Searching OneDrive for SKU matches...
+                  </div>
+                )}
 
-            {/* Not started yet */}
-            {!started && !loading && (
-              <div className="text-sm text-muted-foreground py-8 text-center">
-                Select a brand (optional) and click "Start Matching" to find OneDrive images for products without images.
-              </div>
-            )}
+                {/* Not started */}
+                {!started && !loading && (
+                  <div className="text-sm text-muted-foreground py-12 text-center">
+                    Pick a brand and click &quot;Start Matching&quot;.
+                  </div>
+                )}
 
-            {/* Results */}
-            {started && !loading && items.length === 0 && (
-              <div className="text-sm text-muted-foreground py-4">No products without images found{brandFilter ? ` for ${brandFilter}` : ""}.</div>
-            )}
+                {/* Empty */}
+                {started && !loading && rows.length === 0 && items.length === 0 && (
+                  <div className="text-sm text-muted-foreground py-8 text-center">
+                    No products without images found{brandFilter ? ` for ${brandFilter}` : ""}.
+                  </div>
+                )}
 
-            {started && filteredItems.length > 0 && (
-              <div className="max-h-[420px] overflow-y-auto divide-y divide-border/40 border border-border/60 rounded-lg">
-                {filteredItems.map((item) => {
-                  const imageIds = item.matches.map((m) => m.id);
-                  const selected = selectedMap[item.product.id] || new Set();
-                  return (
-                    <div key={item.product.id} className="p-3 space-y-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium truncate">{item.product.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {item.product.brand} · {item.product.sku || "No SKU"}
-                          </div>
-                        </div>
-                        {item.matches.length > 0 && (
-                          <button
-                            className="text-xs text-primary/80 hover:text-primary"
-                            onClick={() => toggleSelectAllForProduct(item.product.id, imageIds)}
-                          >
-                            {selected.size === imageIds.length ? "Clear all" : "Select all"}
-                          </button>
-                        )}
-                      </div>
-
-                      {item.matches.length === 0 ? (
-                        <div className="text-xs text-muted-foreground">
-                          {item.reason ? `No matches (${item.reason})` : "No matches found."}
-                        </div>
-                      ) : (
-                        <div className="border border-border/60 rounded-md overflow-hidden">
-                          <div className="grid grid-cols-[36px_1fr_120px] gap-2 px-3 py-2 text-[11px] uppercase tracking-wider text-muted-foreground bg-muted/30">
-                            <span />
-                            <span>File</span>
-                            <span>Size</span>
-                          </div>
-                          {item.matches.map((m) => (
-                            <label
-                              key={m.id}
-                              className={cn(
-                                "grid grid-cols-[36px_1fr_120px] gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-muted/20"
-                              )}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selected.has(m.id)}
-                                onChange={() => toggleSelect(item.product.id, m.id)}
-                              />
-                              <span className="truncate">{m.name}</span>
-                              <span className="text-xs text-muted-foreground">{(m.size / 1024).toFixed(1)} KB</span>
-                            </label>
-                          ))}
-                        </div>
-                      )}
+                {/* Table */}
+                {rows.length > 0 && (
+                  <div className="border border-border/60 rounded-lg overflow-hidden">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-muted/30 text-left text-xs text-muted-foreground border-b border-border/60">
+                          <th className="p-2 w-8">
+                            <input
+                              type="checkbox"
+                              checked={allSelected}
+                              onChange={toggleSelectAll}
+                              className="rounded"
+                            />
+                          </th>
+                          <th className="p-2">Product</th>
+                          <th className="p-2">SKU</th>
+                          <th className="p-2">OneDrive File</th>
+                          <th className="p-2 text-right w-24">Size</th>
+                        </tr>
+                      </thead>
+                    </table>
+                    <div className="max-h-[400px] overflow-y-auto">
+                      <table className="w-full text-sm">
+                        <tbody>
+                          {rows.map((row) => {
+                            const key = makeKey(row.productId, row.imageId);
+                            const checked = selected.has(key);
+                            return (
+                              <tr
+                                key={key}
+                                className={`border-b border-border/30 cursor-pointer transition-colors ${checked ? "bg-teal-500/5" : "hover:bg-muted/20"}`}
+                                onClick={() => toggleRow(row)}
+                              >
+                                <td className="p-2 w-8" onClick={(e) => e.stopPropagation()}>
+                                  <input
+                                    type="checkbox"
+                                    checked={checked}
+                                    onChange={() => toggleRow(row)}
+                                    className="rounded"
+                                  />
+                                </td>
+                                <td className="p-2 truncate max-w-[220px]" title={row.productName}>
+                                  <span className="text-foreground">{row.productName}</span>
+                                  <span className="text-muted-foreground text-xs ml-1.5">{row.brand}</span>
+                                </td>
+                                <td className="p-2 text-muted-foreground font-mono text-xs">{row.sku}</td>
+                                <td className="p-2 truncate max-w-[240px] text-foreground" title={row.fileName}>{row.fileName}</td>
+                                <td className="p-2 text-right text-muted-foreground tabular-nums text-xs">{(row.fileSize / 1024).toFixed(0)} KB</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
                     </div>
-                  );
-                })}
-              </div>
-            )}
+                  </div>
+                )}
 
-            {/* Loading more indicator */}
-            {loading && items.length > 0 && (
-              <div className="flex items-center gap-2 py-3 justify-center text-xs text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin" />
-                Loading more...
-              </div>
-            )}
+                {/* Loading more */}
+                {loading && items.length > 0 && (
+                  <div className="flex items-center gap-2 py-3 justify-center text-xs text-muted-foreground">
+                    <Loader2 className="size-3.5 animate-spin" />
+                    Loading more...
+                  </div>
+                )}
 
-            {hasMore && !loading && (
-              <div className="flex justify-center mt-3">
-                <Button intent="outline" size="sm" onPress={handleLoadMore}>
-                  Load more
-                </Button>
-              </div>
-            )}
-          </DialogBody>
-          <DialogFooter>
-            <Button intent="outline" size="sm" onPress={onClose}>
-              Close
-            </Button>
-            <Button intent="primary" size="sm" onPress={handleImport} isDisabled={importing || totalSelected === 0}>
-              {importing ? "Importing..." : `Import ${totalSelected > 0 ? totalSelected : ""} Selected`}
-            </Button>
-          </DialogFooter>
+                {hasMore && !loading && (
+                  <div className="flex justify-center mt-3">
+                    <Button intent="outline" size="sm" onPress={() => doLoad(false, brandFilter)}>
+                      Load more
+                    </Button>
+                  </div>
+                )}
+              </DialogBody>
+              <DialogFooter>
+                <div className="flex items-center gap-3 w-full">
+                  <span className="text-xs text-muted-foreground">
+                    {rows.length} matches · {selected.size} selected
+                  </span>
+                  <div className="ml-auto flex gap-2">
+                    <Button intent="outline" size="sm" onPress={handleClose}>
+                      Close
+                    </Button>
+                    <Button intent="primary" size="sm" onPress={handleImport} isDisabled={selected.size === 0}>
+                      Import {selected.size}
+                    </Button>
+                  </div>
+                </div>
+              </DialogFooter>
+            </>
+          )}
+
+          {/* ───── STEP 2: Importing (progress) ───── */}
+          {step === "importing" && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Importing Images</DialogTitle>
+                <DialogDescription>
+                  Importing {progress.length} product{progress.length !== 1 ? "s" : ""} from OneDrive...
+                </DialogDescription>
+              </DialogHeader>
+              <DialogBody className="pt-0">
+                <ImportProgressView progress={progress} />
+              </DialogBody>
+              <DialogFooter>
+                <span className="text-xs text-muted-foreground">
+                  {progress.filter((p) => p.status === "done" || p.status === "error").length} of {progress.length} complete
+                </span>
+              </DialogFooter>
+            </>
+          )}
+
+          {/* ───── STEP 3: Done ───── */}
+          {step === "done" && importSummary && (
+            <>
+              <DialogHeader>
+                <DialogTitle>
+                  {importSummary.errors === 0 ? "Import Complete" : "Import Finished"}
+                </DialogTitle>
+                <DialogDescription>
+                  {importSummary.errors === 0
+                    ? `Successfully imported images for ${importSummary.success} product${importSummary.success !== 1 ? "s" : ""}.`
+                    : `${importSummary.success} succeeded, ${importSummary.errors} failed.`}
+                </DialogDescription>
+              </DialogHeader>
+              <DialogBody className="pt-0">
+                {/* Summary icon */}
+                <div className="flex flex-col items-center py-6 gap-3">
+                  {importSummary.errors === 0 ? (
+                    <div className="size-14 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                      <Check className="size-7 text-emerald-500" />
+                    </div>
+                  ) : (
+                    <div className="size-14 rounded-full bg-amber-500/10 flex items-center justify-center">
+                      <CircleAlert className="size-7 text-amber-500" />
+                    </div>
+                  )}
+                  <div className="text-center">
+                    <div className="text-2xl font-semibold text-foreground tabular-nums">
+                      {importSummary.success}/{importSummary.total}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">products imported</div>
+                  </div>
+                </div>
+
+                {/* Show errors if any */}
+                {importSummary.errors > 0 && (
+                  <div className="border border-border/60 rounded-lg overflow-hidden max-h-[200px] overflow-y-auto">
+                    {progress.filter((p) => p.status === "error").map((p) => (
+                      <div key={p.productId} className="flex items-center gap-2 px-3 py-2 border-b border-border/30 last:border-0 text-sm">
+                        <X className="size-3.5 text-red-400 shrink-0" />
+                        <span className="text-foreground truncate">{p.productName}</span>
+                        <span className="text-red-400 text-xs ml-auto shrink-0">{p.error}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </DialogBody>
+              <DialogFooter>
+                <div className="ml-auto">
+                  <Button intent="primary" size="sm" onPress={handleClose}>
+                    Done
+                  </Button>
+                </div>
+              </DialogFooter>
+            </>
+          )}
         </Dialog>
       </Modal>
     </ModalOverlay>
+  );
+}
+
+/** Progress list shown during import */
+function ImportProgressView({ progress }: { progress: ImportProgress[] }) {
+  const doneCount = progress.filter((p) => p.status === "done" || p.status === "error").length;
+  const pct = progress.length > 0 ? Math.round((doneCount / progress.length) * 100) : 0;
+
+  return (
+    <div className="space-y-4">
+      {/* Progress bar */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <span>{doneCount} of {progress.length} products</span>
+          <span className="tabular-nums">{pct}%</span>
+        </div>
+        <div className="h-2 bg-muted/40 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-teal-500 rounded-full transition-all duration-300 ease-out"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Product list */}
+      <div className="border border-border/60 rounded-lg overflow-hidden max-h-[320px] overflow-y-auto">
+        {progress.map((p) => (
+          <div
+            key={p.productId}
+            className="flex items-center gap-2.5 px-3 py-2 border-b border-border/30 last:border-0"
+          >
+            {/* Status icon */}
+            {p.status === "pending" && (
+              <div className="size-4 rounded-full border border-border/60 shrink-0" />
+            )}
+            {p.status === "importing" && (
+              <Loader2 className="size-4 text-teal-500 animate-spin shrink-0" />
+            )}
+            {p.status === "done" && (
+              <Check className="size-4 text-emerald-500 shrink-0" />
+            )}
+            {p.status === "error" && (
+              <X className="size-4 text-red-400 shrink-0" />
+            )}
+
+            {/* Product info */}
+            <span className={`text-sm truncate ${p.status === "importing" ? "text-foreground" : "text-muted-foreground"}`}>
+              {p.productName}
+            </span>
+
+            {/* Image count */}
+            <span className="text-xs text-muted-foreground ml-auto shrink-0 tabular-nums">
+              {p.imageCount} image{p.imageCount !== 1 ? "s" : ""}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
