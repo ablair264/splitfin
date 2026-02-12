@@ -421,6 +421,7 @@ export function ProductDetailSheet({
       const result = await onedriveService.searchImages({ query: oneDriveQuery.trim(), limit: 100 });
       setOneDriveResults(result.images || []);
       setOneDriveSelected(new Set());
+      setShowOneDriveSearch(true);
     } catch (err) {
       console.error('OneDrive search failed:', err);
       setOneDriveError('Failed to search OneDrive.');
@@ -528,7 +529,7 @@ export function ProductDetailSheet({
         onOpenChange={onOpenChange}
         side="right"
         isFloat={false}
-        isDismissable={!showDeleteConfirm && !removeTarget && !showOneDriveSearch}
+        isDismissable={!showDeleteConfirm && !removeTarget}
         className="sm:max-w-[720px] w-full backdrop-blur-xl bg-card/95"
         aria-label="Product details"
       >
@@ -635,13 +636,13 @@ export function ProductDetailSheet({
                       <button
                         onClick={() => {
                           setOneDriveQuery(p.sku || '');
-                          setShowOneDriveSearch(true);
+                          setShowOneDriveSearch((prev) => !prev);
                           setTimeout(() => runOneDriveSearch(), 0);
                         }}
                         className="px-2 py-0.5 rounded-md bg-sky-500/10 border border-sky-500/20 text-[11px] font-medium text-sky-300 hover:bg-sky-500/20 transition-colors"
                         type="button"
                       >
-                        Search OneDrive
+                        {showOneDriveSearch ? 'Hide OneDrive' : 'Search OneDrive'}
                       </button>
                     )}
                     <span
@@ -733,6 +734,94 @@ export function ProductDetailSheet({
                   </div>
                 )}
               </motion.div>
+
+              {/* OneDrive Search Accordion */}
+              {isSammie && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.035 }}
+                  className="rounded-xl border border-border/40 p-4 space-y-3"
+                >
+                  <button
+                    className="flex w-full items-center justify-between text-xs font-medium text-muted-foreground/70 uppercase tracking-wider"
+                    onClick={() => setShowOneDriveSearch((prev) => !prev)}
+                    type="button"
+                  >
+                    <span>OneDrive Search</span>
+                    <span className="text-[10px]">{showOneDriveSearch ? '−' : '+'}</span>
+                  </button>
+
+                  {showOneDriveSearch && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={oneDriveQuery}
+                          onChange={(e) => setOneDriveQuery(e.target.value)}
+                          placeholder="Search OneDrive..."
+                          className="flex-1 h-9 px-3 rounded-lg bg-background border border-border text-sm"
+                        />
+                        <Button intent="outline" size="sm" onPress={runOneDriveSearch} isDisabled={oneDriveLoading || !oneDriveQuery.trim()}>
+                          {oneDriveLoading ? 'Searching…' : 'Search'}
+                        </Button>
+                      </div>
+
+                      {oneDriveError && (
+                        <div className="text-sm text-red-400">{oneDriveError}</div>
+                      )}
+
+                      {oneDriveLoading ? (
+                        <div className="text-sm text-muted-foreground">Searching OneDrive…</div>
+                      ) : oneDriveResults.length === 0 ? (
+                        <div className="text-sm text-muted-foreground">No images found.</div>
+                      ) : (
+                        <div className="border border-border/60 rounded-lg overflow-hidden">
+                          <div className="grid grid-cols-[36px_1fr_100px] gap-2 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground bg-muted/30">
+                            <span />
+                            <span>File</span>
+                            <span>Size</span>
+                          </div>
+                          <div className="max-h-[260px] overflow-y-auto divide-y divide-border/40">
+                            {oneDriveResults.map((item) => (
+                              <label key={item.id} className="grid grid-cols-[36px_1fr_100px] gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-muted/20">
+                                <input
+                                  type="checkbox"
+                                  checked={oneDriveSelected.has(item.id)}
+                                  onChange={() => {
+                                    setOneDriveSelected((prev) => {
+                                      const next = new Set(prev);
+                                      if (next.has(item.id)) next.delete(item.id);
+                                      else next.add(item.id);
+                                      return next;
+                                    });
+                                  }}
+                                />
+                                <span className="truncate">{item.name}</span>
+                                <span className="text-xs text-muted-foreground">{(item.size / 1024).toFixed(1)} KB</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex justify-end gap-2">
+                        <Button intent="outline" size="sm" onPress={() => setShowOneDriveSearch(false)}>
+                          Close
+                        </Button>
+                        <Button
+                          intent="primary"
+                          size="sm"
+                          onPress={handleOneDriveImport}
+                          isDisabled={oneDriveImporting || oneDriveSelected.size === 0}
+                        >
+                          {oneDriveImporting ? 'Importing…' : `Import ${oneDriveSelected.size || ''}`.trim()}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              )}
 
               {/* Product Details — always visible */}
               <motion.div
@@ -1208,88 +1297,6 @@ export function ProductDetailSheet({
           />
         )}
       </AnimatePresence>
-      {showOneDriveSearch && (
-        <ModalOverlay
-          isDismissable={false}
-          className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm"
-        >
-          <Modal className="fixed inset-0 z-[120] flex items-center justify-center p-4">
-            <Dialog role="alertdialog" className="w-full max-w-3xl rounded-xl border border-border bg-card shadow-xl">
-              <DialogHeader>
-                <DialogTitle>Search OneDrive</DialogTitle>
-                <DialogDescription>
-                  Search for images by SKU or filename and import them to this product.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogBody className="pt-0">
-                <div className="flex items-center gap-2 mb-3">
-                  <input
-                    type="text"
-                    value={oneDriveQuery}
-                    onChange={(e) => setOneDriveQuery(e.target.value)}
-                    placeholder="Search OneDrive..."
-                    className="flex-1 h-9 px-3 rounded-lg bg-background border border-border text-sm"
-                  />
-                  <Button intent="outline" size="sm" onPress={runOneDriveSearch} isDisabled={oneDriveLoading || !oneDriveQuery.trim()}>
-                    {oneDriveLoading ? 'Searching…' : 'Search'}
-                  </Button>
-                </div>
-
-                {oneDriveError && (
-                  <div className="text-sm text-red-400 mb-3">{oneDriveError}</div>
-                )}
-
-                {oneDriveLoading ? (
-                  <div className="text-sm text-muted-foreground">Searching OneDrive…</div>
-                ) : oneDriveResults.length === 0 ? (
-                  <div className="text-sm text-muted-foreground">No images found.</div>
-                ) : (
-                  <div className="border border-border/60 rounded-lg overflow-hidden">
-                    <div className="grid grid-cols-[36px_1fr_100px] gap-2 px-3 py-2 text-xs uppercase tracking-wider text-muted-foreground bg-muted/30">
-                      <span />
-                      <span>File</span>
-                      <span>Size</span>
-                    </div>
-                    <div className="max-h-[320px] overflow-y-auto divide-y divide-border/40">
-                      {oneDriveResults.map((item) => (
-                        <label key={item.id} className="grid grid-cols-[36px_1fr_100px] gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-muted/20">
-                          <input
-                            type="checkbox"
-                            checked={oneDriveSelected.has(item.id)}
-                            onChange={() => {
-                              setOneDriveSelected((prev) => {
-                                const next = new Set(prev);
-                                if (next.has(item.id)) next.delete(item.id);
-                                else next.add(item.id);
-                                return next;
-                              });
-                            }}
-                          />
-                          <span className="truncate">{item.name}</span>
-                          <span className="text-xs text-muted-foreground">{(item.size / 1024).toFixed(1)} KB</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </DialogBody>
-              <DialogFooter>
-                <Button intent="outline" size="sm" onPress={() => setShowOneDriveSearch(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  intent="primary"
-                  size="sm"
-                  onPress={handleOneDriveImport}
-                  isDisabled={oneDriveImporting || oneDriveSelected.size === 0}
-                >
-                  {oneDriveImporting ? 'Importing…' : `Import ${oneDriveSelected.size || ''}`.trim()}
-                </Button>
-              </DialogFooter>
-            </Dialog>
-          </Modal>
-        </ModalOverlay>
-      )}
       {removeTarget && (
         <ModalOverlay
           isDismissable={false}
