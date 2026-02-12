@@ -36,6 +36,8 @@ export const onedriveService = {
   async listChildren(params?: {
     parentId?: string;
     limit?: number;
+    foldersOnly?: boolean;
+    imagesOnly?: boolean;
   }): Promise<{
     folders: { id: string; name: string; childCount: number | null }[];
     images: {

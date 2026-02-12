@@ -794,10 +794,10 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
       const result = await onedriveService.listChildren({
         parentId,
         limit: 200,
+        foldersOnly: true,
       });
       const key = parentId || ROOT_ID;
       setFoldersByParent((prev) => ({ ...prev, [key]: result.folders || [] }));
-      setImagesByParent((prev) => ({ ...prev, [key]: result.images || [] }));
       setSelectedIds(new Set());
     } catch (err) {
       console.error('Failed to list OneDrive images:', err);
@@ -807,10 +807,26 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
     }
   };
 
+  const loadImages = async (parentId?: string) => {
+    const key = parentId || ROOT_ID;
+    try {
+      const result = await onedriveService.listChildren({
+        parentId,
+        limit: 200,
+        imagesOnly: true,
+      });
+      setImagesByParent((prev) => ({ ...prev, [key]: result.images || [] }));
+    } catch (err) {
+      console.error('Failed to load OneDrive images:', err);
+      setImagesByParent((prev) => ({ ...prev, [key]: [] }));
+    }
+  };
+
   useEffect(() => {
     if (!connected) return;
     loadChildren();
     setCurrentFolderId(ROOT_ID);
+    loadImages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected]);
 
@@ -891,6 +907,7 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
         setCurrentFolderId(id);
         setSelectedIds(new Set());
         if (!foldersByParent[id]) loadChildren(id);
+        if (!imagesByParent[id]) loadImages(id);
       }}
     >
       {(foldersByParent[folder.id] || []).map(renderFolderNode)}
@@ -968,6 +985,7 @@ function OneDriveImportModal({ connected, onClose, onImported }: OneDriveImportM
                       setCurrentFolderId(id);
                       setSelectedIds(new Set());
                       if (!foldersByParent[id]) loadChildren();
+                      if (!imagesByParent[id]) loadImages();
                     }}
                   >
                     {(foldersByParent[ROOT_ID] || []).map(renderFolderNode)}

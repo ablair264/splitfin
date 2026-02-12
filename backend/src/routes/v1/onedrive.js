@@ -317,6 +317,17 @@ router.get('/children', requireSammie, async (req, res) => {
 
     const parentId = typeof req.query.parentId === 'string' ? req.query.parentId : '';
     const limit = Math.min(Number(req.query.limit || 200), 200);
+    const foldersOnly = String(req.query.foldersOnly || 'false') === 'true';
+    const imagesOnly = String(req.query.imagesOnly || 'false') === 'true';
+
+    const selectFields = [];
+    if (foldersOnly) {
+      selectFields.push('id', 'name', 'folder');
+    } else if (imagesOnly) {
+      selectFields.push('id', 'name', 'file', 'size', 'webUrl', 'createdDateTime', 'lastModifiedDateTime');
+    } else {
+      selectFields.push('id', 'name', 'folder', 'file', 'size', 'webUrl', 'createdDateTime', 'lastModifiedDateTime');
+    }
 
     const url = parentId
       ? `${GRAPH_BASE}/me/drive/items/${encodeURIComponent(parentId)}/children`
@@ -324,30 +335,34 @@ router.get('/children', requireSammie, async (req, res) => {
 
     const { data } = await axios.get(url, {
       headers: { Authorization: `Bearer ${accessToken}` },
-      params: { $top: limit },
+      params: { $top: limit, $select: selectFields.join(',') },
     });
 
     const items = Array.isArray(data.value) ? data.value : [];
-    const folders = items
-      .filter(item => item?.folder)
-      .map(item => ({
-        id: item.id,
-        name: item.name,
-        childCount: item.folder?.childCount ?? null,
-      }));
+    const folders = foldersOnly || !imagesOnly
+      ? items
+          .filter(item => item?.folder)
+          .map(item => ({
+            id: item.id,
+            name: item.name,
+            childCount: item.folder?.childCount ?? null,
+          }))
+      : [];
 
-    const images = items
-      .filter(item => item?.file?.mimeType?.startsWith('image/'))
-      .map(item => ({
-        id: item.id,
-        name: item.name,
-        size: item.size,
-        mimeType: item.file?.mimeType || null,
-        webUrl: item.webUrl || null,
-        createdDateTime: item.createdDateTime || null,
-        lastModifiedDateTime: item.lastModifiedDateTime || null,
-        downloadUrl: item['@microsoft.graph.downloadUrl'] || null,
-      }));
+    const images = imagesOnly || !foldersOnly
+      ? items
+          .filter(item => item?.file?.mimeType?.startsWith('image/'))
+          .map(item => ({
+            id: item.id,
+            name: item.name,
+            size: item.size,
+            mimeType: item.file?.mimeType || null,
+            webUrl: item.webUrl || null,
+            createdDateTime: item.createdDateTime || null,
+            lastModifiedDateTime: item.lastModifiedDateTime || null,
+            downloadUrl: item['@microsoft.graph.downloadUrl'] || null,
+          }))
+      : [];
 
     res.json({
       folders,
