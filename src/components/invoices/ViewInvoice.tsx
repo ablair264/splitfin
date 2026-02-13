@@ -54,11 +54,11 @@ function AddressCard({ label, address }: { label: string; address: Record<string
   if (parts.length === 0) return null;
   return (
     <div className="flex-1 min-w-[200px]">
-      <h4 className="text-xs font-semibold text-white/60 uppercase tracking-wide mb-2 flex items-center gap-1.5">
+      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
         <MapPin size={12} />
         {label}
       </h4>
-      <p className="text-sm text-white/80 leading-relaxed">{parts.join(', ')}</p>
+      <p className="text-sm text-muted-foreground leading-relaxed">{parts.join(', ')}</p>
     </div>
   );
 }
@@ -211,9 +211,9 @@ export default function ViewInvoice() {
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse">
-        <div className="h-8 bg-white/5 rounded w-64" />
-        <div className="h-64 bg-white/5 rounded-xl" />
-        <div className="h-48 bg-white/5 rounded-xl" />
+        <div className="h-8 bg-muted/50 rounded w-64" />
+        <div className="h-64 bg-muted/50 rounded-xl" />
+        <div className="h-48 bg-muted/50 rounded-xl" />
       </div>
     );
   }
@@ -264,7 +264,7 @@ export default function ViewInvoice() {
                 setReminderTo(customerInfo?.email || '');
                 setShowReminderModal(true);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-foreground border border-white/10 rounded-md hover:bg-white/5 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-foreground border border-border rounded-md hover:bg-muted/50 transition-colors"
             >
               <Send size={14} /> Send Reminder
             </button>
@@ -282,7 +282,7 @@ export default function ViewInvoice() {
           )}
           <button
             onClick={() => navigate('/finance/invoices')}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground border border-white/10 rounded-md hover:bg-white/5 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground border border-border rounded-md hover:bg-muted/50 transition-colors"
           >
             <ArrowLeft size={14} /> Back
           </button>
@@ -294,18 +294,18 @@ export default function ViewInvoice() {
         {/* Left column: Line items + financials */}
         <div className="lg:col-span-2 space-y-6">
           {/* Line Items */}
-          <div className="bg-card rounded-xl border border-white/10 overflow-hidden">
-            <div className="px-5 py-4 border-b border-white/10">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+          <div className="bg-card rounded-xl border border-border overflow-hidden">
+            <div className="px-5 py-4 border-b border-border">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <Package size={16} className="text-primary" />
                 Line Items
-                <span className="text-xs text-white/50">({lineItems.length})</span>
+                <span className="text-xs text-muted-foreground">({lineItems.length})</span>
               </h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-white/10 text-xs text-white/50 uppercase tracking-wide">
+                  <tr className="border-b border-border text-xs text-muted-foreground uppercase tracking-wide">
                     <th className="text-left px-5 py-3 font-medium">Item</th>
                     <th className="text-right px-3 py-3 font-medium">Qty</th>
                     <th className="text-right px-3 py-3 font-medium">Rate</th>
@@ -316,7 +316,7 @@ export default function ViewInvoice() {
                 </thead>
                 <tbody>
                   {lineItems.map((item) => (
-                    <tr key={item.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                    <tr key={item.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
                       <td className="px-5 py-3">
                         <div className="flex flex-col">
                           <span className="text-foreground font-medium">{item.name}</span>
@@ -347,7 +347,7 @@ export default function ViewInvoice() {
             </div>
 
             {/* Financial Summary */}
-            <div className="px-5 py-4 border-t border-white/10 bg-white/[0.02]">
+            <div className="px-5 py-4 border-t border-border bg-muted/30">
               <div className="flex flex-col items-end gap-1.5 text-sm">
                 <div className="flex justify-between w-64">
                   <span className="text-muted-foreground">Subtotal</span>
@@ -377,7 +377,7 @@ export default function ViewInvoice() {
                     <span className="tabular-nums text-foreground">{formatCurrency(invoice.adjustment)}</span>
                   </div>
                 )}
-                <div className="flex justify-between w-64 pt-2 border-t border-white/10 font-semibold">
+                <div className="flex justify-between w-64 pt-2 border-t border-border font-semibold">
                   <span className="text-foreground">Total</span>
                   <span className="tabular-nums text-foreground">{formatCurrency(invoice.total)}</span>
                 </div>
@@ -399,12 +399,12 @@ export default function ViewInvoice() {
 
           {/* Payment History */}
           {payments.length > 0 && (
-            <div className="bg-card rounded-xl border border-white/10 overflow-hidden">
-              <div className="px-5 py-4 border-b border-white/10">
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <div className="bg-card rounded-xl border border-border overflow-hidden">
+              <div className="px-5 py-4 border-b border-border">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <Banknote size={16} className="text-emerald-400" />
                   Payment History
-                  <span className="text-xs text-white/50">({payments.length})</span>
+                  <span className="text-xs text-muted-foreground">({payments.length})</span>
                 </h3>
               </div>
               <div className="divide-y divide-white/5">
@@ -418,11 +418,11 @@ export default function ViewInvoice() {
                         <div className="text-sm font-medium text-foreground">{formatCurrency(p.amount)}</div>
                         <div className="text-xs text-muted-foreground flex items-center gap-2">
                           <span>{formatDate(p.payment_date)}</span>
-                          <span className="text-white/20">|</span>
+                          <span className="text-muted-foreground/30">|</span>
                           <span className="capitalize">{(p.payment_mode || 'cash').replace(/_/g, ' ')}</span>
                           {p.reference_number && (
                             <>
-                              <span className="text-white/20">|</span>
+                              <span className="text-muted-foreground/30">|</span>
                               <span>Ref: {p.reference_number}</span>
                             </>
                           )}
@@ -444,12 +444,12 @@ export default function ViewInvoice() {
 
           {/* Reminder History */}
           {reminderLog.length > 0 && (
-            <div className="bg-card rounded-xl border border-white/10 overflow-hidden">
-              <div className="px-5 py-4 border-b border-white/10">
-                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+            <div className="bg-card rounded-xl border border-border overflow-hidden">
+              <div className="px-5 py-4 border-b border-border">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
                   <Send size={16} className="text-blue-400" />
                   Reminder History
-                  <span className="text-xs text-white/50">({reminderLog.length})</span>
+                  <span className="text-xs text-muted-foreground">({reminderLog.length})</span>
                 </h3>
               </div>
               <div className="divide-y divide-white/5">
@@ -472,10 +472,10 @@ export default function ViewInvoice() {
 
           {/* Notes & Terms (collapsible) */}
           {hasNotes && (
-            <div className="bg-card rounded-xl border border-white/10 overflow-hidden">
+            <div className="bg-card rounded-xl border border-border overflow-hidden">
               <button
                 onClick={() => setShowNotes(!showNotes)}
-                className="w-full px-5 py-3 flex items-center justify-between text-sm font-semibold text-white hover:bg-white/[0.02] transition-colors"
+                className="w-full px-5 py-3 flex items-center justify-between text-sm font-semibold text-foreground hover:bg-muted/30 transition-colors"
               >
                 <span className="flex items-center gap-2">
                   <FileText size={16} className="text-primary" />
@@ -484,17 +484,17 @@ export default function ViewInvoice() {
                 {showNotes ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
               </button>
               {showNotes && (
-                <div className="px-5 pb-4 space-y-3 border-t border-white/10 pt-3">
+                <div className="px-5 pb-4 space-y-3 border-t border-border pt-3">
                   {invoice.notes && (
                     <div>
-                      <h4 className="text-xs font-semibold text-white/60 uppercase tracking-wide mb-1">Notes</h4>
-                      <p className="text-sm text-white/80 whitespace-pre-wrap">{invoice.notes}</p>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Notes</h4>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{invoice.notes}</p>
                     </div>
                   )}
                   {invoice.terms && (
                     <div>
-                      <h4 className="text-xs font-semibold text-white/60 uppercase tracking-wide mb-1">Terms & Conditions</h4>
-                      <p className="text-sm text-white/80 whitespace-pre-wrap">{invoice.terms}</p>
+                      <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Terms & Conditions</h4>
+                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{invoice.terms}</p>
                     </div>
                   )}
                 </div>
@@ -506,8 +506,8 @@ export default function ViewInvoice() {
         {/* Right column: Info cards */}
         <div className="space-y-6">
           {/* Payment Info */}
-          <div className="bg-card rounded-xl border border-white/10 p-5">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+          <div className="bg-card rounded-xl border border-border p-5">
+            <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
               <CreditCard size={16} className="text-primary" />
               Payment Details
             </h3>
@@ -515,16 +515,16 @@ export default function ViewInvoice() {
               <div className="flex items-center gap-3">
                 <Calendar className="text-primary w-5 shrink-0" size={18} />
                 <div>
-                  <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Invoice Date</label>
-                  <span className="text-white font-medium text-sm">{formatDate(invoice.invoice_date)}</span>
+                  <label className="block text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Invoice Date</label>
+                  <span className="text-foreground font-medium text-sm">{formatDate(invoice.invoice_date)}</span>
                 </div>
               </div>
               {invoice.due_date && (
                 <div className="flex items-center gap-3">
                   <Clock className={`w-5 shrink-0 ${isOverdue ? 'text-red-400' : 'text-primary'}`} size={18} />
                   <div>
-                    <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Due Date</label>
-                    <span className={`font-medium text-sm ${isOverdue ? 'text-red-400' : 'text-white'}`}>{formatDate(invoice.due_date)}</span>
+                    <label className="block text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Due Date</label>
+                    <span className={`font-medium text-sm ${isOverdue ? 'text-red-400' : 'text-foreground'}`}>{formatDate(invoice.due_date)}</span>
                   </div>
                 </div>
               )}
@@ -532,8 +532,8 @@ export default function ViewInvoice() {
                 <div className="flex items-center gap-3">
                   <FileText className="text-primary w-5 shrink-0" size={18} />
                   <div>
-                    <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Payment Terms</label>
-                    <span className="text-white font-medium text-sm">{invoice.payment_terms_label}</span>
+                    <label className="block text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Payment Terms</label>
+                    <span className="text-foreground font-medium text-sm">{invoice.payment_terms_label}</span>
                   </div>
                 </div>
               )}
@@ -541,7 +541,7 @@ export default function ViewInvoice() {
                 <div className="flex items-center gap-3">
                   <CreditCard className="text-emerald-400 w-5 shrink-0" size={18} />
                   <div>
-                    <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Last Payment</label>
+                    <label className="block text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Last Payment</label>
                     <span className="text-emerald-400 font-medium text-sm">{formatDate(invoice.last_payment_date)}</span>
                   </div>
                 </div>
@@ -550,8 +550,8 @@ export default function ViewInvoice() {
           </div>
 
           {/* Customer Info */}
-          <div className="bg-card rounded-xl border border-white/10 p-5">
-            <h3 className="text-sm font-semibold text-white mb-4 flex items-center gap-2">
+          <div className="bg-card rounded-xl border border-border p-5">
+            <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
               <User size={16} className="text-primary" />
               Customer
             </h3>
@@ -592,8 +592,8 @@ export default function ViewInvoice() {
 
           {/* Linked Order */}
           {invoice.salesorder_number && (
-            <div className="bg-card rounded-xl border border-white/10 p-5">
-              <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <div className="bg-card rounded-xl border border-border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                 <Package size={16} className="text-primary" />
                 Linked Order
               </h3>
@@ -610,8 +610,8 @@ export default function ViewInvoice() {
 
           {/* Salesperson */}
           {invoice.salesperson_name && (
-            <div className="bg-card rounded-xl border border-white/10 p-5">
-              <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <div className="bg-card rounded-xl border border-border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                 <User size={16} className="text-primary" />
                 Salesperson
               </h3>
@@ -621,8 +621,8 @@ export default function ViewInvoice() {
 
           {/* Addresses */}
           {(invoice.billing_address || invoice.shipping_address) && (
-            <div className="bg-card rounded-xl border border-white/10 p-5">
-              <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+            <div className="bg-card rounded-xl border border-border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                 <MapPin size={16} className="text-primary" />
                 Addresses
               </h3>
@@ -638,8 +638,8 @@ export default function ViewInvoice() {
       {/* Payment Modal */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-card border border-white/10 rounded-xl w-full max-w-md mx-4 shadow-2xl">
-            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+          <div className="bg-card border border-border rounded-xl w-full max-w-md mx-4 shadow-2xl">
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between">
               <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                 <Banknote size={18} className="text-primary" />
                 Record Payment
@@ -649,13 +649,13 @@ export default function ViewInvoice() {
               </button>
             </div>
             <div className="px-5 py-4 space-y-4">
-              <div className="flex justify-between text-sm text-muted-foreground pb-2 border-b border-white/5">
+              <div className="flex justify-between text-sm text-muted-foreground pb-2 border-b border-border/50">
                 <span>Invoice Balance</span>
                 <span className="font-medium text-foreground">{formatCurrency(invoice.balance)}</span>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-white/70 mb-1.5">Amount *</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Amount *</label>
                 <input
                   type="number"
                   step="0.01"
@@ -663,27 +663,27 @@ export default function ViewInvoice() {
                   max={invoice.balance}
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   placeholder="0.00"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1.5">Date</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Date</label>
                   <input
                     type="date"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-white/70 mb-1.5">Method</label>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Method</label>
                   <select
                     value={paymentMode}
                     onChange={(e) => setPaymentMode(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
                     {PAYMENT_MODES.map((m) => (
                       <option key={m.value} value={m.value}>{m.label}</option>
@@ -693,23 +693,23 @@ export default function ViewInvoice() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-white/70 mb-1.5">Reference Number</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Reference Number</label>
                 <input
                   type="text"
                   value={paymentRef}
                   onChange={(e) => setPaymentRef(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   placeholder="e.g. CHQ-12345"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-white/70 mb-1.5">Description</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Description</label>
                 <input
                   type="text"
                   value={paymentDesc}
                   onChange={(e) => setPaymentDesc(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   placeholder="Optional note"
                 />
               </div>
@@ -720,10 +720,10 @@ export default function ViewInvoice() {
                 </p>
               )}
             </div>
-            <div className="px-5 py-3 border-t border-white/10 flex justify-end gap-2">
+            <div className="px-5 py-3 border-t border-border flex justify-end gap-2">
               <button
                 onClick={() => setShowPaymentModal(false)}
-                className="px-4 py-2 text-sm text-muted-foreground border border-white/10 rounded-md hover:bg-white/5"
+                className="px-4 py-2 text-sm text-muted-foreground border border-border rounded-md hover:bg-muted/50"
               >
                 Cancel
               </button>
@@ -743,8 +743,8 @@ export default function ViewInvoice() {
       {/* Reminder Modal */}
       {showReminderModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-card border border-white/10 rounded-xl w-full max-w-md mx-4 shadow-2xl">
-            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between">
+          <div className="bg-card border border-border rounded-xl w-full max-w-md mx-4 shadow-2xl">
+            <div className="px-5 py-4 border-b border-border flex items-center justify-between">
               <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
                 <Send size={18} className="text-blue-400" />
                 Send Payment Reminder
@@ -754,47 +754,47 @@ export default function ViewInvoice() {
               </button>
             </div>
             <div className="px-5 py-4 space-y-4">
-              <div className="flex justify-between text-sm text-muted-foreground pb-2 border-b border-white/5">
+              <div className="flex justify-between text-sm text-muted-foreground pb-2 border-b border-border/50">
                 <span>{invoice.invoice_number}</span>
                 <span className="font-medium text-foreground">Balance: {formatCurrency(invoice.balance)}</span>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-white/70 mb-1.5">To *</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">To *</label>
                 <input
                   type="email"
                   value={reminderTo}
                   onChange={(e) => setReminderTo(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-white/70 mb-1.5">CC</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">CC</label>
                 <input
                   type="email"
                   value={reminderCc}
                   onChange={(e) => setReminderCc(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   placeholder="Optional"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-white/70 mb-1.5">Custom Message</label>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Custom Message</label>
                 <textarea
                   value={reminderMessage}
                   onChange={(e) => setReminderMessage(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 text-sm bg-white/5 border border-white/10 rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                  className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                   placeholder="Add a personal note (optional)"
                 />
               </div>
             </div>
-            <div className="px-5 py-3 border-t border-white/10 flex justify-end gap-2">
+            <div className="px-5 py-3 border-t border-border flex justify-end gap-2">
               <button
                 onClick={() => setShowReminderModal(false)}
-                className="px-4 py-2 text-sm text-muted-foreground border border-white/10 rounded-md hover:bg-white/5"
+                className="px-4 py-2 text-sm text-muted-foreground border border-border rounded-md hover:bg-muted/50"
               >
                 Cancel
               </button>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { orderService } from '../services/orderService';
 import { customerService } from '../services/customerService';
@@ -21,7 +21,6 @@ import {
   Home,
   Clock,
   HelpCircle,
-  ArrowLeft,
   MapPin,
   Truck,
   X,
@@ -36,7 +35,8 @@ import {
   ExternalLink,
   Hash,
   UserCheck,
-  CalendarCheck
+  CalendarCheck,
+  ChevronRight
 } from 'lucide-react';
 
 declare global {
@@ -604,16 +604,16 @@ function ViewOrder() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-card to-surface text-white flex justify-center items-center p-8">
+      <div className="flex justify-center items-center p-8">
         <div className="text-center max-w-md">
           <HelpCircle size={48} className="text-destructive mx-auto" />
-          <h2 className="mt-4 mb-2 text-xl font-bold">Error Loading Order</h2>
-          <p className="text-white/70 mb-8">{error}</p>
+          <h2 className="mt-4 mb-2 text-xl font-bold text-foreground">Error Loading Order</h2>
+          <p className="text-muted-foreground mb-8">{error}</p>
           <div className="flex gap-4 justify-center">
-            <button onClick={fetchOrderDetails} className="px-6 py-3 bg-gradient-to-r from-primary to-primary text-background rounded-lg font-semibold hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/30 transition-all">
+            <button onClick={fetchOrderDetails} className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all">
               Retry
             </button>
-            <button onClick={handleBackToOrders} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/20 rounded-lg hover:bg-white/10 transition-all text-sm backdrop-blur-sm">
+            <button onClick={handleBackToOrders} className="flex items-center gap-2 px-4 py-3 bg-muted/50 border border-border rounded-lg hover:bg-muted transition-all text-sm">
               Back to Orders
             </button>
           </div>
@@ -624,12 +624,12 @@ function ViewOrder() {
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-card to-surface text-white flex justify-center items-center p-8">
+      <div className="flex justify-center items-center p-8">
         <div className="text-center max-w-md">
           <Package size={48} className="text-muted-foreground mx-auto" />
-          <h2 className="mt-4 mb-2 text-xl font-bold">Order Not Found</h2>
-          <p className="text-white/70 mb-8">The requested order could not be found.</p>
-          <button onClick={handleBackToOrders} className="flex items-center gap-2 px-4 py-3 bg-white/5 border border-white/20 rounded-lg hover:bg-white/10 transition-all text-sm backdrop-blur-sm mx-auto">
+          <h2 className="mt-4 mb-2 text-xl font-bold text-foreground">Order Not Found</h2>
+          <p className="text-muted-foreground mb-8">The requested order could not be found.</p>
+          <button onClick={handleBackToOrders} className="flex items-center gap-2 px-4 py-3 bg-muted/50 border border-border rounded-lg hover:bg-muted transition-all text-sm mx-auto">
             Back to Orders
           </button>
         </div>
@@ -659,14 +659,16 @@ function ViewOrder() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-card to-surface text-white p-6 relative overflow-hidden">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'radial-gradient(circle, var(--primary) 1px, transparent 1px)', backgroundSize: '32px 32px' }} />
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.02] via-transparent to-info/[0.02] animate-pulse" style={{ animationDuration: '8s' }} />
+    <div>
+      {/* Breadcrumb */}
+      <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-6">
+        <Link to="/orders" className="hover:text-foreground transition-colors">Orders</Link>
+        <ChevronRight size={14} />
+        <span className="text-foreground font-medium">{order.salesorder_number || 'N/A'}</span>
+      </nav>
 
-      <div className="relative">
-        {/* Header */}
-        <div className="flex justify-between items-start mb-6 pb-5 border-b border-white/10 flex-wrap gap-4">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-6 pb-5 border-b border-border flex-wrap gap-4">
           <div className="flex flex-col gap-3">
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl font-bold text-foreground">Order {order.salesorder_number || 'N/A'}</h1>
@@ -711,23 +713,23 @@ function ViewOrder() {
 
         {/* Customer Details Card (full-width, above grid) */}
         {customer && (
-          <div className="bg-card rounded-xl border border-white/10 p-4 mb-6 backdrop-blur-sm">
+          <div className="bg-card rounded-xl border border-border p-4 mb-6">
             <div className="flex items-center gap-4 flex-wrap">
               {/* Avatar */}
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary flex items-center justify-center text-white font-bold text-lg shrink-0">
+              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold text-lg shrink-0">
                 {getCustomerInitial()}
               </div>
 
               {/* Name + Company */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-white truncate">{customer.company_name}</h3>
+                <h3 className="text-base font-semibold text-foreground truncate">{customer.company_name}</h3>
                 {customer.contact_name && (
-                  <p className="text-sm text-white/60 truncate">{customer.contact_name}</p>
+                  <p className="text-sm text-muted-foreground truncate">{customer.contact_name}</p>
                 )}
               </div>
 
               {/* Contact info inline */}
-              <div className="flex items-center gap-5 flex-wrap text-sm text-white/70">
+              <div className="flex items-center gap-5 flex-wrap text-sm text-muted-foreground">
                 {customer.phone && (
                   <a href={`tel:${customer.phone}`} className="flex items-center gap-1.5 hover:text-primary transition-colors">
                     <Phone size={14} className="text-primary" />
@@ -744,12 +746,12 @@ function ViewOrder() {
 
               {/* Financial summary */}
               <div className="flex items-center gap-4 text-sm">
-                <div className="flex flex-col items-center px-3 py-1 bg-white/5 rounded-lg border border-white/10">
-                  <span className="text-[10px] text-white/50 uppercase tracking-wider">Receivable</span>
+                <div className="flex flex-col items-center px-3 py-1 bg-muted/50 rounded-lg border border-border">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Receivable</span>
                   <span className="font-semibold text-warning">{formatCurrency(customer.outstanding_receivable || 0)}</span>
                 </div>
-                <div className="flex flex-col items-center px-3 py-1 bg-white/5 rounded-lg border border-white/10">
-                  <span className="text-[10px] text-white/50 uppercase tracking-wider">Credits</span>
+                <div className="flex flex-col items-center px-3 py-1 bg-muted/50 rounded-lg border border-border">
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Credits</span>
                   <span className="font-semibold text-success">{formatCurrency(customer.unused_credits || 0)}</span>
                 </div>
               </div>
@@ -771,22 +773,22 @@ function ViewOrder() {
           {/* Left Column */}
           <div className="flex flex-col gap-5">
             {/* Order Details & Progress (consolidated) */}
-            <div className="bg-card rounded-xl border border-white/10 p-5 backdrop-blur-sm">
-              <h3 className="text-sm font-semibold text-white mb-3">Order Details</h3>
+            <div className="bg-card rounded-xl border border-border p-5">
+              <h3 className="text-sm font-semibold text-foreground mb-3">Order Details</h3>
               <div className="flex flex-col gap-3">
                 <div className="flex items-center gap-3">
                   <Calendar className="text-primary w-5 shrink-0" size={20} />
                   <div className="flex-1">
-                    <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Order Date</label>
-                    <span className="text-white font-medium">{formatDate(order.date || order.created_at)}</span>
+                    <label className="block text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Order Date</label>
+                    <span className="text-foreground font-medium">{formatDate(order.date || order.created_at)}</span>
                   </div>
                 </div>
                 {order.reference_number && (
                   <div className="flex items-center gap-3">
                     <Hash className="text-primary w-5 shrink-0" size={20} />
                     <div className="flex-1">
-                      <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Reference</label>
-                      <span className="text-white font-medium">{order.reference_number}</span>
+                      <label className="block text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Reference</label>
+                      <span className="text-foreground font-medium">{order.reference_number}</span>
                     </div>
                   </div>
                 )}
@@ -794,8 +796,8 @@ function ViewOrder() {
                   <div className="flex items-center gap-3">
                     <UserCheck className="text-primary w-5 shrink-0" size={20} />
                     <div className="flex-1">
-                      <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Salesperson</label>
-                      <span className="text-white font-medium">{order.salesperson_name}</span>
+                      <label className="block text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Salesperson</label>
+                      <span className="text-foreground font-medium">{order.salesperson_name}</span>
                     </div>
                   </div>
                 )}
@@ -803,16 +805,16 @@ function ViewOrder() {
                   <div className="flex items-center gap-3">
                     <CalendarCheck className="text-primary w-5 shrink-0" size={20} />
                     <div className="flex-1">
-                      <label className="block text-xs text-white/60 uppercase tracking-wide mb-0.5">Delivery Date</label>
-                      <span className="text-white font-medium">{formatDate(order.delivery_date)}</span>
+                      <label className="block text-xs text-muted-foreground uppercase tracking-wide mb-0.5">Delivery Date</label>
+                      <span className="text-foreground font-medium">{formatDate(order.delivery_date)}</span>
                     </div>
                   </div>
                 )}
               </div>
 
               {/* Progress stepper (merged into same card) */}
-              <div className="mt-5 pt-4 border-t border-white/10">
-                <h4 className="text-xs font-semibold text-white/60 uppercase tracking-wide mb-3">Progress</h4>
+              <div className="mt-5 pt-4 border-t border-border">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Progress</h4>
                 <div className="flex flex-col gap-0">
                   {orderStatusSteps.map((step, index) => {
                     const isCompleted = index < progress;
@@ -824,19 +826,19 @@ function ViewOrder() {
                       <div key={step.key} className="flex items-start gap-3 relative">
                         {index < orderStatusSteps.length - 1 && (
                           <div className={`absolute left-[15px] top-[32px] w-0.5 h-[calc(100%-8px)] ${
-                            isCompleted ? 'bg-primary' : 'bg-white/10'
+                            isCompleted ? 'bg-primary' : 'bg-muted'
                           }`} />
                         )}
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 transition-all ${
                           isCompleted ? 'bg-primary text-background' :
                           isCurrent ? 'bg-success text-white shadow-[0_0_12px_color-mix(in_srgb,var(--success)_50%,transparent)]' :
-                          'bg-white/10 text-white/40'
+                          'bg-muted text-muted-foreground'
                         }`}>
                           <StepIcon size={14} />
                         </div>
                         <div className={`pb-4 pt-1 ${isFuture ? 'opacity-40' : ''}`}>
                           <span className={`text-sm font-medium ${
-                            isCurrent ? 'text-success' : isCompleted ? 'text-white' : 'text-white/50'
+                            isCurrent ? 'text-success' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
                           }`}>
                             {step.label}
                           </span>
@@ -853,11 +855,11 @@ function ViewOrder() {
 
             {/* Customer Details (map + addresses) */}
             {customer && (
-              <div className="bg-card rounded-xl border border-white/10 p-5 backdrop-blur-sm">
-                <h3 className="text-sm font-semibold text-white mb-3">Location</h3>
+              <div className="bg-card rounded-xl border border-border p-5">
+                <h3 className="text-sm font-semibold text-foreground mb-3">Location</h3>
 
                 {mapCenter && (
-                  <div className="w-full h-[200px] rounded-lg overflow-hidden border border-white/10 mb-4">
+                  <div className="w-full h-[200px] rounded-lg overflow-hidden border border-border mb-4">
                     <iframe
                       title="Customer Location Map"
                       width="100%"
@@ -873,13 +875,13 @@ function ViewOrder() {
                 <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-2">
                     {customer.email && (
-                      <a href={`mailto:${customer.email}`} className="flex items-center gap-3 text-sm text-white/80 hover:text-primary transition-colors">
+                      <a href={`mailto:${customer.email}`} className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
                         <Mail size={16} className="text-primary" />
                         <span>{customer.email}</span>
                       </a>
                     )}
                     {customer.phone && (
-                      <a href={`tel:${customer.phone}`} className="flex items-center gap-3 text-sm text-white/80 hover:text-primary transition-colors">
+                      <a href={`tel:${customer.phone}`} className="flex items-center gap-3 text-sm text-muted-foreground hover:text-primary transition-colors">
                         <Phone size={16} className="text-primary" />
                         <span>{customer.phone}</span>
                       </a>
@@ -888,7 +890,7 @@ function ViewOrder() {
 
                   <div className="mt-2">
                     <h5 className="text-sm font-semibold text-primary uppercase tracking-wide mb-2">Billing Address</h5>
-                    <div className="flex items-start gap-3 text-sm text-white/80 leading-relaxed">
+                    <div className="flex items-start gap-3 text-sm text-muted-foreground leading-relaxed">
                       <Home size={16} className="text-primary mt-0.5 shrink-0" />
                       <div>
                         {customer.billing_address?.address}<br />
@@ -901,7 +903,7 @@ function ViewOrder() {
 
                   <div className="mt-2">
                     <h5 className="text-sm font-semibold text-primary uppercase tracking-wide mb-2">Shipping Address</h5>
-                    <div className="flex items-start gap-3 text-sm text-white/80 leading-relaxed">
+                    <div className="flex items-start gap-3 text-sm text-muted-foreground leading-relaxed">
                       <MapPin size={16} className="text-primary mt-0.5 shrink-0" />
                       <div>
                         {customer.shipping_address?.address ? (
@@ -929,15 +931,15 @@ function ViewOrder() {
 
             {/* Package Information with Tabs */}
             {customer && (
-              <div className="bg-card rounded-xl border border-white/10 p-5 backdrop-blur-sm">
-                <h3 className="text-sm font-semibold text-white mb-3">Package Information</h3>
+              <div className="bg-card rounded-xl border border-border p-5">
+                <h3 className="text-sm font-semibold text-foreground mb-3">Package Information</h3>
                 {!hasPackages ? (
-                  <p className="text-white/70 italic text-sm">No shipment data available for this order.</p>
+                  <p className="text-muted-foreground italic text-sm">No shipment data available for this order.</p>
                 ) : (
                   <div className="mt-2">
                     {/* Package tabs (if multiple) */}
                     {packages.length > 1 && (
-                      <div className="flex gap-1 mb-4 border-b border-white/10 pb-3">
+                      <div className="flex gap-1 mb-4 border-b border-border pb-3">
                         {packages.map((_: any, idx: number) => (
                           <button
                             key={idx}
@@ -945,7 +947,7 @@ function ViewOrder() {
                             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                               activePackageTab === idx
                                 ? 'bg-primary/20 text-primary border border-primary/30'
-                                : 'text-white/60 border border-white/10 hover:bg-white/5 hover:text-white'
+                                : 'text-muted-foreground border border-border hover:bg-muted/50 hover:text-foreground'
                             }`}
                           >
                             Package {idx + 1}
@@ -957,29 +959,29 @@ function ViewOrder() {
                     {activePackage && (
                       <div className="flex flex-col gap-3">
                         <div className="flex justify-between items-start">
-                          <div className="flex flex-col gap-3 text-sm text-white/70">
+                          <div className="flex flex-col gap-3 text-sm text-muted-foreground">
                             <div className="flex flex-col gap-1">
-                              <span className="text-xs text-white/60 uppercase tracking-wide font-medium">Package</span>
-                              <span className="text-white font-medium">#{activePackageTab + 1} of {packages.length}</span>
+                              <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Package</span>
+                              <span className="text-foreground font-medium">#{activePackageTab + 1} of {packages.length}</span>
                             </div>
                             {activePackage.quantity !== undefined && (
                               <div className="flex flex-col gap-1">
-                                <span className="text-xs text-white/60 uppercase tracking-wide font-medium">Quantity</span>
-                                <span className="text-white font-medium">{activePackage.quantity}</span>
+                                <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Quantity</span>
+                                <span className="text-foreground font-medium">{activePackage.quantity}</span>
                               </div>
                             )}
                             <div className="flex flex-col gap-1">
-                              <span className="text-xs text-white/60 uppercase tracking-wide font-medium">Courier</span>
-                              <span className="text-white font-medium">{activePackage.delivery_method || activePackage.carrier || 'Unknown'}</span>
+                              <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Courier</span>
+                              <span className="text-foreground font-medium">{activePackage.delivery_method || activePackage.carrier || 'Unknown'}</span>
                             </div>
                             <div className="flex flex-col gap-1">
-                              <span className="text-xs text-white/60 uppercase tracking-wide font-medium">Tracking</span>
-                              <span className="text-white font-medium">{activePackage.tracking_number || 'N/A'}</span>
+                              <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Tracking</span>
+                              <span className="text-foreground font-medium">{activePackage.tracking_number || 'N/A'}</span>
                             </div>
                             {activePackage.shipment_date && (
                               <div className="flex flex-col gap-1">
-                                <span className="text-xs text-white/60 uppercase tracking-wide font-medium">Shipment Date</span>
-                                <span className="text-white font-medium">{formatDateTime(activePackage.shipment_date)}</span>
+                                <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Shipment Date</span>
+                                <span className="text-foreground font-medium">{formatDateTime(activePackage.shipment_date)}</span>
                               </div>
                             )}
                           </div>
@@ -998,7 +1000,7 @@ function ViewOrder() {
                         <div className="mt-2">
                           <h4 className="text-sm font-semibold text-primary mb-2">Ship To</h4>
                           {(order.shipping_address_json?.address || customer.shipping_address?.address) ? (
-                            <div className="flex items-start gap-3 text-sm text-white/80 leading-relaxed">
+                            <div className="flex items-start gap-3 text-sm text-muted-foreground leading-relaxed">
                               <MapPin size={16} className="text-primary mt-0.5 shrink-0" />
                               <div>
                                 <strong>{customer.company_name}</strong><br />
@@ -1009,7 +1011,7 @@ function ViewOrder() {
                               </div>
                             </div>
                           ) : (
-                            <p className="text-white/70 italic text-sm">No shipping address available.</p>
+                            <p className="text-muted-foreground italic text-sm">No shipping address available.</p>
                           )}
                         </div>
                       </div>
@@ -1021,10 +1023,10 @@ function ViewOrder() {
 
             {/* Order Notes (in left column) */}
             {order.notes && (
-              <div className="bg-card rounded-xl border border-white/10 p-5 backdrop-blur-sm">
-                <h3 className="text-sm font-semibold text-white mb-3">Order Notes</h3>
-                <div className="bg-white/5 p-4 rounded-lg border-l-4 border-primary">
-                  <p className="text-white/90 leading-relaxed m-0 text-sm">{order.notes}</p>
+              <div className="bg-card rounded-xl border border-border p-5">
+                <h3 className="text-sm font-semibold text-foreground mb-3">Order Notes</h3>
+                <div className="bg-muted/50 p-4 rounded-lg border-l-4 border-primary">
+                  <p className="text-foreground leading-relaxed m-0 text-sm">{order.notes}</p>
                 </div>
               </div>
             )}
@@ -1033,21 +1035,21 @@ function ViewOrder() {
           {/* Right Column */}
           <div className="flex flex-col">
             {/* Order Items Card */}
-            <div className="bg-card rounded-xl border border-white/10 p-5 backdrop-blur-sm">
+            <div className="bg-card rounded-xl border border-border p-5">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-sm font-semibold text-white">Order Items</h3>
+                <h3 className="text-sm font-semibold text-foreground">Order Items</h3>
                 <span className="text-lg font-semibold text-primary">Total: {formatCurrency(order.total || 0)}</span>
               </div>
 
               {/* Tab Filters */}
-              <div className="flex gap-2 mb-6 border-b border-white/10 pb-4 flex-wrap">
+              <div className="flex gap-2 mb-6 border-b border-border pb-4 flex-wrap">
                 {(['all', 'shipped', 'partial', 'awaiting'] as TabFilter[]).map(tab => (
                   <button
                     key={tab}
                     className={`px-4 py-2 border rounded-md text-sm font-medium transition-all ${
                       activeTab === tab
                         ? 'bg-primary/20 border-primary text-primary'
-                        : 'bg-white/5 border-white/20 text-white/70 hover:bg-white/10 hover:text-white'
+                        : 'bg-muted/50 border-border text-muted-foreground hover:bg-muted hover:text-foreground'
                     }`}
                     onClick={() => setActiveTab(tab)}
                   >
@@ -1061,7 +1063,7 @@ function ViewOrder() {
 
               {/* Line Items Table */}
               <div className="mb-6">
-                <div className="hidden lg:grid grid-cols-[2fr_1fr_0.5fr_1fr_1fr_1fr_1fr] gap-4 py-3 border-b-2 border-white/10 text-xs font-semibold uppercase tracking-wide text-white/70">
+                <div className="hidden lg:grid grid-cols-[2fr_1fr_0.5fr_1fr_1fr_1fr_1fr] gap-4 py-3 border-b-2 border-border text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   <div>Item</div>
                   <div>SKU</div>
                   <div>Qty</div>
@@ -1078,20 +1080,20 @@ function ViewOrder() {
                     const isPartiallyShipped = shipped > 0 && shipped < item.quantity;
 
                     return (
-                      <div key={item.id} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_0.5fr_1fr_1fr_1fr_1fr] gap-4 py-4 border-b border-white/5 items-center hover:bg-white/[0.03] transition-colors">
+                      <div key={item.id} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_0.5fr_1fr_1fr_1fr_1fr] gap-4 py-4 border-b border-border/50 items-center hover:bg-muted/40 transition-colors">
                         <div className="flex flex-col gap-1">
-                          <span className="text-sm font-medium text-white">{item.name}</span>
-                          {item.brand_name && <span className="text-xs text-white/60">{item.brand_name}</span>}
+                          <span className="text-sm font-medium text-foreground">{item.name}</span>
+                          {item.brand_name && <span className="text-xs text-muted-foreground">{item.brand_name}</span>}
                         </div>
                         <div>
-                          <code className="bg-white/10 px-2 py-1 rounded text-xs text-primary border border-primary/20">
+                          <code className="bg-muted px-2 py-1 rounded text-xs text-primary border border-primary/20">
                             {item.sku || item.zoho_item_id?.substr(0, 8) || 'N/A'}
                           </code>
                         </div>
-                        <div className="text-sm font-medium text-white">{item.quantity}</div>
-                        <div className="text-sm font-medium text-white">{formatCurrency(item.rate || 0)}</div>
-                        <div className="text-sm font-medium text-white">{formatCurrency(item.amount || 0)}</div>
-                        <div className="text-sm font-medium text-white">{shipped} / {item.quantity}</div>
+                        <div className="text-sm font-medium text-foreground">{item.quantity}</div>
+                        <div className="text-sm font-medium text-foreground">{formatCurrency(item.rate || 0)}</div>
+                        <div className="text-sm font-medium text-foreground">{formatCurrency(item.amount || 0)}</div>
+                        <div className="text-sm font-medium text-foreground">{shipped} / {item.quantity}</div>
                         <div className="text-xs">
                           {isFullyShipped ? (
                             <span className="flex items-center gap-1.5 text-success font-medium"><CheckCircle size={16} /> Shipped</span>
@@ -1107,55 +1109,55 @@ function ViewOrder() {
                 </div>
 
                 {filteredItems.length === 0 && (
-                  <div className="flex flex-col items-center gap-4 py-12 text-white/50 text-center">
-                    <Package size={48} className="text-white/30" />
+                  <div className="flex flex-col items-center gap-4 py-12 text-muted-foreground text-center">
+                    <Package size={48} className="text-muted-foreground/50" />
                     <p>No items match the current filter</p>
                   </div>
                 )}
               </div>
 
               {/* Order Summary */}
-              <div className="bg-white/5 p-6 rounded-lg border-t border-white/10">
-                <div className="flex justify-between items-center py-2 text-sm text-white/80">
+              <div className="bg-muted/50 p-6 rounded-lg border-t border-border">
+                <div className="flex justify-between items-center py-2 text-sm text-muted-foreground">
                   <span>Subtotal:</span>
                   <span>{formatCurrency(order.sub_total || 0)}</span>
                 </div>
                 {(order.discount_total || 0) > 0 && (
-                  <div className="flex justify-between items-center py-2 text-sm text-white/80">
+                  <div className="flex justify-between items-center py-2 text-sm text-muted-foreground">
                     <span>Discount:</span>
                     <span className="text-success">-{formatCurrency(order.discount_total || 0)}</span>
                   </div>
                 )}
                 {(order.shipping_charge || 0) > 0 && (
-                  <div className="flex justify-between items-center py-2 text-sm text-white/80">
+                  <div className="flex justify-between items-center py-2 text-sm text-muted-foreground">
                     <span>Shipping:</span>
                     <span>{formatCurrency(order.shipping_charge || 0)}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center py-2 text-sm text-white/80">
+                <div className="flex justify-between items-center py-2 text-sm text-muted-foreground">
                   <span>Tax:</span>
                   <span>{formatCurrency(order.tax_total || Math.max(0, (order.total || 0) - (order.sub_total || 0)))}</span>
                 </div>
                 {(order.adjustment || 0) !== 0 && (
-                  <div className="flex justify-between items-center py-2 text-sm text-white/80">
+                  <div className="flex justify-between items-center py-2 text-sm text-muted-foreground">
                     <span>Adjustment:</span>
                     <span>{formatCurrency(order.adjustment || 0)}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center py-3 border-t border-white/10 mt-2 text-lg font-semibold text-primary">
+                <div className="flex justify-between items-center py-3 border-t border-border mt-2 text-lg font-semibold text-primary">
                   <span>Total:</span>
                   <span>{formatCurrency(order.total || 0)}</span>
                 </div>
               </div>
 
               {/* Invoice Section (below summary) */}
-              <div className="mt-6 pt-6 border-t border-white/10">
-                <h3 className="text-sm font-semibold text-white mb-3 flex items-center gap-2">
+              <div className="mt-6 pt-6 border-t border-border">
+                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
                   <CreditCard size={16} className="text-primary" />
-                  Invoices {invoices.length > 0 && <span className="text-xs text-white/50">({invoices.length})</span>}
+                  Invoices {invoices.length > 0 && <span className="text-xs text-muted-foreground">({invoices.length})</span>}
                 </h3>
                 {invoices.length === 0 ? (
-                  <div className="flex items-center justify-between gap-3 px-4 py-4 bg-white/[0.02] rounded-lg border border-white/5 text-sm">
+                  <div className="flex items-center justify-between gap-3 px-4 py-4 bg-muted/30 rounded-lg border border-border/50 text-sm">
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <FileText size={18} className="text-muted-foreground/50" />
                       <span>No invoice generated yet</span>
@@ -1171,22 +1173,22 @@ function ViewOrder() {
                 ) : (
                   <div className="flex flex-col gap-3">
                     {invoices.map((invoice) => (
-                      <div key={invoice.id} onClick={() => navigate(`/finance/invoices/${invoice.id}`)} className="flex items-center justify-between gap-4 px-4 py-3 bg-white/[0.03] rounded-lg border border-white/10 hover:bg-white/[0.06] transition-colors cursor-pointer">
+                      <div key={invoice.id} onClick={() => navigate(`/finance/invoices/${invoice.id}`)} className="flex items-center justify-between gap-4 px-4 py-3 bg-muted/40 rounded-lg border border-border hover:bg-muted/60 transition-colors cursor-pointer">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                           <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-medium text-white truncate">{invoice.invoice_number || 'Invoice'}</span>
-                            <span className="text-xs text-white/50">{formatDate(invoice.invoice_date)}</span>
+                            <span className="text-sm font-medium text-foreground truncate">{invoice.invoice_number || 'Invoice'}</span>
+                            <span className="text-xs text-muted-foreground">{formatDate(invoice.invoice_date)}</span>
                           </div>
                           {invoice.due_date && (
-                            <div className="flex flex-col text-xs text-white/50 hidden sm:flex">
+                            <div className="flex flex-col text-xs text-muted-foreground hidden sm:flex">
                               <span>Due</span>
-                              <span className="text-white/70">{formatDate(invoice.due_date)}</span>
+                              <span className="text-muted-foreground">{formatDate(invoice.due_date)}</span>
                             </div>
                           )}
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="flex flex-col items-end text-sm">
-                            <span className="font-medium text-white">{formatCurrency(invoice.total)}</span>
+                            <span className="font-medium text-foreground">{formatCurrency(invoice.total)}</span>
                             {invoice.balance > 0 && (
                               <span className="text-xs text-warning">Bal: {formatCurrency(invoice.balance)}</span>
                             )}
@@ -1207,10 +1209,10 @@ function ViewOrder() {
         {/* Edit Order Modal */}
         {showEditModal && editOrderData && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-4">
-            <div className="bg-card rounded-xl border border-white/10 max-w-[800px] w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-              <div className="flex justify-between items-center p-6 border-b border-white/10">
-                <h2 className="text-2xl font-bold text-white">Edit Order</h2>
-                <button onClick={() => setShowEditModal(false)} className="p-2 rounded-md text-white/60 hover:bg-white/10 hover:text-white transition-all">
+            <div className="bg-card rounded-xl border border-border max-w-[800px] w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+              <div className="flex justify-between items-center p-6 border-b border-border">
+                <h2 className="text-2xl font-bold text-foreground">Edit Order</h2>
+                <button onClick={() => setShowEditModal(false)} className="p-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
                   <X size={20} />
                 </button>
               </div>
@@ -1219,12 +1221,12 @@ function ViewOrder() {
                 {/* Order Status and Date */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div>
-                    <label htmlFor="orderStatus" className="block mb-2 font-semibold text-white/90">Order Status</label>
+                    <label htmlFor="orderStatus" className="block mb-2 font-semibold text-foreground">Order Status</label>
                     <select
                       id="orderStatus"
                       value={editOrderData.order_status}
                       onChange={(e) => setEditOrderData({ ...editOrderData, order_status: e.target.value })}
-                      className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all"
+                      className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all"
                     >
                       <option value="pending">Pending</option>
                       <option value="confirmed">Confirmed</option>
@@ -1235,12 +1237,12 @@ function ViewOrder() {
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="shippingStatus" className="block mb-2 font-semibold text-white/90">Shipping Status</label>
+                    <label htmlFor="shippingStatus" className="block mb-2 font-semibold text-foreground">Shipping Status</label>
                     <select
                       id="shippingStatus"
                       value={editOrderData.shipping_status}
                       onChange={(e) => setEditOrderData({ ...editOrderData, shipping_status: e.target.value })}
-                      className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all"
+                      className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all"
                     >
                       <option value="pending">Pending</option>
                       <option value="processing">Processing</option>
@@ -1250,41 +1252,41 @@ function ViewOrder() {
                     </select>
                   </div>
                   <div>
-                    <label htmlFor="orderDate" className="block mb-2 font-semibold text-white/90">Order Date</label>
+                    <label htmlFor="orderDate" className="block mb-2 font-semibold text-foreground">Order Date</label>
                     <input
                       type="date"
                       id="orderDate"
                       value={editOrderData.order_date}
                       onChange={(e) => setEditOrderData({ ...editOrderData, order_date: e.target.value })}
-                      className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all"
+                      className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all"
                     />
                   </div>
                 </div>
 
                 {/* Addresses Section */}
-                <div className="my-8 p-6 bg-white/[0.02] border border-white/10 rounded-xl">
-                  <h3 className="text-xl font-semibold text-white mb-6">Addresses</h3>
+                <div className="my-8 p-6 bg-muted/30 border border-border rounded-xl">
+                  <h3 className="text-xl font-semibold text-foreground mb-6">Addresses</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Billing Address */}
                     <div>
-                      <h4 className="text-base font-semibold text-white/90 mb-4">Billing Address</h4>
+                      <h4 className="text-base font-semibold text-foreground mb-4">Billing Address</h4>
                       <div className="flex flex-col gap-3">
                         <input type="text" placeholder="Address Line 1" value={editOrderData.billing_address.address_1}
                           onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, address_1: e.target.value } })}
-                          className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
+                          className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
                         <input type="text" placeholder="Address Line 2 (optional)" value={editOrderData.billing_address.address_2}
                           onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, address_2: e.target.value } })}
-                          className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
+                          className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
                         <div className="grid grid-cols-3 gap-3">
                           <input type="text" placeholder="City/Town" value={editOrderData.billing_address.city_town}
                             onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, city_town: e.target.value } })}
-                            className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
+                            className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
                           <input type="text" placeholder="County" value={editOrderData.billing_address.county}
                             onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, county: e.target.value } })}
-                            className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
+                            className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
                           <input type="text" placeholder="Postcode" value={editOrderData.billing_address.postcode}
                             onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, postcode: e.target.value } })}
-                            className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
+                            className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
                         </div>
                       </div>
                     </div>
@@ -1292,7 +1294,7 @@ function ViewOrder() {
                     {/* Shipping Address */}
                     <div>
                       <div className="flex justify-between items-center mb-4">
-                        <h4 className="text-base font-semibold text-white/90">Shipping Address</h4>
+                        <h4 className="text-base font-semibold text-foreground">Shipping Address</h4>
                         <button type="button" onClick={() => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.billing_address } })}
                           className="flex items-center gap-1 px-3 py-2 bg-info/10 border border-info/30 rounded-md text-info text-xs hover:bg-info/20 hover:border-info/50 transition-all">
                           <Copy size={14} /> Copy Billing
@@ -1301,26 +1303,26 @@ function ViewOrder() {
                       <div className="flex flex-col gap-3">
                         <input type="text" placeholder="Address Line 1" value={editOrderData.shipping_address.address_1}
                           onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, address_1: e.target.value } })}
-                          className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
+                          className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
                         <input type="text" placeholder="Address Line 2 (optional)" value={editOrderData.shipping_address.address_2}
                           onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, address_2: e.target.value } })}
-                          className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
+                          className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
                         <div className="grid grid-cols-3 gap-3">
                           <input type="text" placeholder="City/Town" value={editOrderData.shipping_address.city_town}
                             onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, city_town: e.target.value } })}
-                            className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
+                            className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
                           <input type="text" placeholder="County" value={editOrderData.shipping_address.county}
                             onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, county: e.target.value } })}
-                            className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
+                            className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
                           <input type="text" placeholder="Postcode" value={editOrderData.shipping_address.postcode}
                             onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, postcode: e.target.value } })}
-                            className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
+                            className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <label className="flex items-center cursor-pointer text-white/90 mt-6 gap-2">
+                  <label className="flex items-center cursor-pointer text-foreground mt-6 gap-2">
                     <input type="checkbox" checked={editOrderData.make_default_addresses}
                       onChange={(e) => setEditOrderData({ ...editOrderData, make_default_addresses: e.target.checked })}
                       className="w-auto" />
@@ -1329,9 +1331,9 @@ function ViewOrder() {
                 </div>
 
                 {/* Line Items Section */}
-                <div className="my-8 p-6 bg-white/[0.02] border border-white/10 rounded-xl">
+                <div className="my-8 p-6 bg-muted/30 border border-border rounded-xl">
                   <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-xl font-semibold text-white">Line Items</h3>
+                    <h3 className="text-xl font-semibold text-foreground">Line Items</h3>
                     <button type="button" onClick={() => setShowItemSearch(true)}
                       className="flex items-center gap-2 px-4 py-2 bg-success text-white rounded-md font-semibold hover:bg-success/80 hover:-translate-y-0.5 transition-all text-sm">
                       <Plus size={16} /> Add Item
@@ -1339,28 +1341,28 @@ function ViewOrder() {
                   </div>
 
                   {showItemSearch && (
-                    <div className="mb-6 p-4 bg-white/5 rounded-lg border border-white/10">
+                    <div className="mb-6 p-4 bg-muted/50 rounded-lg border border-border">
                       <div className="relative flex items-center gap-2">
-                        <Search size={16} className="absolute left-3 text-white/50 pointer-events-none" />
+                        <Search size={16} className="absolute left-3 text-muted-foreground pointer-events-none" />
                         <input type="text" placeholder="Search items by name, SKU, or description..."
                           value={itemSearchTerm}
                           onChange={(e) => { setItemSearchTerm(e.target.value); searchItems(e.target.value); }}
-                          className="w-full pl-10 pr-10 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all"
+                          className="w-full pl-10 pr-10 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all"
                           autoFocus />
                         <button onClick={() => { setShowItemSearch(false); setItemSearchTerm(''); setAvailableItems([]); }}
-                          className="absolute right-2 p-1 rounded text-white/50 hover:bg-white/10 hover:text-white transition-all">
+                          className="absolute right-2 p-1 rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
                           <X size={16} />
                         </button>
                       </div>
 
                       {availableItems.length > 0 && (
-                        <div className="mt-2 max-h-[200px] overflow-y-auto border border-white/10 rounded-md bg-white/[0.02]">
+                        <div className="mt-2 max-h-[200px] overflow-y-auto border border-border rounded-md bg-muted/30">
                           {availableItems.map((item) => (
-                            <div key={item.id} className="p-3 border-b border-white/10 cursor-pointer hover:bg-white/5 transition-all last:border-b-0"
+                            <div key={item.id} className="p-3 border-b border-border cursor-pointer hover:bg-muted/50 transition-all last:border-b-0"
                               onClick={() => addItemToOrder(item)}>
-                              <div className="font-semibold text-white text-sm mb-1">{item.name}</div>
-                              <div className="flex gap-4 text-xs text-white/70">
-                                <span className="font-mono bg-white/10 px-1.5 py-0.5 rounded">{item.sku}</span>
+                              <div className="font-semibold text-foreground text-sm mb-1">{item.name}</div>
+                              <div className="flex gap-4 text-xs text-muted-foreground">
+                                <span className="font-mono bg-muted px-1.5 py-0.5 rounded">{item.sku}</span>
                                 <span className="text-success">{item.brand}</span>
                                 <span className="text-info font-semibold">{formatCurrency(item.rate || 0)}</span>
                               </div>
@@ -1371,17 +1373,17 @@ function ViewOrder() {
                     </div>
                   )}
 
-                  <div className="border border-white/10 rounded-lg p-4 bg-white/[0.02]">
+                  <div className="border border-border rounded-lg p-4 bg-muted/30">
                     {editOrderData.line_items.map((item: any, index: number) => (
-                      <div key={item.id} className="grid grid-cols-1 md:grid-cols-[2fr_100px_120px_150px_40px] gap-4 items-center p-3 border-b border-white/10 last:border-b-0">
+                      <div key={item.id} className="grid grid-cols-1 md:grid-cols-[2fr_100px_120px_150px_40px] gap-4 items-center p-3 border-b border-border last:border-b-0">
                         <div className="flex flex-col gap-1">
-                          <span className="font-semibold text-white text-sm">
+                          <span className="font-semibold text-foreground text-sm">
                             {item.item_name}
                             {item.is_new && <span className="inline-block bg-success text-white text-[10px] font-bold px-1.5 py-0.5 rounded ml-2">NEW</span>}
                           </span>
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-xs text-white/70">Qty:</label>
+                          <label className="text-xs text-muted-foreground">Qty:</label>
                           <input type="number" min="0" value={item.quantity}
                             onChange={(e) => {
                               const newItems = [...editOrderData.line_items];
@@ -1390,10 +1392,10 @@ function ViewOrder() {
                               newItems[index].total_price = qty * newItems[index].unit_price;
                               setEditOrderData({ ...editOrderData, line_items: newItems });
                             }}
-                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info transition-all" />
+                            className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info transition-all" />
                         </div>
                         <div className="flex flex-col gap-1">
-                          <label className="text-xs text-white/70">Unit Price:</label>
+                          <label className="text-xs text-muted-foreground">Unit Price:</label>
                           <input type="number" min="0" step="0.01" value={item.unit_price}
                             onChange={(e) => {
                               const newItems = [...editOrderData.line_items];
@@ -1402,7 +1404,7 @@ function ViewOrder() {
                               newItems[index].total_price = newItems[index].quantity * price;
                               setEditOrderData({ ...editOrderData, line_items: newItems });
                             }}
-                            className="w-full px-3 py-2 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info transition-all" />
+                            className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info transition-all" />
                         </div>
                         <div className="text-right font-semibold text-success text-sm">
                           Total: {formatCurrency(item.total_price)}
@@ -1417,35 +1419,35 @@ function ViewOrder() {
                     ))}
 
                     {editOrderData.line_items.length === 0 && (
-                      <div className="text-center py-8 text-white/60 text-sm">
+                      <div className="text-center py-8 text-muted-foreground text-sm">
                         <p>No items in this order. Add items using the button above.</p>
                       </div>
                     )}
                   </div>
 
-                  <div className="text-right p-4 border-t-2 border-white/20 mt-4 text-white text-lg">
+                  <div className="text-right p-4 border-t-2 border-border mt-4 text-foreground text-lg">
                     <strong>Order Total: {formatCurrency(editOrderData.line_items.reduce((sum: number, item: any) => sum + item.total_price, 0))}</strong>
                   </div>
                 </div>
 
                 {/* Order Notes */}
                 <div className="mb-6">
-                  <label htmlFor="orderNotes" className="block mb-2 font-semibold text-white/90">Order Notes</label>
+                  <label htmlFor="orderNotes" className="block mb-2 font-semibold text-foreground">Order Notes</label>
                   <textarea id="orderNotes" value={editOrderData.notes}
                     onChange={(e) => setEditOrderData({ ...editOrderData, notes: e.target.value })}
-                    className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all resize-y min-h-[80px]"
+                    className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all resize-y min-h-[80px]"
                     rows={4} placeholder="Add any notes about this order..." />
                 </div>
               </div>
 
-              <div className="flex justify-between items-center p-6 border-t border-white/10 gap-4 flex-wrap">
+              <div className="flex justify-between items-center p-6 border-t border-border gap-4 flex-wrap">
                 <button onClick={() => setShowCancelModal(true)}
                   className="flex items-center gap-2 px-6 py-3 bg-destructive text-white rounded-lg font-semibold hover:bg-destructive/80 hover:-translate-y-0.5 transition-all text-sm">
                   <AlertTriangle size={16} /> Cancel Order
                 </button>
                 <div className="flex gap-3">
                   <button onClick={() => setShowEditModal(false)} disabled={savingOrder}
-                    className="flex items-center gap-2 px-6 py-3 bg-white/10 text-white border border-white/20 rounded-lg font-semibold hover:bg-white/15 hover:border-white/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all text-sm">
+                    className="flex items-center gap-2 px-6 py-3 bg-muted text-foreground border border-border rounded-lg font-semibold hover:bg-muted hover:border-border disabled:opacity-60 disabled:cursor-not-allowed transition-all text-sm">
                     Close
                   </button>
                   <button onClick={handleSaveOrderEdit} disabled={savingOrder}
@@ -1461,10 +1463,10 @@ function ViewOrder() {
         {/* Cancel Order Modal */}
         {showCancelModal && (
           <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[1000] p-4">
-            <div className="bg-card rounded-xl border border-white/10 max-w-[800px] w-full max-h-[90vh] overflow-y-auto shadow-2xl">
-              <div className="flex justify-between items-center p-6 border-b border-white/10">
-                <h2 className="text-2xl font-bold text-white">Cancel Order</h2>
-                <button onClick={() => setShowCancelModal(false)} className="p-2 rounded-md text-white/60 hover:bg-white/10 hover:text-white transition-all">
+            <div className="bg-card rounded-xl border border-border max-w-[800px] w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+              <div className="flex justify-between items-center p-6 border-b border-border">
+                <h2 className="text-2xl font-bold text-foreground">Cancel Order</h2>
+                <button onClick={() => setShowCancelModal(false)} className="p-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
                   <X size={20} />
                 </button>
               </div>
@@ -1476,17 +1478,17 @@ function ViewOrder() {
                 </div>
 
                 <div className="mb-6">
-                  <label htmlFor="cancelReason" className="block mb-2 font-semibold text-white/90">Reason for cancellation (optional)</label>
+                  <label htmlFor="cancelReason" className="block mb-2 font-semibold text-foreground">Reason for cancellation (optional)</label>
                   <textarea id="cancelReason" value={cancelReason}
                     onChange={(e) => setCancelReason(e.target.value)}
-                    className="w-full px-3 py-3 bg-white/5 border border-white/20 rounded-lg text-white text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all resize-y min-h-[80px]"
+                    className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all resize-y min-h-[80px]"
                     rows={3} placeholder="Please provide a reason for cancelling this order..." />
                 </div>
               </div>
 
-              <div className="flex justify-end items-center p-6 border-t border-white/10 gap-3">
+              <div className="flex justify-end items-center p-6 border-t border-border gap-3">
                 <button onClick={() => setShowCancelModal(false)} disabled={cancellingOrder}
-                  className="flex items-center gap-2 px-6 py-3 bg-white/10 text-white border border-white/20 rounded-lg font-semibold hover:bg-white/15 hover:border-white/30 disabled:opacity-60 disabled:cursor-not-allowed transition-all text-sm">
+                  className="flex items-center gap-2 px-6 py-3 bg-muted text-foreground border border-border rounded-lg font-semibold hover:bg-muted hover:border-border disabled:opacity-60 disabled:cursor-not-allowed transition-all text-sm">
                   Keep Order
                 </button>
                 <button onClick={handleCancelOrder} disabled={cancellingOrder}
@@ -1497,7 +1499,6 @@ function ViewOrder() {
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }
