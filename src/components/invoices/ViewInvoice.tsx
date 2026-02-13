@@ -2,7 +2,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { invoiceService } from '@/services/invoiceService';
+import { orderService } from '@/services/orderService';
 import { authService } from '@/services/authService';
+import { Button } from '@/components/ui/button';
 import type { Invoice, InvoicePayment } from '@/types/domain';
 import { statusStyles } from './invoices-columns';
 import {
@@ -78,6 +80,7 @@ export default function ViewInvoice() {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [showNotes, setShowNotes] = useState(false);
+  const [linkedOrderId, setLinkedOrderId] = useState<number | null>(null);
 
   // Payments state
   const [payments, setPayments] = useState<InvoicePayment[]>([]);
@@ -138,6 +141,18 @@ export default function ViewInvoice() {
     fetchPayments();
     fetchReminderLog();
   }, [fetchInvoice, fetchPayments, fetchReminderLog]);
+
+  // Look up the internal order ID for the linked salesorder
+  useEffect(() => {
+    if (!invoice?.salesorder_number) return;
+    let ignore = false;
+    orderService.list({ search: invoice.salesorder_number, limit: 1 }).then((res) => {
+      if (!ignore && res.data?.length) {
+        setLinkedOrderId(res.data[0].id);
+      }
+    }).catch(() => {});
+    return () => { ignore = true; };
+  }, [invoice?.salesorder_number]);
 
   async function handleRecordPayment() {
     if (!invoice) return;
@@ -211,9 +226,9 @@ export default function ViewInvoice() {
   if (loading) {
     return (
       <div className="space-y-4 animate-pulse">
-        <div className="h-8 bg-muted/50 rounded w-64" />
-        <div className="h-64 bg-muted/50 rounded-xl" />
-        <div className="h-48 bg-muted/50 rounded-xl" />
+        <div className="h-8 bg-white/5 rounded w-64" />
+        <div className="h-64 bg-white/5 rounded-xl" />
+        <div className="h-48 bg-white/5 rounded-xl" />
       </div>
     );
   }
@@ -259,33 +274,32 @@ export default function ViewInvoice() {
         </div>
         <div className="flex items-center gap-2">
           {canSendReminder && (
-            <button
-              onClick={() => {
+            <Button
+              intent="outline"
+              size="sm"
+              onPress={() => {
                 setReminderTo(customerInfo?.email || '');
                 setShowReminderModal(true);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-foreground border border-border rounded-md hover:bg-muted/50 transition-colors"
             >
               <Send size={14} /> Send Reminder
-            </button>
+            </Button>
           )}
           {canRecordPayment && (
-            <button
-              onClick={() => {
+            <Button
+              intent="primary"
+              size="sm"
+              onPress={() => {
                 setPaymentAmount(String(invoice.balance));
                 setShowPaymentModal(true);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 transition-colors"
             >
               <Banknote size={14} /> Record Payment
-            </button>
+            </Button>
           )}
-          <button
-            onClick={() => navigate('/finance/invoices')}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-muted-foreground border border-border rounded-md hover:bg-muted/50 transition-colors"
-          >
+          <Button intent="outline" size="sm" onPress={() => navigate('/finance/invoices')}>
             <ArrowLeft size={14} /> Back
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -316,7 +330,7 @@ export default function ViewInvoice() {
                 </thead>
                 <tbody>
                   {lineItems.map((item) => (
-                    <tr key={item.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                    <tr key={item.id} className="border-b border-border/50 hover:bg-white/[0.02] transition-colors">
                       <td className="px-5 py-3">
                         <div className="flex flex-col">
                           <span className="text-foreground font-medium">{item.name}</span>
@@ -347,7 +361,7 @@ export default function ViewInvoice() {
             </div>
 
             {/* Financial Summary */}
-            <div className="px-5 py-4 border-t border-border bg-muted/30">
+            <div className="px-5 py-4 border-t border-border bg-white/[0.02]">
               <div className="flex flex-col items-end gap-1.5 text-sm">
                 <div className="flex justify-between w-64">
                   <span className="text-muted-foreground">Subtotal</span>
@@ -475,7 +489,7 @@ export default function ViewInvoice() {
             <div className="bg-card rounded-xl border border-border overflow-hidden">
               <button
                 onClick={() => setShowNotes(!showNotes)}
-                className="w-full px-5 py-3 flex items-center justify-between text-sm font-semibold text-foreground hover:bg-muted/30 transition-colors"
+                className="w-full px-5 py-3 flex items-center justify-between text-sm font-semibold text-foreground hover:bg-white/[0.02] transition-colors"
               >
                 <span className="flex items-center gap-2">
                   <FileText size={16} className="text-primary" />
@@ -598,7 +612,7 @@ export default function ViewInvoice() {
                 Linked Order
               </h3>
               <Link
-                to={`/orders?search=${invoice.salesorder_number}`}
+                to={linkedOrderId ? `/order/${linkedOrderId}` : `/orders?search=${invoice.salesorder_number}`}
                 className="flex items-center gap-2 text-sm text-primary hover:underline"
               >
                 <FileText size={14} />
@@ -663,7 +677,7 @@ export default function ViewInvoice() {
                   max={invoice.balance}
                   value={paymentAmount}
                   onChange={(e) => setPaymentAmount(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 text-sm bg-white/5 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   placeholder="0.00"
                 />
               </div>
@@ -675,7 +689,7 @@ export default function ViewInvoice() {
                     type="date"
                     value={paymentDate}
                     onChange={(e) => setPaymentDate(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full px-3 py-2 text-sm bg-white/5 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   />
                 </div>
                 <div>
@@ -683,7 +697,7 @@ export default function ViewInvoice() {
                   <select
                     value={paymentMode}
                     onChange={(e) => setPaymentMode(e.target.value)}
-                    className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    className="w-full px-3 py-2 text-sm bg-white/5 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
                     {PAYMENT_MODES.map((m) => (
                       <option key={m.value} value={m.value}>{m.label}</option>
@@ -698,7 +712,7 @@ export default function ViewInvoice() {
                   type="text"
                   value={paymentRef}
                   onChange={(e) => setPaymentRef(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 text-sm bg-white/5 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   placeholder="e.g. CHQ-12345"
                 />
               </div>
@@ -709,7 +723,7 @@ export default function ViewInvoice() {
                   type="text"
                   value={paymentDesc}
                   onChange={(e) => setPaymentDesc(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 text-sm bg-white/5 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   placeholder="Optional note"
                 />
               </div>
@@ -721,20 +735,13 @@ export default function ViewInvoice() {
               )}
             </div>
             <div className="px-5 py-3 border-t border-border flex justify-end gap-2">
-              <button
-                onClick={() => setShowPaymentModal(false)}
-                className="px-4 py-2 text-sm text-muted-foreground border border-border rounded-md hover:bg-muted/50"
-              >
+              <Button intent="outline" size="sm" onPress={() => setShowPaymentModal(false)}>
                 Cancel
-              </button>
-              <button
-                onClick={handleRecordPayment}
-                disabled={recordingPayment}
-                className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary rounded-md hover:bg-primary/90 disabled:opacity-50 flex items-center gap-1.5"
-              >
+              </Button>
+              <Button intent="primary" size="sm" onPress={handleRecordPayment} isDisabled={recordingPayment}>
                 {recordingPayment ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                 {recordingPayment ? 'Recording...' : 'Record Payment'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -765,7 +772,7 @@ export default function ViewInvoice() {
                   type="email"
                   value={reminderTo}
                   onChange={(e) => setReminderTo(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 text-sm bg-white/5 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                 />
               </div>
 
@@ -775,7 +782,7 @@ export default function ViewInvoice() {
                   type="email"
                   value={reminderCc}
                   onChange={(e) => setReminderCc(e.target.value)}
-                  className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="w-full px-3 py-2 text-sm bg-white/5 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
                   placeholder="Optional"
                 />
               </div>
@@ -786,26 +793,19 @@ export default function ViewInvoice() {
                   value={reminderMessage}
                   onChange={(e) => setReminderMessage(e.target.value)}
                   rows={3}
-                  className="w-full px-3 py-2 text-sm bg-muted/50 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                  className="w-full px-3 py-2 text-sm bg-white/5 border border-border rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
                   placeholder="Add a personal note (optional)"
                 />
               </div>
             </div>
             <div className="px-5 py-3 border-t border-border flex justify-end gap-2">
-              <button
-                onClick={() => setShowReminderModal(false)}
-                className="px-4 py-2 text-sm text-muted-foreground border border-border rounded-md hover:bg-muted/50"
-              >
+              <Button intent="outline" size="sm" onPress={() => setShowReminderModal(false)}>
                 Cancel
-              </button>
-              <button
-                onClick={handleSendReminder}
-                disabled={sendingReminder || !reminderTo}
-                className="px-4 py-2 text-sm font-medium text-primary-foreground bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center gap-1.5"
-              >
+              </Button>
+              <Button intent="primary" size="sm" onPress={handleSendReminder} isDisabled={sendingReminder || !reminderTo}>
                 {sendingReminder ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                 {sendingReminder ? 'Sending...' : 'Send Reminder'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

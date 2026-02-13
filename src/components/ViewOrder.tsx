@@ -8,6 +8,7 @@ import { productService } from '../services/productService';
 import { shippingService } from '../services/shippingService';
 import { useLoader } from '../contexts/LoaderContext';
 import type { Order, OrderLineItem, Customer, Invoice } from '../types/domain';
+import { Button } from '@/components/ui/button';
 import {
   FileText,
   File,
@@ -609,13 +610,13 @@ function ViewOrder() {
           <HelpCircle size={48} className="text-destructive mx-auto" />
           <h2 className="mt-4 mb-2 text-xl font-bold text-foreground">Error Loading Order</h2>
           <p className="text-muted-foreground mb-8">{error}</p>
-          <div className="flex gap-4 justify-center">
-            <button onClick={fetchOrderDetails} className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all">
+          <div className="flex gap-3 justify-center">
+            <Button intent="primary" size="sm" onPress={fetchOrderDetails}>
               Retry
-            </button>
-            <button onClick={handleBackToOrders} className="flex items-center gap-2 px-4 py-3 bg-muted/50 border border-border rounded-lg hover:bg-muted transition-all text-sm">
+            </Button>
+            <Button intent="outline" size="sm" onPress={handleBackToOrders}>
               Back to Orders
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -629,9 +630,9 @@ function ViewOrder() {
           <Package size={48} className="text-muted-foreground mx-auto" />
           <h2 className="mt-4 mb-2 text-xl font-bold text-foreground">Order Not Found</h2>
           <p className="text-muted-foreground mb-8">The requested order could not be found.</p>
-          <button onClick={handleBackToOrders} className="flex items-center gap-2 px-4 py-3 bg-muted/50 border border-border rounded-lg hover:bg-muted transition-all text-sm mx-auto">
+          <Button intent="outline" size="sm" onPress={handleBackToOrders} className="mx-auto">
             Back to Orders
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -677,19 +678,19 @@ function ViewOrder() {
               </span>
             </div>
           </div>
-          <div className="flex gap-3 flex-wrap">
-            <button onClick={handlePrintOrder} className="flex items-center gap-2 px-4 py-2.5 bg-transparent border border-border text-muted-foreground rounded-lg hover:bg-muted hover:text-foreground transition-all text-sm">
+          <div className="flex gap-2 flex-wrap">
+            <Button intent="outline" size="sm" onPress={handlePrintOrder}>
               <File size={16} /> Print
-            </button>
-            <button onClick={handleCreateInvoice} className="flex items-center gap-2 px-4 py-2.5 bg-transparent border border-border text-muted-foreground rounded-lg hover:bg-muted hover:text-foreground transition-all text-sm">
+            </Button>
+            <Button intent="outline" size="sm" onPress={handleCreateInvoice}>
               <FileText size={16} /> Invoice
-            </button>
-            <button onClick={handleEditOrder} className="flex items-center gap-2 px-4 py-2.5 bg-transparent border border-border text-muted-foreground rounded-lg hover:bg-muted hover:text-foreground transition-all text-sm">
+            </Button>
+            <Button intent="outline" size="sm" onPress={handleEditOrder}>
               <Settings size={16} /> Edit Order
-            </button>
-            <button onClick={handleSendToPacking} disabled={sendingToPacking} className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-lg font-semibold hover:bg-primary/90 transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed">
+            </Button>
+            <Button intent="primary" size="sm" onPress={handleSendToPacking} isDisabled={sendingToPacking}>
               <Package size={16} /> {sendingToPacking ? 'Sending...' : 'Send to Packing'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -746,11 +747,11 @@ function ViewOrder() {
 
               {/* Financial summary */}
               <div className="flex items-center gap-4 text-sm">
-                <div className="flex flex-col items-center px-3 py-1 bg-muted/50 rounded-lg border border-border">
+                <div className="flex flex-col items-center px-3 py-1 bg-white/5 rounded-lg border border-border">
                   <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Receivable</span>
                   <span className="font-semibold text-warning">{formatCurrency(customer.outstanding_receivable || 0)}</span>
                 </div>
-                <div className="flex flex-col items-center px-3 py-1 bg-muted/50 rounded-lg border border-border">
+                <div className="flex flex-col items-center px-3 py-1 bg-white/5 rounded-lg border border-border">
                   <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Credits</span>
                   <span className="font-semibold text-success">{formatCurrency(customer.unused_credits || 0)}</span>
                 </div>
@@ -826,13 +827,13 @@ function ViewOrder() {
                       <div key={step.key} className="flex items-start gap-3 relative">
                         {index < orderStatusSteps.length - 1 && (
                           <div className={`absolute left-[15px] top-[32px] w-0.5 h-[calc(100%-8px)] ${
-                            isCompleted ? 'bg-primary' : 'bg-muted'
+                            isCompleted ? 'bg-primary' : 'bg-white/10'
                           }`} />
                         )}
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 transition-all ${
                           isCompleted ? 'bg-primary text-background' :
                           isCurrent ? 'bg-success text-white shadow-[0_0_12px_color-mix(in_srgb,var(--success)_50%,transparent)]' :
-                          'bg-muted text-muted-foreground'
+                          'bg-white/10 text-muted-foreground'
                         }`}>
                           <StepIcon size={14} />
                         </div>
@@ -947,7 +948,7 @@ function ViewOrder() {
                             className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
                               activePackageTab === idx
                                 ? 'bg-primary/20 text-primary border border-primary/30'
-                                : 'text-muted-foreground border border-border hover:bg-muted/50 hover:text-foreground'
+                                : 'text-muted-foreground border border-border hover:bg-white/5 hover:text-foreground'
                             }`}
                           >
                             Package {idx + 1}
@@ -1025,7 +1026,7 @@ function ViewOrder() {
             {order.notes && (
               <div className="bg-card rounded-xl border border-border p-5">
                 <h3 className="text-sm font-semibold text-foreground mb-3">Order Notes</h3>
-                <div className="bg-muted/50 p-4 rounded-lg border-l-4 border-primary">
+                <div className="bg-white/5 p-4 rounded-lg border-l-4 border-primary">
                   <p className="text-foreground leading-relaxed m-0 text-sm">{order.notes}</p>
                 </div>
               </div>
@@ -1049,7 +1050,7 @@ function ViewOrder() {
                     className={`px-4 py-2 border rounded-md text-sm font-medium transition-all ${
                       activeTab === tab
                         ? 'bg-primary/20 border-primary text-primary'
-                        : 'bg-muted/50 border-border text-muted-foreground hover:bg-muted hover:text-foreground'
+                        : 'bg-white/5 border-border text-muted-foreground hover:bg-white/10 hover:text-foreground'
                     }`}
                     onClick={() => setActiveTab(tab)}
                   >
@@ -1080,13 +1081,13 @@ function ViewOrder() {
                     const isPartiallyShipped = shipped > 0 && shipped < item.quantity;
 
                     return (
-                      <div key={item.id} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_0.5fr_1fr_1fr_1fr_1fr] gap-4 py-4 border-b border-border/50 items-center hover:bg-muted/40 transition-colors">
+                      <div key={item.id} className="grid grid-cols-1 lg:grid-cols-[2fr_1fr_0.5fr_1fr_1fr_1fr_1fr] gap-4 py-4 border-b border-border/50 items-center hover:bg-white/[0.03] transition-colors">
                         <div className="flex flex-col gap-1">
                           <span className="text-sm font-medium text-foreground">{item.name}</span>
                           {item.brand_name && <span className="text-xs text-muted-foreground">{item.brand_name}</span>}
                         </div>
                         <div>
-                          <code className="bg-muted px-2 py-1 rounded text-xs text-primary border border-primary/20">
+                          <code className="bg-white/10 px-2 py-1 rounded text-xs text-primary border border-primary/20">
                             {item.sku || item.zoho_item_id?.substr(0, 8) || 'N/A'}
                           </code>
                         </div>
@@ -1117,7 +1118,7 @@ function ViewOrder() {
               </div>
 
               {/* Order Summary */}
-              <div className="bg-muted/50 p-6 rounded-lg border-t border-border">
+              <div className="bg-white/5 p-6 rounded-lg border-t border-border">
                 <div className="flex justify-between items-center py-2 text-sm text-muted-foreground">
                   <span>Subtotal:</span>
                   <span>{formatCurrency(order.sub_total || 0)}</span>
@@ -1157,7 +1158,7 @@ function ViewOrder() {
                   Invoices {invoices.length > 0 && <span className="text-xs text-muted-foreground">({invoices.length})</span>}
                 </h3>
                 {invoices.length === 0 ? (
-                  <div className="flex items-center justify-between gap-3 px-4 py-4 bg-muted/30 rounded-lg border border-border/50 text-sm">
+                  <div className="flex items-center justify-between gap-3 px-4 py-4 bg-white/[0.02] rounded-lg border border-border/50 text-sm">
                     <div className="flex items-center gap-3 text-muted-foreground">
                       <FileText size={18} className="text-muted-foreground/50" />
                       <span>No invoice generated yet</span>
@@ -1173,7 +1174,7 @@ function ViewOrder() {
                 ) : (
                   <div className="flex flex-col gap-3">
                     {invoices.map((invoice) => (
-                      <div key={invoice.id} onClick={() => navigate(`/finance/invoices/${invoice.id}`)} className="flex items-center justify-between gap-4 px-4 py-3 bg-muted/40 rounded-lg border border-border hover:bg-muted/60 transition-colors cursor-pointer">
+                      <div key={invoice.id} onClick={() => navigate(`/finance/invoices/${invoice.id}`)} className="flex items-center justify-between gap-4 px-4 py-3 bg-white/[0.03] rounded-lg border border-border hover:bg-white/[0.06] transition-colors cursor-pointer">
                         <div className="flex items-center gap-4 flex-1 min-w-0">
                           <div className="flex flex-col min-w-0">
                             <span className="text-sm font-medium text-foreground truncate">{invoice.invoice_number || 'Invoice'}</span>
@@ -1212,7 +1213,7 @@ function ViewOrder() {
             <div className="bg-card rounded-xl border border-border max-w-[800px] w-full max-h-[90vh] overflow-y-auto shadow-2xl">
               <div className="flex justify-between items-center p-6 border-b border-border">
                 <h2 className="text-2xl font-bold text-foreground">Edit Order</h2>
-                <button onClick={() => setShowEditModal(false)} className="p-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
+                <button onClick={() => setShowEditModal(false)} className="p-2 rounded-md text-muted-foreground hover:bg-white/10 hover:text-foreground transition-all">
                   <X size={20} />
                 </button>
               </div>
@@ -1226,7 +1227,7 @@ function ViewOrder() {
                       id="orderStatus"
                       value={editOrderData.order_status}
                       onChange={(e) => setEditOrderData({ ...editOrderData, order_status: e.target.value })}
-                      className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all"
+                      className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all"
                     >
                       <option value="pending">Pending</option>
                       <option value="confirmed">Confirmed</option>
@@ -1242,7 +1243,7 @@ function ViewOrder() {
                       id="shippingStatus"
                       value={editOrderData.shipping_status}
                       onChange={(e) => setEditOrderData({ ...editOrderData, shipping_status: e.target.value })}
-                      className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all"
+                      className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all"
                     >
                       <option value="pending">Pending</option>
                       <option value="processing">Processing</option>
@@ -1258,13 +1259,13 @@ function ViewOrder() {
                       id="orderDate"
                       value={editOrderData.order_date}
                       onChange={(e) => setEditOrderData({ ...editOrderData, order_date: e.target.value })}
-                      className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all"
+                      className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all"
                     />
                   </div>
                 </div>
 
                 {/* Addresses Section */}
-                <div className="my-8 p-6 bg-muted/30 border border-border rounded-xl">
+                <div className="my-8 p-6 bg-white/[0.02] border border-border rounded-xl">
                   <h3 className="text-xl font-semibold text-foreground mb-6">Addresses</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Billing Address */}
@@ -1273,20 +1274,20 @@ function ViewOrder() {
                       <div className="flex flex-col gap-3">
                         <input type="text" placeholder="Address Line 1" value={editOrderData.billing_address.address_1}
                           onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, address_1: e.target.value } })}
-                          className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
+                          className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
                         <input type="text" placeholder="Address Line 2 (optional)" value={editOrderData.billing_address.address_2}
                           onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, address_2: e.target.value } })}
-                          className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
+                          className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
                         <div className="grid grid-cols-3 gap-3">
                           <input type="text" placeholder="City/Town" value={editOrderData.billing_address.city_town}
                             onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, city_town: e.target.value } })}
-                            className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
+                            className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
                           <input type="text" placeholder="County" value={editOrderData.billing_address.county}
                             onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, county: e.target.value } })}
-                            className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
+                            className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
                           <input type="text" placeholder="Postcode" value={editOrderData.billing_address.postcode}
                             onChange={(e) => setEditOrderData({ ...editOrderData, billing_address: { ...editOrderData.billing_address, postcode: e.target.value } })}
-                            className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
+                            className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
                         </div>
                       </div>
                     </div>
@@ -1303,20 +1304,20 @@ function ViewOrder() {
                       <div className="flex flex-col gap-3">
                         <input type="text" placeholder="Address Line 1" value={editOrderData.shipping_address.address_1}
                           onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, address_1: e.target.value } })}
-                          className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
+                          className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
                         <input type="text" placeholder="Address Line 2 (optional)" value={editOrderData.shipping_address.address_2}
                           onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, address_2: e.target.value } })}
-                          className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
+                          className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
                         <div className="grid grid-cols-3 gap-3">
                           <input type="text" placeholder="City/Town" value={editOrderData.shipping_address.city_town}
                             onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, city_town: e.target.value } })}
-                            className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
+                            className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
                           <input type="text" placeholder="County" value={editOrderData.shipping_address.county}
                             onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, county: e.target.value } })}
-                            className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
+                            className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
                           <input type="text" placeholder="Postcode" value={editOrderData.shipping_address.postcode}
                             onChange={(e) => setEditOrderData({ ...editOrderData, shipping_address: { ...editOrderData.shipping_address, postcode: e.target.value } })}
-                            className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all" />
+                            className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all" />
                         </div>
                       </div>
                     </div>
@@ -1331,38 +1332,37 @@ function ViewOrder() {
                 </div>
 
                 {/* Line Items Section */}
-                <div className="my-8 p-6 bg-muted/30 border border-border rounded-xl">
+                <div className="my-8 p-6 bg-white/[0.02] border border-border rounded-xl">
                   <div className="flex justify-between items-center mb-6">
                     <h3 className="text-xl font-semibold text-foreground">Line Items</h3>
-                    <button type="button" onClick={() => setShowItemSearch(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-success text-white rounded-md font-semibold hover:bg-success/80 hover:-translate-y-0.5 transition-all text-sm">
+                    <Button intent="primary" size="sm" onPress={() => setShowItemSearch(true)}>
                       <Plus size={16} /> Add Item
-                    </button>
+                    </Button>
                   </div>
 
                   {showItemSearch && (
-                    <div className="mb-6 p-4 bg-muted/50 rounded-lg border border-border">
+                    <div className="mb-6 p-4 bg-white/5 rounded-lg border border-border">
                       <div className="relative flex items-center gap-2">
                         <Search size={16} className="absolute left-3 text-muted-foreground pointer-events-none" />
                         <input type="text" placeholder="Search items by name, SKU, or description..."
                           value={itemSearchTerm}
                           onChange={(e) => { setItemSearchTerm(e.target.value); searchItems(e.target.value); }}
-                          className="w-full pl-10 pr-10 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all"
+                          className="w-full pl-10 pr-10 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all"
                           autoFocus />
                         <button onClick={() => { setShowItemSearch(false); setItemSearchTerm(''); setAvailableItems([]); }}
-                          className="absolute right-2 p-1 rounded text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
+                          className="absolute right-2 p-1 rounded text-muted-foreground hover:bg-white/10 hover:text-foreground transition-all">
                           <X size={16} />
                         </button>
                       </div>
 
                       {availableItems.length > 0 && (
-                        <div className="mt-2 max-h-[200px] overflow-y-auto border border-border rounded-md bg-muted/30">
+                        <div className="mt-2 max-h-[200px] overflow-y-auto border border-border rounded-md bg-white/[0.02]">
                           {availableItems.map((item) => (
-                            <div key={item.id} className="p-3 border-b border-border cursor-pointer hover:bg-muted/50 transition-all last:border-b-0"
+                            <div key={item.id} className="p-3 border-b border-border cursor-pointer hover:bg-white/5 transition-all last:border-b-0"
                               onClick={() => addItemToOrder(item)}>
                               <div className="font-semibold text-foreground text-sm mb-1">{item.name}</div>
                               <div className="flex gap-4 text-xs text-muted-foreground">
-                                <span className="font-mono bg-muted px-1.5 py-0.5 rounded">{item.sku}</span>
+                                <span className="font-mono bg-white/10 px-1.5 py-0.5 rounded">{item.sku}</span>
                                 <span className="text-success">{item.brand}</span>
                                 <span className="text-info font-semibold">{formatCurrency(item.rate || 0)}</span>
                               </div>
@@ -1373,7 +1373,7 @@ function ViewOrder() {
                     </div>
                   )}
 
-                  <div className="border border-border rounded-lg p-4 bg-muted/30">
+                  <div className="border border-border rounded-lg p-4 bg-white/[0.02]">
                     {editOrderData.line_items.map((item: any, index: number) => (
                       <div key={item.id} className="grid grid-cols-1 md:grid-cols-[2fr_100px_120px_150px_40px] gap-4 items-center p-3 border-b border-border last:border-b-0">
                         <div className="flex flex-col gap-1">
@@ -1392,7 +1392,7 @@ function ViewOrder() {
                               newItems[index].total_price = qty * newItems[index].unit_price;
                               setEditOrderData({ ...editOrderData, line_items: newItems });
                             }}
-                            className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info transition-all" />
+                            className="w-full px-3 py-2 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info transition-all" />
                         </div>
                         <div className="flex flex-col gap-1">
                           <label className="text-xs text-muted-foreground">Unit Price:</label>
@@ -1404,7 +1404,7 @@ function ViewOrder() {
                               newItems[index].total_price = newItems[index].quantity * price;
                               setEditOrderData({ ...editOrderData, line_items: newItems });
                             }}
-                            className="w-full px-3 py-2 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info transition-all" />
+                            className="w-full px-3 py-2 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info transition-all" />
                         </div>
                         <div className="text-right font-semibold text-success text-sm">
                           Total: {formatCurrency(item.total_price)}
@@ -1435,25 +1435,22 @@ function ViewOrder() {
                   <label htmlFor="orderNotes" className="block mb-2 font-semibold text-foreground">Order Notes</label>
                   <textarea id="orderNotes" value={editOrderData.notes}
                     onChange={(e) => setEditOrderData({ ...editOrderData, notes: e.target.value })}
-                    className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all resize-y min-h-[80px]"
+                    className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all resize-y min-h-[80px]"
                     rows={4} placeholder="Add any notes about this order..." />
                 </div>
               </div>
 
               <div className="flex justify-between items-center p-6 border-t border-border gap-4 flex-wrap">
-                <button onClick={() => setShowCancelModal(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-destructive text-white rounded-lg font-semibold hover:bg-destructive/80 hover:-translate-y-0.5 transition-all text-sm">
+                <Button intent="danger" size="sm" onPress={() => setShowCancelModal(true)}>
                   <AlertTriangle size={16} /> Cancel Order
-                </button>
-                <div className="flex gap-3">
-                  <button onClick={() => setShowEditModal(false)} disabled={savingOrder}
-                    className="flex items-center gap-2 px-6 py-3 bg-muted text-foreground border border-border rounded-lg font-semibold hover:bg-muted hover:border-border disabled:opacity-60 disabled:cursor-not-allowed transition-all text-sm">
+                </Button>
+                <div className="flex gap-2">
+                  <Button intent="outline" size="sm" onPress={() => setShowEditModal(false)} isDisabled={savingOrder}>
                     Close
-                  </button>
-                  <button onClick={handleSaveOrderEdit} disabled={savingOrder}
-                    className="flex items-center gap-2 px-6 py-3 bg-info text-white rounded-lg font-semibold hover:bg-info/80 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed transition-all text-sm">
+                  </Button>
+                  <Button intent="primary" size="sm" onPress={handleSaveOrderEdit} isDisabled={savingOrder}>
                     <Save size={16} /> {savingOrder ? 'Saving...' : 'Save Changes'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1466,7 +1463,7 @@ function ViewOrder() {
             <div className="bg-card rounded-xl border border-border max-w-[800px] w-full max-h-[90vh] overflow-y-auto shadow-2xl">
               <div className="flex justify-between items-center p-6 border-b border-border">
                 <h2 className="text-2xl font-bold text-foreground">Cancel Order</h2>
-                <button onClick={() => setShowCancelModal(false)} className="p-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-all">
+                <button onClick={() => setShowCancelModal(false)} className="p-2 rounded-md text-muted-foreground hover:bg-white/10 hover:text-foreground transition-all">
                   <X size={20} />
                 </button>
               </div>
@@ -1481,20 +1478,18 @@ function ViewOrder() {
                   <label htmlFor="cancelReason" className="block mb-2 font-semibold text-foreground">Reason for cancellation (optional)</label>
                   <textarea id="cancelReason" value={cancelReason}
                     onChange={(e) => setCancelReason(e.target.value)}
-                    className="w-full px-3 py-3 bg-muted/50 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-muted/80 focus:ring-2 focus:ring-info/10 transition-all resize-y min-h-[80px]"
+                    className="w-full px-3 py-3 bg-white/5 border border-border rounded-lg text-foreground text-sm focus:outline-none focus:border-info focus:bg-white/[0.08] focus:ring-2 focus:ring-info/10 transition-all resize-y min-h-[80px]"
                     rows={3} placeholder="Please provide a reason for cancelling this order..." />
                 </div>
               </div>
 
-              <div className="flex justify-end items-center p-6 border-t border-border gap-3">
-                <button onClick={() => setShowCancelModal(false)} disabled={cancellingOrder}
-                  className="flex items-center gap-2 px-6 py-3 bg-muted text-foreground border border-border rounded-lg font-semibold hover:bg-muted hover:border-border disabled:opacity-60 disabled:cursor-not-allowed transition-all text-sm">
+              <div className="flex justify-end items-center p-6 border-t border-border gap-2">
+                <Button intent="outline" size="sm" onPress={() => setShowCancelModal(false)} isDisabled={cancellingOrder}>
                   Keep Order
-                </button>
-                <button onClick={handleCancelOrder} disabled={cancellingOrder}
-                  className="flex items-center gap-2 px-6 py-3 bg-destructive text-white rounded-lg font-semibold hover:bg-destructive/80 hover:-translate-y-0.5 disabled:opacity-60 disabled:cursor-not-allowed transition-all text-sm">
+                </Button>
+                <Button intent="danger" size="sm" onPress={handleCancelOrder} isDisabled={cancellingOrder}>
                   <AlertTriangle size={16} /> {cancellingOrder ? 'Cancelling...' : 'Cancel Order'}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
