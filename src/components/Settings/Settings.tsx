@@ -233,6 +233,39 @@ function GeneralSettings({ userName, userEmail, userRole }: { userName: string; 
         </div>
       </div>
 
+      {/* Invoice Reminders — Admin only */}
+      {userRole === 'Admin' && (
+        <div className="mb-10 last:mb-0">
+          <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Invoice Reminders</h3>
+          <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <span className="text-amber-400 text-sm font-medium">Not active</span>
+            <span className="text-amber-200/70 text-xs">Auto-reminders are disabled. Enable via backend environment variable when ready.</span>
+          </div>
+          <div className="space-y-3 text-sm text-muted-foreground">
+            <p className="m-0">When enabled, reminders are sent daily at 8am UK time for unpaid invoices based on each customer's settings.</p>
+            <div className="grid grid-cols-2 gap-4 p-3 rounded-lg bg-foreground/[0.03]">
+              <div>
+                <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-1">Before due date</span>
+                <span className="text-foreground text-[13px]">7, 3, 1 days</span>
+              </div>
+              <div>
+                <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-1">After due date</span>
+                <span className="text-foreground text-[13px]">1, 7, 14, 30 days</span>
+              </div>
+              <div>
+                <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-1">Max per invoice</span>
+                <span className="text-foreground text-[13px]">5 reminders</span>
+              </div>
+              <div>
+                <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-1">CC agent</span>
+                <span className="text-foreground text-[13px]">Yes</span>
+              </div>
+            </div>
+            <p className="m-0 text-xs text-muted-foreground/70">These are defaults. Override per customer from their detail page.</p>
+          </div>
+        </div>
+      )}
+
       {/* Admin Tools Section — Collapsible */}
       {userRole === 'Admin' && (
         <AdminToolsSection onNavigate={navigate} />

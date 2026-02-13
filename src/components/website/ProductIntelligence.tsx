@@ -943,12 +943,12 @@ function PriceCheckCard({ result }: { result: PriceCheckResult }) {
           </span>
         </div>
 
-        {result.found_prices.length > 0 ? (
+        {(result.found_prices ?? []).length > 0 ? (
           <div className="space-y-1 pt-1 border-t border-border/40">
             <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide pt-1">
               Found online
             </div>
-            {result.found_prices.map((fp, i) => (
+            {(result.found_prices ?? []).map((fp, i) => (
               <div key={i} className="flex items-center justify-between text-xs">
                 <a
                   href={fp.url}

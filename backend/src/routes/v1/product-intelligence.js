@@ -356,44 +356,147 @@ router.get('/reorder-alerts', async (req, res) => {
 
 // ── POST /price-check ────────────────────────────────────────
 
-async function searchWeb(searchQuery, limit = 5) {
+/**
+ * Search Google Shopping via Serper for structured price results.
+ * Falls back to regular search + price regex if no Serper key or shopping fails.
+ */
+async function searchPrices(productName, brand) {
   const serperKey = process.env.SERPER_API_KEY || process.env.SERP_API_KEY || '';
+  const searchQuery = `${productName} ${brand}`;
+
+  // 1. Try Serper Shopping endpoint — returns structured price data
   if (serperKey) {
+    try {
+      const r = await fetch('https://google.serper.dev/shopping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-API-KEY': serperKey },
+        body: JSON.stringify({ q: searchQuery, gl: 'uk', num: 10 }),
+      });
+      if (r.ok) {
+        const data = await r.json();
+        const shopping = data.shopping || [];
+        if (shopping.length > 0) {
+          return shopping
+            .filter(item => item.price != null)
+            .map(item => ({
+              retailer: item.source || extractDomain(item.link) || 'Unknown',
+              price: parsePrice(item.price),
+              url: item.link || '',
+            }))
+            .filter(item => item.price > 0);
+        }
+      }
+    } catch (err) {
+      logger.warn('[PriceCheck] Serper shopping failed:', err.message);
+    }
+
+    // 2. Fallback: Serper regular search + extract prices from snippets
     try {
       const r = await fetch('https://google.serper.dev/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-API-KEY': serperKey },
-        body: JSON.stringify({ q: searchQuery, num: limit }),
+        body: JSON.stringify({ q: `${searchQuery} price buy UK`, gl: 'uk', num: 10 }),
       });
       if (r.ok) {
         const data = await r.json();
-        return (data.organic || []).slice(0, limit).map(o => ({
-          title: o.title || '',
-          url: o.link || o.url || '',
-          snippet: o.snippet || o.description || '',
-        }));
+        const results = [];
+
+        // Extract from organic results
+        for (const item of (data.organic || [])) {
+          const text = `${item.title || ''} ${item.snippet || ''}`;
+          const prices = extractGBPPrices(text);
+          for (const price of prices) {
+            results.push({
+              retailer: extractDomain(item.link) || item.title?.slice(0, 40) || 'Unknown',
+              price,
+              url: item.link || '',
+            });
+          }
+        }
+
+        // Extract from knowledge graph / answer box if present
+        if (data.answerBox?.snippet) {
+          const prices = extractGBPPrices(data.answerBox.snippet);
+          for (const price of prices) {
+            results.push({ retailer: 'Google', price, url: '' });
+          }
+        }
+
+        if (results.length > 0) return results;
       }
-    } catch (_) { /* fall through */ }
+    } catch (err) {
+      logger.warn('[PriceCheck] Serper search failed:', err.message);
+    }
   }
 
-  // DuckDuckGo fallback
+  // 3. No Serper key — try DuckDuckGo lite
   try {
-    const ddgUrl = `https://duckduckgo.com/html/?q=${encodeURIComponent(searchQuery)}`;
-    const rr = await fetch(ddgUrl, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-    const html = await rr.text();
+    const ddgUrl = `https://lite.duckduckgo.com/lite/?q=${encodeURIComponent(`${searchQuery} price buy UK`)}`;
+    const r = await fetch(ddgUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; PriceBot/1.0)' },
+    });
+    const html = await r.text();
     const results = [];
-    const re = new RegExp('<a rel="nofollow" class="result__a" href="([^"]+)">(.*?)</a>[\\s\\S]*?<a class="result__snippet"[^>]*>([\\s\\S]*?)</a>', 'g');
+
+    // DDG lite uses simple table rows with links and snippets
+    const linkRe = /<a[^>]+href="([^"]+)"[^>]*class="result-link"[^>]*>(.*?)<\/a>/gi;
+    const snippetRe = /<td[^>]*class="result-snippet"[^>]*>([\s\S]*?)<\/td>/gi;
+
+    const links = [];
     let m;
-    while ((m = re.exec(html)) && results.length < limit) {
-      results.push({
-        title: m[2].replace(/<[^>]+>/g, ''),
-        url: m[1],
-        snippet: m[3].replace(/<[^>]+>/g, ''),
-      });
+    while ((m = linkRe.exec(html))) {
+      links.push({ url: m[1], title: m[2].replace(/<[^>]+>/g, '') });
     }
+    const snippets = [];
+    while ((m = snippetRe.exec(html))) {
+      snippets.push(m[1].replace(/<[^>]+>/g, ''));
+    }
+
+    for (let i = 0; i < Math.min(links.length, snippets.length, 10); i++) {
+      const text = `${links[i].title} ${snippets[i]}`;
+      const prices = extractGBPPrices(text);
+      for (const price of prices) {
+        results.push({
+          retailer: extractDomain(links[i].url) || links[i].title.slice(0, 40),
+          price,
+          url: links[i].url,
+        });
+      }
+    }
+
     return results;
-  } catch (_) {
+  } catch (err) {
+    logger.warn('[PriceCheck] DDG fallback failed:', err.message);
     return [];
+  }
+}
+
+/** Parse a price string like "£49.99", "$29.99", or "49.99" into a number */
+function parsePrice(priceStr) {
+  if (typeof priceStr === 'number') return priceStr;
+  if (!priceStr) return 0;
+  const cleaned = String(priceStr).replace(/[^0-9.,]/g, '').replace(',', '');
+  return parseFloat(cleaned) || 0;
+}
+
+/** Extract all £XX.XX prices from a text string */
+function extractGBPPrices(text) {
+  if (!text) return [];
+  const re = /£\s?(\d{1,6}(?:[.,]\d{2})?)/g;
+  const prices = [];
+  let match;
+  while ((match = re.exec(text)) !== null) {
+    const val = parseFloat(match[1].replace(',', ''));
+    if (val > 0.5 && val < 100000) prices.push(val);
+  }
+  return prices;
+}
+
+function extractDomain(url) {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '');
+  } catch {
+    return null;
   }
 }
 
@@ -419,42 +522,13 @@ router.post('/price-check', async (req, res) => {
       return res.json({ results: [] });
     }
 
-    // Extract £XX.XX prices from text
-    const priceRegex = /£\s?(\d{1,6}(?:[.,]\d{2})?)/g;
-
-    function extractPrices(text) {
-      const prices = [];
-      let match;
-      while ((match = priceRegex.exec(text)) !== null) {
-        const val = parseFloat(match[1].replace(',', ''));
-        if (val > 0 && val < 100000) prices.push(val);
-      }
-      priceRegex.lastIndex = 0;
-      return prices;
-    }
-
-    // Search for each product in parallel, extract prices from snippets
     const results = await Promise.all(
       products.map(async (p) => {
-        const searchQuery = `${p.name} ${p.brand} buy price UK`;
-        const searchHits = await searchWeb(searchQuery, 8);
-
-        const foundPrices = [];
-        for (const hit of searchHits) {
-          const text = `${hit.title} ${hit.snippet}`;
-          const prices = extractPrices(text);
-          for (const price of prices) {
-            foundPrices.push({
-              retailer: extractDomain(hit.url) || hit.title.slice(0, 40),
-              price,
-              url: hit.url,
-            });
-          }
-        }
+        const rawPrices = await searchPrices(p.name, p.brand);
 
         // Dedupe by retailer+price
         const seen = new Set();
-        const unique = foundPrices.filter((fp) => {
+        const unique = rawPrices.filter((fp) => {
           const key = `${fp.retailer}:${fp.price}`;
           if (seen.has(key)) return false;
           seen.add(key);
@@ -480,15 +554,6 @@ router.post('/price-check', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-
-function extractDomain(url) {
-  try {
-    const hostname = new URL(url).hostname.replace(/^www\./, '');
-    return hostname;
-  } catch {
-    return null;
-  }
-}
 
 // ── GET /brands ──────────────────────────────────────────────
 

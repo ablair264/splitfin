@@ -238,7 +238,7 @@ export default function ViewInvoice() {
   const canSendReminder = invoice.balance > 0 && customerInfo?.email;
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground">
         <Link to="/finance/invoices" className="hover:text-foreground transition-colors">Invoices</Link>

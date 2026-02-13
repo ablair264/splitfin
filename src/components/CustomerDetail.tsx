@@ -2,11 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
-  Mail, Phone, MapPin, ExternalLink, Save, X, Loader2, ShoppingCart,
+  Mail, Phone, MapPin, ExternalLink, Save, X, Loader2, ShoppingCart, Bell, BellOff, Plus, Trash2,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { customerService } from '../services/customerService';
 import { orderService } from '../services/orderService';
+import { invoiceService } from '../services/invoiceService';
+import type { ReminderSettings } from '../types/domain';
 import { useLoader } from '../contexts/LoaderContext';
 import type { Customer, Address, Order } from '../types/domain';
 import { cn } from '@/lib/utils';
@@ -103,6 +105,13 @@ export default function CustomerDetail() {
   const [resettingPin, setResettingPin] = useState(false);
   const [sendingMagicLink, setSendingMagicLink] = useState(false);
 
+  // Reminder settings state
+  const [reminderSettings, setReminderSettings] = useState<ReminderSettings | null>(null);
+  const [reminderLoading, setReminderLoading] = useState(false);
+  const [reminderSaving, setReminderSaving] = useState(false);
+  const [reminderDayInput, setReminderDayInput] = useState('');
+  const [reminderAfterDayInput, setReminderAfterDayInput] = useState('');
+
   const hasDirtyFields = Object.keys(dirtyFields).length > 0;
 
   useEffect(() => {
@@ -114,6 +123,12 @@ export default function CustomerDetail() {
       fetchOrders(customerData.zoho_contact_id);
     }
   }, [customerData?.zoho_contact_id]);
+
+  useEffect(() => {
+    if (customerData?.id) {
+      fetchReminderSettings(customerData.id);
+    }
+  }, [customerData?.id]);
 
   const fetchCustomerData = async () => {
     try {
@@ -140,6 +155,78 @@ export default function CustomerDetail() {
     } finally {
       setOrdersLoading(false);
     }
+  };
+
+  const fetchReminderSettings = async (custId: number) => {
+    try {
+      setReminderLoading(true);
+      const settings = await invoiceService.getReminderSettings(custId);
+      setReminderSettings(settings);
+    } catch {
+      // No settings yet — use defaults
+      setReminderSettings({
+        customer_id: custId,
+        is_enabled: true,
+        days_before_due: [7, 3, 1],
+        days_after_due: [1, 7, 14, 30],
+        max_reminders: 5,
+        cc_agent: true,
+        custom_message: null,
+      });
+    } finally {
+      setReminderLoading(false);
+    }
+  };
+
+  const handleSaveReminderSettings = async () => {
+    if (!customerData?.id || !reminderSettings) return;
+    try {
+      setReminderSaving(true);
+      const updated = await invoiceService.updateReminderSettings(customerData.id, reminderSettings);
+      setReminderSettings(updated);
+    } catch (err) {
+      console.error('Failed to save reminder settings:', err);
+    } finally {
+      setReminderSaving(false);
+    }
+  };
+
+  const addDayBefore = () => {
+    const day = parseInt(reminderDayInput);
+    if (!reminderSettings || isNaN(day) || day < 1 || day > 90) return;
+    if (reminderSettings.days_before_due.includes(day)) return;
+    setReminderSettings({
+      ...reminderSettings,
+      days_before_due: [...reminderSettings.days_before_due, day].sort((a, b) => b - a),
+    });
+    setReminderDayInput('');
+  };
+
+  const removeDayBefore = (day: number) => {
+    if (!reminderSettings) return;
+    setReminderSettings({
+      ...reminderSettings,
+      days_before_due: reminderSettings.days_before_due.filter(d => d !== day),
+    });
+  };
+
+  const addDayAfter = () => {
+    const day = parseInt(reminderAfterDayInput);
+    if (!reminderSettings || isNaN(day) || day < 1 || day > 90) return;
+    if (reminderSettings.days_after_due.includes(day)) return;
+    setReminderSettings({
+      ...reminderSettings,
+      days_after_due: [...reminderSettings.days_after_due, day].sort((a, b) => a - b),
+    });
+    setReminderAfterDayInput('');
+  };
+
+  const removeDayAfter = (day: number) => {
+    if (!reminderSettings) return;
+    setReminderSettings({
+      ...reminderSettings,
+      days_after_due: reminderSettings.days_after_due.filter(d => d !== day),
+    });
   };
 
   // -- Dirty field tracking --
@@ -759,6 +846,151 @@ export default function CustomerDetail() {
                 Send Magic Link
               </Button>
             </div>
+          </motion.div>
+
+          {/* Reminder Settings */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.23 }}
+            className="bg-card rounded-xl border border-border/60 p-5"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Invoice Reminders</h3>
+              {reminderSettings && (
+                <button
+                  onClick={() => setReminderSettings({ ...reminderSettings, is_enabled: !reminderSettings.is_enabled })}
+                  className={cn(
+                    'flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium transition-colors',
+                    reminderSettings.is_enabled
+                      ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
+                      : 'bg-muted-foreground/10 text-muted-foreground hover:bg-muted-foreground/20'
+                  )}
+                >
+                  {reminderSettings.is_enabled ? <Bell size={11} /> : <BellOff size={11} />}
+                  {reminderSettings.is_enabled ? 'Enabled' : 'Disabled'}
+                </button>
+              )}
+            </div>
+
+            {reminderLoading ? (
+              <div className="py-4 text-center text-sm text-muted-foreground">Loading...</div>
+            ) : reminderSettings ? (
+              <div className="space-y-4">
+                {/* Days before due */}
+                <div>
+                  <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-2">Before due date</span>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {reminderSettings.days_before_due.map(day => (
+                      <span key={day} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[12px] font-medium border border-primary/15">
+                        {day}d
+                        <button onClick={() => removeDayBefore(day)} className="text-primary/50 hover:text-primary ml-0.5"><X size={10} /></button>
+                      </span>
+                    ))}
+                    {reminderSettings.days_before_due.length === 0 && (
+                      <span className="text-[12px] text-muted-foreground/50">None</span>
+                    )}
+                  </div>
+                  <div className="flex gap-1.5">
+                    <input
+                      type="number"
+                      min={1}
+                      max={90}
+                      placeholder="Days"
+                      value={reminderDayInput}
+                      onChange={e => setReminderDayInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && addDayBefore()}
+                      className="w-16 px-2 py-1 text-[12px] bg-foreground/5 border border-foreground/10 rounded-md text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40"
+                    />
+                    <button onClick={addDayBefore} className="p-1 rounded-md bg-foreground/5 border border-foreground/10 text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors">
+                      <Plus size={12} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Days after due */}
+                <div>
+                  <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-2">After due date</span>
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {reminderSettings.days_after_due.map(day => (
+                      <span key={day} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-[12px] font-medium border border-amber-500/15">
+                        {day}d
+                        <button onClick={() => removeDayAfter(day)} className="text-amber-400/50 hover:text-amber-400 ml-0.5"><X size={10} /></button>
+                      </span>
+                    ))}
+                    {reminderSettings.days_after_due.length === 0 && (
+                      <span className="text-[12px] text-muted-foreground/50">None</span>
+                    )}
+                  </div>
+                  <div className="flex gap-1.5">
+                    <input
+                      type="number"
+                      min={1}
+                      max={90}
+                      placeholder="Days"
+                      value={reminderAfterDayInput}
+                      onChange={e => setReminderAfterDayInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && addDayAfter()}
+                      className="w-16 px-2 py-1 text-[12px] bg-foreground/5 border border-foreground/10 rounded-md text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40"
+                    />
+                    <button onClick={addDayAfter} className="p-1 rounded-md bg-foreground/5 border border-foreground/10 text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors">
+                      <Plus size={12} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Max reminders */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider">Max reminders</span>
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={reminderSettings.max_reminders}
+                    onChange={e => setReminderSettings({ ...reminderSettings, max_reminders: parseInt(e.target.value) || 5 })}
+                    className="w-14 px-2 py-1 text-[12px] text-right bg-foreground/5 border border-foreground/10 rounded-md text-foreground focus:outline-none focus:border-primary/40"
+                  />
+                </div>
+
+                {/* CC agent toggle */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider">CC assigned agent</span>
+                  <label className="relative inline-block w-10 h-5">
+                    <input
+                      type="checkbox"
+                      checked={reminderSettings.cc_agent}
+                      onChange={() => setReminderSettings({ ...reminderSettings, cc_agent: !reminderSettings.cc_agent })}
+                      className="opacity-0 w-0 h-0 peer"
+                    />
+                    <span className="absolute cursor-pointer inset-0 bg-foreground/10 rounded-full transition-colors duration-300 before:absolute before:content-[''] before:h-[14px] before:w-[14px] before:left-[3px] before:bottom-[3px] before:bg-muted-foreground before:rounded-full before:transition-all before:duration-300 peer-checked:bg-primary peer-checked:before:translate-x-5 peer-checked:before:bg-white" />
+                  </label>
+                </div>
+
+                {/* Custom message */}
+                <div>
+                  <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-2">Custom message</span>
+                  <textarea
+                    rows={2}
+                    value={reminderSettings.custom_message || ''}
+                    onChange={e => setReminderSettings({ ...reminderSettings, custom_message: e.target.value || null })}
+                    placeholder="Optional message to include in reminders..."
+                    className="w-full px-2.5 py-1.5 text-[12px] bg-foreground/5 border border-foreground/10 rounded-md text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 resize-none"
+                  />
+                </div>
+
+                {/* Save button */}
+                <Button
+                  intent="primary"
+                  size="sm"
+                  onPress={handleSaveReminderSettings}
+                  isDisabled={reminderSaving}
+                  className="w-full"
+                >
+                  {reminderSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                  {reminderSaving ? 'Saving...' : 'Save Reminder Settings'}
+                </Button>
+              </div>
+            ) : null}
           </motion.div>
 
           {/* Addresses — inline editable */}

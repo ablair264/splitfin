@@ -1,5 +1,5 @@
 import { api } from './apiClient';
-import type { Invoice, InvoicePayment, InvoiceSummary, ListResponse, SingleResponse } from '../types/domain';
+import type { Invoice, InvoicePayment, InvoiceSummary, ReminderSettings, ListResponse, SingleResponse } from '../types/domain';
 
 export interface InvoiceFilters {
   status?: string;
@@ -94,13 +94,13 @@ export const invoiceService = {
     return result.data;
   },
 
-  async getReminderSettings(customerId: number): Promise<unknown> {
-    const result = await api.get<{ data: unknown }>(`/api/v1/invoices/reminder-settings/${customerId}`);
+  async getReminderSettings(customerId: number): Promise<ReminderSettings> {
+    const result = await api.get<{ data: ReminderSettings }>(`/api/v1/invoices/reminder-settings/${customerId}`);
     return result.data;
   },
 
-  async updateReminderSettings(customerId: number, settings: Record<string, unknown>): Promise<unknown> {
-    const result = await api.put<{ data: unknown }>(`/api/v1/invoices/reminder-settings/${customerId}`, settings);
+  async updateReminderSettings(customerId: number, settings: Partial<ReminderSettings>): Promise<ReminderSettings> {
+    const result = await api.put<{ data: ReminderSettings }>(`/api/v1/invoices/reminder-settings/${customerId}`, settings);
     return result.data;
   },
 };

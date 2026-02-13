@@ -439,6 +439,19 @@ export interface PriceCheckResult {
   found_prices: FoundPrice[];
 }
 
+export interface ReminderSettings {
+  id?: number;
+  customer_id: number;
+  is_enabled: boolean;
+  days_before_due: number[];
+  days_after_due: number[];
+  max_reminders: number;
+  cc_agent: boolean;
+  custom_message: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
 // Purchase Orders
 export interface ReorderIntelligenceItem {
   product_id: number;
