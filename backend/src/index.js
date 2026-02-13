@@ -345,19 +345,17 @@ if (process.env.ENABLE_UPS_REFRESH === 'true') {
 // ====================================
 // INVOICE REMINDER CRON (daily at 8am UK time)
 // ====================================
-if (process.env.ENABLE_INVOICE_REMINDERS === 'true') {
-  // 8am UK = 8am Europe/London (handles BST/GMT automatically via server TZ)
-  cron.schedule('0 8 * * *', async () => {
-    logger.info('[Invoice Reminders] Starting daily reminder run');
-    try {
-      const result = await processAutoReminders();
-      logger.info(`[Invoice Reminders] Complete: ${result.sent} sent, ${result.skipped} skipped`);
-    } catch (err) {
-      logger.error('[Invoice Reminders] Cron failed:', err);
-    }
-  }, { timezone: 'Europe/London' });
-  logger.info('[Invoice Reminders] Scheduled daily at 8am UK time');
-}
+// Always schedule — processAutoReminders checks the DB master toggle itself
+cron.schedule('0 8 * * *', async () => {
+  logger.info('[Invoice Reminders] Starting daily reminder run');
+  try {
+    const result = await processAutoReminders();
+    logger.info(`[Invoice Reminders] Complete: ${result.sent} sent, ${result.skipped} skipped`);
+  } catch (err) {
+    logger.error('[Invoice Reminders] Cron failed:', err);
+  }
+}, { timezone: 'Europe/London' });
+logger.info('[Invoice Reminders] Scheduled daily at 8am UK time (master toggle checked at runtime)');
 
 // ====================================
 // SERVER STARTUP + SHUTDOWN

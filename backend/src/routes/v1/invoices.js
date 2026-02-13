@@ -330,6 +330,37 @@ router.post('/from-order', async (req, res) => {
   }
 });
 
+// GET /api/v1/invoices/reminder-global — master on/off for auto-reminders
+router.get('/reminder-global', async (req, res) => {
+  try {
+    const { rows } = await query(
+      "SELECT data FROM app_cache WHERE cache_key = 'invoice_reminders_enabled' LIMIT 1"
+    );
+    const enabled = rows[0]?.data?.enabled ?? false;
+    res.json({ data: { enabled } });
+  } catch (err) {
+    logger.error('[Invoices] Get global reminder status error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// PUT /api/v1/invoices/reminder-global — toggle master on/off
+router.put('/reminder-global', async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    await query(
+      `INSERT INTO app_cache (cache_key, data, updated_at)
+       VALUES ('invoice_reminders_enabled', $1, NOW())
+       ON CONFLICT (cache_key) DO UPDATE SET data = $1, updated_at = NOW()`,
+      [JSON.stringify({ enabled: !!enabled })]
+    );
+    res.json({ data: { enabled: !!enabled } });
+  } catch (err) {
+    logger.error('[Invoices] Set global reminder status error:', err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // GET /api/v1/invoices/reminder-settings/:customerId
 // Must be before /:id to avoid Express matching "reminder-settings" as an id
 router.get('/reminder-settings/:customerId', async (req, res) => {

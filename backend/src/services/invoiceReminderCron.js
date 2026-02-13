@@ -11,6 +11,16 @@ export async function processAutoReminders() {
   logger.info('[Reminder Cron] Starting auto-reminder processing');
 
   try {
+    // Check master toggle in DB
+    const { rows: cacheRows } = await query(
+      "SELECT data FROM app_cache WHERE cache_key = 'invoice_reminders_enabled' LIMIT 1"
+    );
+    const globalEnabled = cacheRows[0]?.data?.enabled ?? false;
+    if (!globalEnabled) {
+      logger.info('[Reminder Cron] Master toggle is OFF — skipping');
+      return { sent: 0, skipped: 0 };
+    }
+
     // Get all unpaid invoices with customer email
     const { rows: invoices } = await query(`
       SELECT i.*, c.id as customer_db_id, c.email as customer_email, c.contact_name, c.company_name,

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import { authService } from '../../services/authService';
-import { ArrowLeft } from 'lucide-react';
+import { invoiceService } from '../../services/invoiceService';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { ProgressLoader } from '../ProgressLoader';
 import FixOrder from '../FixOrder';
 
@@ -235,41 +236,108 @@ function GeneralSettings({ userName, userEmail, userRole }: { userName: string; 
 
       {/* Invoice Reminders — Admin only */}
       {userRole === 'Admin' && (
-        <div className="mb-10 last:mb-0">
-          <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Invoice Reminders</h3>
-          <div className="flex items-center gap-3 mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
-            <span className="text-amber-400 text-sm font-medium">Not active</span>
-            <span className="text-amber-200/70 text-xs">Auto-reminders are disabled. Enable via backend environment variable when ready.</span>
-          </div>
-          <div className="space-y-3 text-sm text-muted-foreground">
-            <p className="m-0">When enabled, reminders are sent daily at 8am UK time for unpaid invoices based on each customer's settings.</p>
-            <div className="grid grid-cols-2 gap-4 p-3 rounded-lg bg-foreground/[0.03]">
-              <div>
-                <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-1">Before due date</span>
-                <span className="text-foreground text-[13px]">7, 3, 1 days</span>
-              </div>
-              <div>
-                <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-1">After due date</span>
-                <span className="text-foreground text-[13px]">1, 7, 14, 30 days</span>
-              </div>
-              <div>
-                <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-1">Max per invoice</span>
-                <span className="text-foreground text-[13px]">5 reminders</span>
-              </div>
-              <div>
-                <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-1">CC agent</span>
-                <span className="text-foreground text-[13px]">Yes</span>
-              </div>
-            </div>
-            <p className="m-0 text-xs text-muted-foreground/70">These are defaults. Override per customer from their detail page.</p>
-          </div>
-        </div>
+        <InvoiceReminderSettings />
       )}
 
       {/* Admin Tools Section — Collapsible */}
       {userRole === 'Admin' && (
         <AdminToolsSection onNavigate={navigate} />
       )}
+    </div>
+  );
+}
+
+// Invoice Reminder Settings — master toggle + defaults
+function InvoiceReminderSettings() {
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [toggling, setToggling] = useState(false);
+
+  useEffect(() => {
+    invoiceService.getGlobalReminderStatus().then(setEnabled).catch(() => setEnabled(false));
+  }, []);
+
+  const handleToggle = async () => {
+    if (enabled === null) return;
+    const next = !enabled;
+    setToggling(true);
+    try {
+      const result = await invoiceService.setGlobalReminderStatus(next);
+      setEnabled(result);
+    } catch {
+      // revert
+    } finally {
+      setToggling(false);
+    }
+  };
+
+  return (
+    <div className="mb-10 last:mb-0">
+      <h3 className="m-0 mb-4 text-lg font-semibold text-foreground">Invoice Reminders</h3>
+
+      {/* Master toggle */}
+      <div className="flex items-center justify-between p-4 rounded-lg bg-foreground/[0.03] mb-4">
+        <div>
+          <h4 className="m-0 mb-1 text-[0.95rem] text-foreground">Auto-Reminders</h4>
+          <p className="m-0 text-sm text-muted-foreground">
+            {enabled === null ? 'Loading...' : enabled ? 'Sending daily at 8am UK time' : 'Currently disabled'}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {toggling && <Loader2 size={14} className="animate-spin text-muted-foreground" />}
+          <label className="relative inline-block w-12 h-6">
+            <input
+              type="checkbox"
+              checked={enabled ?? false}
+              onChange={handleToggle}
+              disabled={enabled === null || toggling}
+              className="opacity-0 w-0 h-0 peer"
+            />
+            <span className="absolute cursor-pointer inset-0 bg-foreground/10 rounded-full transition-colors duration-300 before:absolute before:content-[''] before:h-[18px] before:w-[18px] before:left-[3px] before:bottom-[3px] before:bg-muted-foreground before:rounded-full before:transition-all before:duration-300 peer-checked:bg-primary peer-checked:before:translate-x-6 peer-checked:before:bg-white peer-disabled:opacity-50" />
+          </label>
+        </div>
+      </div>
+
+      {/* Status banner */}
+      {enabled !== null && (
+        <div className={`flex items-center gap-3 mb-4 p-3 rounded-lg border ${
+          enabled
+            ? 'bg-emerald-500/10 border-emerald-500/20'
+            : 'bg-amber-500/10 border-amber-500/20'
+        }`}>
+          <span className={`text-sm font-medium ${enabled ? 'text-emerald-400' : 'text-amber-400'}`}>
+            {enabled ? 'Active' : 'Not active'}
+          </span>
+          <span className={`text-xs ${enabled ? 'text-emerald-200/70' : 'text-amber-200/70'}`}>
+            {enabled
+              ? 'Reminders will be sent for customers with reminders enabled.'
+              : 'No reminders will be sent until you turn this on.'}
+          </span>
+        </div>
+      )}
+
+      {/* Default schedule info */}
+      <div className="space-y-3 text-sm text-muted-foreground">
+        <p className="m-0">Default schedule applied to customers without custom settings:</p>
+        <div className="grid grid-cols-2 gap-4 p-3 rounded-lg bg-foreground/[0.03]">
+          <div>
+            <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-1">Before due date</span>
+            <span className="text-foreground text-[13px]">7, 3, 1 days</span>
+          </div>
+          <div>
+            <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-1">After due date</span>
+            <span className="text-foreground text-[13px]">1, 7, 14, 30 days</span>
+          </div>
+          <div>
+            <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-1">Max per invoice</span>
+            <span className="text-foreground text-[13px]">5 reminders</span>
+          </div>
+          <div>
+            <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-1">CC agent</span>
+            <span className="text-foreground text-[13px]">Yes</span>
+          </div>
+        </div>
+        <p className="m-0 text-xs text-muted-foreground/70">Override per customer from their detail page.</p>
+      </div>
     </div>
   );
 }

@@ -103,4 +103,14 @@ export const invoiceService = {
     const result = await api.put<{ data: ReminderSettings }>(`/api/v1/invoices/reminder-settings/${customerId}`, settings);
     return result.data;
   },
+
+  async getGlobalReminderStatus(): Promise<boolean> {
+    const result = await api.get<{ data: { enabled: boolean } }>('/api/v1/invoices/reminder-global');
+    return result.data.enabled;
+  },
+
+  async setGlobalReminderStatus(enabled: boolean): Promise<boolean> {
+    const result = await api.put<{ data: { enabled: boolean } }>('/api/v1/invoices/reminder-global', { enabled });
+    return result.data.enabled;
+  },
 };
