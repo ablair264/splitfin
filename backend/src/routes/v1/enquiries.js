@@ -124,7 +124,6 @@ async function sendApprovalEmail(customer, createdBy) {
     await update('customers', customer.id, {
       magic_link_token: token,
       magic_link_expires_at: expiresAt.toISOString(),
-      updated_at: new Date().toISOString(),
     });
 
     const magicLinkUrl = `${TRADE_PORTAL_URL}/auth/magic-link?token=${token}`;
