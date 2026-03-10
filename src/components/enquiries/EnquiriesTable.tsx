@@ -425,11 +425,13 @@ export default function EnquiriesTable() {
       try {
         const result = await enquiryService.approve(id);
         if (!result.magic_link_sent) {
-          alert(`Customer approved, but magic link was not sent (${result.magic_link_reason || 'unknown'}).`);
+          alert(`Customer approved, but the welcome email was not sent (${result.magic_link_reason || 'unknown'}). You can resend it from the customer detail page.`);
         }
         refetch();
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to approve enquiry:", err);
+        alert(`Failed to approve enquiry: ${err?.message || 'Unknown error'}. Please try again.`);
+        refetch();
       } finally {
         setActionLoading(null);
       }

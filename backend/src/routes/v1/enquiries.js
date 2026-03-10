@@ -105,83 +105,88 @@ function emailWrapper(content, title) {
 }
 
 async function sendApprovalEmail(customer, createdBy) {
-  if (!customer?.email) {
-    logger.warn('[Enquiries] Approval email not sent: customer has no email');
-    return { sent: false, reason: 'missing_email' };
-  }
-
-  // Generate magic link token
-  const crypto = await import('crypto');
-  const token = crypto.randomBytes(32).toString('hex');
-  const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours
-
-  await update('customers', customer.id, {
-    magic_link_token: token,
-    magic_link_expires_at: expiresAt.toISOString(),
-    updated_at: new Date().toISOString(),
-  });
-
-  const magicLinkUrl = `${TRADE_PORTAL_URL}/auth/magic-link?token=${token}`;
-  const customerName = customer.contact_name || null;
-  const companyName = customer.company_name || customer.contact_name || '';
-
-  const content = `
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-      <tr>
-        <td align="center" style="padding-bottom: 20px;">
-          <h1 style="margin: 0; font-family: 'Comfortaa', 'Trebuchet MS', sans-serif; font-size: 28px; font-weight: 600; color: ${COLORS.mauve};">
-            Welcome to DM Brands
-          </h1>
-        </td>
-      </tr>
-    </table>
-
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-      <tr>
-        <td align="center" style="padding-bottom: 25px;">
-          <p style="margin: 0 0 15px; font-size: 16px; line-height: 1.6; color: ${COLORS.textDark};">
-            ${customerName ? `Hi ${customerName},` : 'Hello,'}<br><br>
-            Great news! Your trade account application for<br>
-            <strong>${companyName}</strong> has been approved.
-          </p>
-          <p style="margin: 0; font-size: 16px; line-height: 1.6; color: ${COLORS.textDark};">
-            Click the button below to set up your account and start<br>
-            browsing our full product catalogue. This link expires in 8 hours.
-          </p>
-        </td>
-      </tr>
-    </table>
-
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-      <tr>
-        <td align="center" style="padding-bottom: 20px;">
-          <a href="${magicLinkUrl}"
-             style="display: inline-block; background-color: ${COLORS.mauve}; color: #ffffff; padding: 16px 60px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600;">
-            Set Up Your Account
-          </a>
-        </td>
-      </tr>
-    </table>
-
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-      <tr>
-        <td style="padding: 20px; background: rgba(255,255,255,0.5); border-radius: 12px;">
-          <p style="margin: 0 0 15px; font-size: 14px; font-weight: 600; color: ${COLORS.mauve}; text-align: center;">
-            What you can do:
-          </p>
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
-            <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; Browse products from all our premium brands</td></tr>
-            <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; View real-time stock availability</td></tr>
-            <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; See your personalised trade pricing</td></tr>
-            <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; Place and track orders online</td></tr>
-            <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; View your order history</td></tr>
-          </table>
-        </td>
-      </tr>
-    </table>
-  `;
-
   try {
+    if (!customer?.email) {
+      logger.warn('[Enquiries] Approval email not sent: customer has no email');
+      return { sent: false, reason: 'missing_email' };
+    }
+
+    if (!process.env.RESEND_API_KEY) {
+      logger.warn('[Enquiries] Approval email not sent: RESEND_API_KEY not configured');
+      return { sent: false, reason: 'email_not_configured' };
+    }
+
+    // Generate magic link token
+    const crypto = await import('crypto');
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours
+
+    await update('customers', customer.id, {
+      magic_link_token: token,
+      magic_link_expires_at: expiresAt.toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+    const magicLinkUrl = `${TRADE_PORTAL_URL}/auth/magic-link?token=${token}`;
+    const customerName = customer.contact_name || null;
+    const companyName = customer.company_name || customer.contact_name || '';
+
+    const content = `
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td align="center" style="padding-bottom: 20px;">
+            <h1 style="margin: 0; font-family: 'Comfortaa', 'Trebuchet MS', sans-serif; font-size: 28px; font-weight: 600; color: ${COLORS.mauve};">
+              Welcome to DM Brands
+            </h1>
+          </td>
+        </tr>
+      </table>
+
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td align="center" style="padding-bottom: 25px;">
+            <p style="margin: 0 0 15px; font-size: 16px; line-height: 1.6; color: ${COLORS.textDark};">
+              ${customerName ? `Hi ${customerName},` : 'Hello,'}<br><br>
+              Great news! Your trade account application for<br>
+              <strong>${companyName}</strong> has been approved.
+            </p>
+            <p style="margin: 0; font-size: 16px; line-height: 1.6; color: ${COLORS.textDark};">
+              Click the button below to set up your account and start<br>
+              browsing our full product catalogue. This link expires in 8 hours.
+            </p>
+          </td>
+        </tr>
+      </table>
+
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td align="center" style="padding-bottom: 20px;">
+            <a href="${magicLinkUrl}"
+               style="display: inline-block; background-color: ${COLORS.mauve}; color: #ffffff; padding: 16px 60px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600;">
+              Set Up Your Account
+            </a>
+          </td>
+        </tr>
+      </table>
+
+      <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding: 20px; background: rgba(255,255,255,0.5); border-radius: 12px;">
+            <p style="margin: 0 0 15px; font-size: 14px; font-weight: 600; color: ${COLORS.mauve}; text-align: center;">
+              What you can do:
+            </p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+              <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; Browse products from all our premium brands</td></tr>
+              <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; View real-time stock availability</td></tr>
+              <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; See your personalised trade pricing</td></tr>
+              <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; Place and track orders online</td></tr>
+              <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; View your order history</td></tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    `;
+
     const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
@@ -205,7 +210,7 @@ async function sendApprovalEmail(customer, createdBy) {
     logger.info(`[Enquiries] Approval email sent to ${customer.email} for customer ${customer.id} by ${createdBy || 'system'}`);
     return { sent: true };
   } catch (err) {
-    logger.error('[Enquiries] Approval email send error:', err);
+    logger.error('[Enquiries] Approval email error:', err);
     return { sent: false, reason: err.message || 'send_failed' };
   }
 }
