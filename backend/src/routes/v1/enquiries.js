@@ -6,12 +6,111 @@ import { logger } from '../../utils/logger.js';
 
 const router = express.Router();
 
-async function sendMagicLink(customer, createdBy) {
+const FROM_EMAIL = process.env.FROM_EMAIL || 'DM Brands <noreply@dmbrands.co.uk>';
+const TRADE_PORTAL_URL = process.env.TRADE_PORTAL_URL || 'https://trade.dmbrands.co.uk';
+
+const COLORS = {
+  mauve: '#593c4f',
+  dustyPink: '#d4b8b8',
+  dustyPinkLight: '#e8d5d5',
+  footer: '#4a4044',
+  textDark: '#593c4f',
+  textMuted: '#666666',
+};
+
+const BRAND_LOGOS = [
+  { name: 'Elvang', url: `${TRADE_PORTAL_URL}/brands/elvang.svg` },
+  { name: 'Remember', url: `${TRADE_PORTAL_URL}/brands/remember.svg` },
+  { name: 'Relaxound', url: `${TRADE_PORTAL_URL}/brands/relaxound.svg` },
+  { name: 'Rader', url: `${TRADE_PORTAL_URL}/brands/rader.svg` },
+  { name: 'My Flame', url: `${TRADE_PORTAL_URL}/brands/myflame.svg` },
+  { name: 'Ideas', url: `${TRADE_PORTAL_URL}/brands/i4s.svg` },
+  { name: 'GEFU', url: `${TRADE_PORTAL_URL}/brands/gefu.svg` },
+];
+
+function emailWrapper(content, title) {
+  return `
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #ffffff; font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color: #ffffff;">
+      <tr>
+        <td align="center" style="padding: 40px 20px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width: 600px;">
+            <tr>
+              <td style="background: linear-gradient(180deg, ${COLORS.dustyPink} 0%, ${COLORS.dustyPinkLight} 100%); border-radius: 16px; padding: 40px 40px 50px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td align="center" style="padding-bottom: 30px;">
+                      <img src="${TRADE_PORTAL_URL}/logo-circle.png" alt="DMB" width="100" height="100" style="display: block;">
+                    </td>
+                  </tr>
+                </table>
+                ${content}
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 30px 20px; text-align: center;">
+                <p style="margin: 0 0 15px; font-size: 15px; font-weight: 600; color: ${COLORS.textDark};">
+                  If you received this email in error, you can safely ignore it.
+                </p>
+                <p style="margin: 0; font-size: 14px; color: ${COLORS.textMuted};">
+                  If you require any assistance or have a question.<br>
+                  Please call DM Brands on <strong>01905 616 006</strong>.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="background-color: ${COLORS.footer}; border-radius: 12px; padding: 30px 40px;">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                  <tr>
+                    <td align="center" style="color: #ffffff; font-size: 13px; line-height: 1.6;">
+                      <p style="margin: 0 0 5px; font-weight: 600;">DM Brands Ltd</p>
+                      <p style="margin: 0 0 15px; opacity: 0.9;">79 Waterworks Road, Worcester, WR1 3EZ</p>
+                      <p style="margin: 0;">
+                        01905 616 006<br>
+                        <a href="mailto:sales@dmbrands.co.uk" style="color: #ffffff; opacity: 0.9;">sales@dmbrands.co.uk</a>
+                      </p>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td align="center" style="padding-top: 25px;">
+                      <table role="presentation" cellspacing="0" cellpadding="0">
+                        <tr>
+                          ${BRAND_LOGOS.map(logo => `
+                            <td style="padding: 0 6px;">
+                              <img src="${logo.url}" alt="${logo.name}" width="36" height="36" style="display: block;">
+                            </td>
+                          `).join('')}
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
+  `.trim();
+}
+
+async function sendApprovalEmail(customer, createdBy) {
   if (!customer?.email) {
-    logger.warn('[Enquiries] Magic link not sent: customer has no email');
+    logger.warn('[Enquiries] Approval email not sent: customer has no email');
     return { sent: false, reason: 'missing_email' };
   }
 
+  // Generate magic link token
   const crypto = await import('crypto');
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 8 * 60 * 60 * 1000); // 8 hours
@@ -22,30 +121,91 @@ async function sendMagicLink(customer, createdBy) {
     updated_at: new Date().toISOString(),
   });
 
-  const magicLinkUrl = `https://trade.dmbrands.co.uk/auth/magic-link?token=${token}`;
+  const magicLinkUrl = `${TRADE_PORTAL_URL}/auth/magic-link?token=${token}`;
+  const customerName = customer.contact_name || null;
+  const companyName = customer.company_name || customer.contact_name || '';
+
+  const content = `
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+      <tr>
+        <td align="center" style="padding-bottom: 20px;">
+          <h1 style="margin: 0; font-family: 'Comfortaa', 'Trebuchet MS', sans-serif; font-size: 28px; font-weight: 600; color: ${COLORS.mauve};">
+            Welcome to DM Brands
+          </h1>
+        </td>
+      </tr>
+    </table>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+      <tr>
+        <td align="center" style="padding-bottom: 25px;">
+          <p style="margin: 0 0 15px; font-size: 16px; line-height: 1.6; color: ${COLORS.textDark};">
+            ${customerName ? `Hi ${customerName},` : 'Hello,'}<br><br>
+            Great news! Your trade account application for<br>
+            <strong>${companyName}</strong> has been approved.
+          </p>
+          <p style="margin: 0; font-size: 16px; line-height: 1.6; color: ${COLORS.textDark};">
+            Click the button below to set up your account and start<br>
+            browsing our full product catalogue. This link expires in 8 hours.
+          </p>
+        </td>
+      </tr>
+    </table>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+      <tr>
+        <td align="center" style="padding-bottom: 20px;">
+          <a href="${magicLinkUrl}"
+             style="display: inline-block; background-color: ${COLORS.mauve}; color: #ffffff; padding: 16px 60px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: 600;">
+            Set Up Your Account
+          </a>
+        </td>
+      </tr>
+    </table>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+      <tr>
+        <td style="padding: 20px; background: rgba(255,255,255,0.5); border-radius: 12px;">
+          <p style="margin: 0 0 15px; font-size: 14px; font-weight: 600; color: ${COLORS.mauve}; text-align: center;">
+            What you can do:
+          </p>
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+            <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; Browse products from all our premium brands</td></tr>
+            <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; View real-time stock availability</td></tr>
+            <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; See your personalised trade pricing</td></tr>
+            <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; Place and track orders online</td></tr>
+            <tr><td style="padding: 8px 0; font-size: 14px; color: ${COLORS.textDark};">&#10003; View your order history</td></tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  `;
 
   try {
-    await fetch('https://api.resend.com/emails', {
+    const response = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: process.env.FROM_EMAIL || 'DM Brands <noreply@dmbrands.co.uk>',
+        from: FROM_EMAIL,
         to: customer.email,
-        subject: 'Your magic link - DM Brands Trade Portal',
-        html: `<p>Hi ${customer.contact_name || 'there'},</p>
-        <p>Click the link below to sign into your DM Brands Trade Portal account. This link expires in 8 hours.</p>
-        <p><a href="${magicLinkUrl}" style="display:inline-block;background-color:#8B7BB5;color:#fff;padding:12px 40px;text-decoration:none;border-radius:8px;font-weight:600;">Sign in here</a></p>
-        <p>If you didn't request this, you can safely ignore this email.</p>`,
+        subject: 'Your Trade Account Has Been Approved - DM Brands',
+        html: emailWrapper(content, 'Account Approved'),
       }),
     });
 
-    logger.info(`[Enquiries] Magic link sent to ${customer.email} for customer ${customer.id} by ${createdBy || 'system'}`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      logger.error('[Enquiries] Approval email send failed:', errorData);
+      return { sent: false, reason: errorData.message || 'send_failed' };
+    }
+
+    logger.info(`[Enquiries] Approval email sent to ${customer.email} for customer ${customer.id} by ${createdBy || 'system'}`);
     return { sent: true };
   } catch (err) {
-    logger.error('[Enquiries] Magic link send error:', err);
+    logger.error('[Enquiries] Approval email send error:', err);
     return { sent: false, reason: err.message || 'send_failed' };
   }
 }
@@ -410,20 +570,20 @@ router.post('/:id/approve', async (req, res) => {
       created_by: req.agent?.id,
     });
 
-    // 6. Send magic link (best effort)
-    const magicLinkResult = await sendMagicLink(customer, req.agent?.id);
-    if (!magicLinkResult.sent) {
+    // 6. Send approval welcome email with magic link (best effort)
+    const emailResult = await sendApprovalEmail(customer, req.agent?.id);
+    if (!emailResult.sent) {
       await insert('enquiry_activities', {
         enquiry_id: parseInt(req.params.id),
         activity_type: 'note',
-        description: `Magic link not sent (${magicLinkResult.reason || 'unknown'})`,
+        description: `Approval email not sent (${emailResult.reason || 'unknown'})`,
         created_by: req.agent?.id,
       });
     } else {
       await insert('enquiry_activities', {
         enquiry_id: parseInt(req.params.id),
         activity_type: 'note',
-        description: 'Magic link sent to customer for Trade Portal access.',
+        description: 'Approval welcome email with magic link sent to customer.',
         created_by: req.agent?.id,
       });
     }
@@ -432,8 +592,8 @@ router.post('/:id/approve', async (req, res) => {
       data: {
         customer,
         zoho_contact_id: zohoContact.contact_id,
-        magic_link_sent: magicLinkResult.sent,
-        magic_link_reason: magicLinkResult.sent ? null : magicLinkResult.reason || 'unknown',
+        magic_link_sent: emailResult.sent,
+        magic_link_reason: emailResult.sent ? null : emailResult.reason || 'unknown',
       },
     });
   } catch (err) {
