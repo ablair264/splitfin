@@ -19,7 +19,6 @@ import {
   Package,
   CheckCircle,
   Truck,
-  MapPin,
   User,
   Clock,
   AlertTriangle,
@@ -44,7 +43,6 @@ const COLUMNS: { id: WarehouseStatus; label: string; shortLabel: string; icon: R
   { id: 'packed', label: 'Packed', shortLabel: 'Packed', icon: <Package size={14} />, color: 'text-blue-500', bg: 'bg-blue-500/5' },
   { id: 'delivery_booked', label: 'Delivery Booked', shortLabel: 'Booked', icon: <Truck size={14} />, color: 'text-purple-500', bg: 'bg-purple-500/5' },
   { id: 'shipped', label: 'Shipped', shortLabel: 'Shipped', icon: <BoxIcon size={14} />, color: 'text-cyan-500', bg: 'bg-cyan-500/5' },
-  { id: 'delivered', label: 'Delivered', shortLabel: 'Delivered', icon: <MapPin size={14} />, color: 'text-emerald-500', bg: 'bg-emerald-500/5' },
 ];
 
 const STATUS_ORDER: WarehouseStatus[] = ['sent_to_packing', 'packed', 'delivery_booked', 'shipped', 'delivered'];
@@ -99,30 +97,28 @@ function PackageCard({
         isDragOverlay && 'shadow-lg ring-2 ring-primary/20 rotate-[1deg]',
       )}
     >
-      {/* Row 1: packing number + order link */}
-      <div className="flex items-center justify-between gap-1 mb-1">
+      {/* Row 1: customer name (headline) */}
+      <div className="flex items-center gap-1.5 mb-0.5">
+        <User size={11} className="shrink-0 text-muted-foreground" />
         <span className="text-xs font-semibold text-foreground truncate">
-          {pkg.packing_number}
+          {pkg.customer_name || 'Unknown'}
         </span>
+      </div>
+
+      {/* Row 2: packing number + order number + items */}
+      <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground">
+        <span className="truncate">{pkg.packing_number}</span>
         <button
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            navigate(`/orders/${pkg.order_id}`);
+            navigate(`/order/${pkg.order_id}`);
           }}
           className="text-[10px] text-primary hover:text-primary/80 transition-colors shrink-0"
           title={`View ${pkg.salesorder_number}`}
         >
           {pkg.salesorder_number}
         </button>
-      </div>
-
-      {/* Row 2: customer + items */}
-      <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground">
-        <span className="flex items-center gap-1 truncate min-w-0">
-          <User size={10} className="shrink-0" />
-          <span className="truncate">{pkg.customer_name || 'Unknown'}</span>
-        </span>
         <span className="shrink-0 tabular-nums">{pkg.item_count} item{pkg.item_count !== 1 ? 's' : ''}</span>
       </div>
 
@@ -163,7 +159,6 @@ export default function Warehouse() {
     packed: [],
     delivery_booked: [],
     shipped: [],
-    delivered: [],
   });
 
   useEffect(() => {
@@ -194,7 +189,6 @@ export default function Warehouse() {
         packed: enrich(data.packed, 'packed'),
         delivery_booked: enrich(data.delivery_booked, 'delivery_booked'),
         shipped: enrich(data.shipped, 'shipped'),
-        delivered: enrich(data.delivered, 'delivered'),
       });
       setLastRefresh(new Date());
     } catch (err) {
@@ -370,7 +364,7 @@ export default function Warehouse() {
                 key={col.id}
                 value={col.id}
                 className={cn(
-                  'w-[220px] shrink-0 rounded-lg border border-border/40 p-0 gap-0 flex flex-col h-full',
+                  'w-[280px] flex-1 rounded-lg border border-border/40 p-0 gap-0 flex flex-col h-full',
                   col.bg,
                 )}
               >
@@ -430,7 +424,7 @@ export default function Warehouse() {
               const pkg = findPackage(value);
               if (!pkg) return null;
               return (
-                <div className="w-[210px]">
+                <div className="w-[270px]">
                   <PackageCard
                     pkg={pkg}
                     onStatusUpdate={handleStatusUpdate}

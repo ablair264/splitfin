@@ -1,5 +1,5 @@
 {
-  "timestamp": "2026-03-15T23:31:22.479Z",
+  "timestamp": "2026-03-15T23:40:22.536Z",
   "projectRoot": "/home/alastair/splitfin",
   "structure": {
     "hasPackageJson": true,
@@ -7,5 +7,5 @@
     "hasClaudeConfig": true,
     "hasClaudeFlow": true
   },
-  "scannedAt": 1773617482479
+  "scannedAt": 1773618022536
 }
