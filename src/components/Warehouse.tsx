@@ -21,7 +21,6 @@ import {
   Truck,
   MapPin,
   User,
-  DollarSign,
   Clock,
   AlertTriangle,
   RefreshCw,
@@ -40,12 +39,12 @@ interface KanbanItem extends KanbanPackage {
   _kanbanId: string;
 }
 
-const COLUMNS: { id: WarehouseStatus; label: string; icon: React.ReactNode; color: string }[] = [
-  { id: 'sent_to_packing', label: 'Sent to Packing', icon: <Send size={16} />, color: 'text-amber-500' },
-  { id: 'packed', label: 'Packed', icon: <Package size={16} />, color: 'text-blue-500' },
-  { id: 'delivery_booked', label: 'Delivery Booked', icon: <Truck size={16} />, color: 'text-purple-500' },
-  { id: 'shipped', label: 'Shipped', icon: <BoxIcon size={16} />, color: 'text-cyan-500' },
-  { id: 'delivered', label: 'Delivered', icon: <MapPin size={16} />, color: 'text-emerald-500' },
+const COLUMNS: { id: WarehouseStatus; label: string; shortLabel: string; icon: React.ReactNode; color: string; bg: string }[] = [
+  { id: 'sent_to_packing', label: 'Sent to Packing', shortLabel: 'Packing', icon: <Send size={14} />, color: 'text-amber-500', bg: 'bg-amber-500/5' },
+  { id: 'packed', label: 'Packed', shortLabel: 'Packed', icon: <Package size={14} />, color: 'text-blue-500', bg: 'bg-blue-500/5' },
+  { id: 'delivery_booked', label: 'Delivery Booked', shortLabel: 'Booked', icon: <Truck size={14} />, color: 'text-purple-500', bg: 'bg-purple-500/5' },
+  { id: 'shipped', label: 'Shipped', shortLabel: 'Shipped', icon: <BoxIcon size={14} />, color: 'text-cyan-500', bg: 'bg-cyan-500/5' },
+  { id: 'delivered', label: 'Delivered', shortLabel: 'Delivered', icon: <MapPin size={14} />, color: 'text-emerald-500', bg: 'bg-emerald-500/5' },
 ];
 
 const STATUS_ORDER: WarehouseStatus[] = ['sent_to_packing', 'packed', 'delivery_booked', 'shipped', 'delivered'];
@@ -65,16 +64,6 @@ function getActionText(status: WarehouseStatus): string | null {
   }
 }
 
-function getStatusBadgeClass(status: WarehouseStatus): string {
-  switch (status) {
-    case 'sent_to_packing': return 'bg-amber-500/10 text-amber-500 border-amber-500/20';
-    case 'packed': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-    case 'delivery_booked': return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
-    case 'shipped': return 'bg-cyan-500/10 text-cyan-500 border-cyan-500/20';
-    case 'delivered': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
-  }
-}
-
 // ── Helpers ──────────────────────────────────────────────────────────────
 
 function formatCurrency(amount: number): string {
@@ -85,7 +74,7 @@ function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-// ── Package Card ────────────────────────────────────────────────────────
+// ── Compact Package Card ─────────────────────────────────────────────────
 
 function PackageCard({
   pkg,
@@ -106,85 +95,53 @@ function PackageCard({
   return (
     <div
       className={cn(
-        'rounded-lg border bg-card p-3 shadow-sm space-y-2',
-        isDragOverlay && 'shadow-lg ring-2 ring-primary/20 rotate-[2deg]',
+        'rounded-md border bg-card px-2.5 py-2 shadow-sm',
+        isDragOverlay && 'shadow-lg ring-2 ring-primary/20 rotate-[1deg]',
       )}
     >
-      {/* Header: packing number + view */}
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-sm font-medium text-foreground truncate">
+      {/* Row 1: packing number + order link */}
+      <div className="flex items-center justify-between gap-1 mb-1">
+        <span className="text-xs font-semibold text-foreground truncate">
           {pkg.packing_number}
         </span>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/orders/${pkg.order_id}`);
-            }}
-            className="text-muted-foreground hover:text-foreground transition-colors p-0.5"
-            title="View order"
-          >
-            <Eye size={14} />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            navigate(`/orders/${pkg.order_id}`);
+          }}
+          className="text-[10px] text-primary hover:text-primary/80 transition-colors shrink-0"
+          title={`View ${pkg.salesorder_number}`}
+        >
+          {pkg.salesorder_number}
+        </button>
       </div>
 
-      {/* Sales order number (clickable subtitle) */}
-      <button
-        type="button"
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate(`/orders/${pkg.order_id}`);
-        }}
-        className="text-xs text-primary hover:text-primary/80 transition-colors truncate block"
-      >
-        {pkg.salesorder_number}
-      </button>
-
-      {/* Customer */}
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <User size={12} />
-        <span className="truncate">{pkg.customer_name || 'Unknown'}</span>
-      </div>
-
-      {/* Meta row: item count + amount */}
-      <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-        <Badge variant="secondary" className="text-xs h-5 gap-1">
-          <Package size={10} />
-          {pkg.item_count} {pkg.item_count === 1 ? 'item' : 'items'}
-        </Badge>
-        <span className="flex items-center gap-1 font-medium text-foreground">
-          <DollarSign size={12} />
-          {formatCurrency(pkg.order_total || 0)}
+      {/* Row 2: customer + items */}
+      <div className="flex items-center justify-between gap-1 text-[11px] text-muted-foreground">
+        <span className="flex items-center gap-1 truncate min-w-0">
+          <User size={10} className="shrink-0" />
+          <span className="truncate">{pkg.customer_name || 'Unknown'}</span>
         </span>
+        <span className="shrink-0 tabular-nums">{pkg.item_count} item{pkg.item_count !== 1 ? 's' : ''}</span>
       </div>
 
-      {/* Action button */}
+      {/* Row 3: action button (compact) */}
       {nextStatus && actionText && !isDragOverlay && (
         <Button
-          size="sm"
+          size="xs"
           intent="outline"
-          className="w-full h-7 text-xs"
+          className="w-full mt-1.5 h-6 text-[11px]"
           isDisabled={isUpdating}
-          onPress={() => {
-            onStatusUpdate(pkg.id, nextStatus);
-          }}
+          onPress={() => onStatusUpdate(pkg.id, nextStatus)}
         >
           {isUpdating ? (
-            <RefreshCw size={12} className="animate-spin mr-1" />
+            <RefreshCw size={10} className="animate-spin" />
           ) : (
-            <CheckCircle size={12} className="mr-1" />
+            <CheckCircle size={10} />
           )}
           {isUpdating ? 'Updating...' : actionText}
         </Button>
-      )}
-
-      {status === 'delivered' && !isDragOverlay && (
-        <Badge className={cn('text-xs w-full justify-center', getStatusBadgeClass('delivered'))}>
-          <CheckCircle size={12} />
-          Delivered
-        </Badge>
       )}
     </div>
   );
@@ -201,7 +158,6 @@ export default function Warehouse() {
   const [updatingPackages, setUpdatingPackages] = useState<Set<number>>(new Set());
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
 
-  // Kanban state: Record<ColumnId, KanbanItem[]>
   const [columns, setColumns] = useState<Record<UniqueIdentifier, KanbanItem[]>>({
     sent_to_packing: [],
     packed: [],
@@ -210,7 +166,6 @@ export default function Warehouse() {
     delivered: [],
   });
 
-  // Auth check
   useEffect(() => {
     const agent = authService.getCachedAgent();
     if (!agent) {
@@ -221,7 +176,6 @@ export default function Warehouse() {
     setAuthenticated(true);
   }, []);
 
-  // Fetch packages
   const fetchPackages = useCallback(async () => {
     if (!authenticated) return;
     try {
@@ -255,14 +209,12 @@ export default function Warehouse() {
     if (authenticated) fetchPackages();
   }, [fetchPackages, authenticated]);
 
-  // Auto-refresh every 30s
   useEffect(() => {
     if (!authenticated) return;
     const interval = setInterval(fetchPackages, 30000);
     return () => clearInterval(interval);
   }, [fetchPackages, authenticated]);
 
-  // Handle status update (button click)
   const handleStatusUpdate = useCallback(
     async (packageId: number, newStatus: WarehouseStatus) => {
       setUpdatingPackages((prev) => new Set([...prev, packageId]));
@@ -284,10 +236,8 @@ export default function Warehouse() {
     [fetchPackages],
   );
 
-  // Handle kanban drag-and-drop column changes
   const handleValueChange = useCallback(
     async (newColumns: Record<UniqueIdentifier, KanbanItem[]>) => {
-      // Find which package moved to a different column
       const prevColumns = columns;
       let movedPackage: KanbanItem | null = null;
       let targetColumn: WarehouseStatus | null = null;
@@ -295,8 +245,6 @@ export default function Warehouse() {
       for (const colId of STATUS_ORDER) {
         const newItems = newColumns[colId] ?? [];
         const prevItems = prevColumns[colId] ?? [];
-
-        // Find items in new that weren't in prev
         const prevIds = new Set(prevItems.map((p) => p._kanbanId));
         for (const item of newItems) {
           if (!prevIds.has(item._kanbanId)) {
@@ -308,20 +256,16 @@ export default function Warehouse() {
         if (movedPackage) break;
       }
 
-      // Optimistically update UI
       setColumns(newColumns);
 
-      // If a package moved to a different column, update its status
       if (movedPackage && targetColumn) {
         try {
           await warehouseService.updatePackageStatus(movedPackage.id, targetColumn);
-          // Refresh to get accurate data from server
           await fetchPackages();
         } catch (err) {
           console.error('Drag-drop update failed:', err);
           setError('Failed to update package via drag-and-drop');
           setTimeout(() => setError(null), 4000);
-          // Revert optimistic update
           setColumns(prevColumns);
         }
       }
@@ -329,7 +273,6 @@ export default function Warehouse() {
     [columns, fetchPackages],
   );
 
-  // Stats
   const stats = useMemo(() => {
     const allPackages = Object.values(columns).flat();
     return {
@@ -338,7 +281,6 @@ export default function Warehouse() {
     };
   }, [columns]);
 
-  // Find a package by kanban ID for the overlay
   const findPackage = useCallback(
     (id: UniqueIdentifier): KanbanItem | undefined => {
       for (const items of Object.values(columns)) {
@@ -350,7 +292,6 @@ export default function Warehouse() {
     [columns],
   );
 
-  // Column count map
   const columnCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const col of COLUMNS) {
@@ -361,7 +302,7 @@ export default function Warehouse() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="p-4 space-y-4">
         <PageHeader
           title="Warehouse"
           subtitle="Loading..."
@@ -378,44 +319,29 @@ export default function Warehouse() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Page Header */}
+    <div className="p-4 space-y-4 h-[calc(100vh-64px)] flex flex-col">
+      {/* Page Header — compact */}
       <PageHeader
         title="Warehouse"
-        subtitle={`${stats.total} active packages`}
         count={stats.total}
+        subtitle="active packages"
         breadcrumbs={[
           { label: 'Shipping', href: '/shipping/warehouse' },
           { label: 'Warehouse' },
         ]}
         actions={
-          <div className="flex items-center gap-3">
-            {/* Stats pills */}
-            <div className="hidden md:flex items-center gap-2">
-              <Badge variant="outline" className="text-xs gap-1 py-1">
-                <Package size={12} />
-                {stats.total} packages
-              </Badge>
-              <Badge variant="outline" className="text-xs gap-1 py-1">
-                <DollarSign size={12} />
-                {formatCurrency(stats.value)}
-              </Badge>
-            </div>
-
-            {/* Last refresh */}
+          <div className="flex items-center gap-2">
             <span className="hidden lg:flex items-center gap-1 text-xs text-muted-foreground">
-              <Clock size={12} />
+              <Clock size={11} />
               {lastRefresh.toLocaleTimeString()}
             </span>
-
-            {/* Refresh button */}
             <Button
               intent="outline"
-              size="sm"
+              size="xs"
               onPress={fetchPackages}
               isDisabled={loading}
             >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+              <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
               Refresh
             </Button>
           </div>
@@ -424,94 +350,99 @@ export default function Warehouse() {
 
       {/* Error banner */}
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          <AlertTriangle size={16} />
+        <div className="flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-3 py-2 text-xs text-destructive shrink-0">
+          <AlertTriangle size={14} />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Kanban Board */}
-      <Kanban<KanbanItem>
-        value={columns}
-        onValueChange={handleValueChange}
-        getItemValue={(item) => item._kanbanId}
-        flatCursor
-      >
-        <KanbanBoard className="gap-4">
-          {COLUMNS.map((col) => (
-            <KanbanColumn
-              key={col.id}
-              value={col.id}
-              className="min-w-[280px] max-w-[340px] flex-1 rounded-xl border border-border/50 bg-muted/30 p-0 gap-0"
-            >
-              {/* Column header */}
-              <div className="flex items-center justify-between px-3 py-2.5 border-b border-border/50">
-                <div className="flex items-center gap-2">
-                  <span className={col.color}>{col.icon}</span>
-                  <span className="text-sm font-medium text-foreground">{col.label}</span>
-                </div>
-                <Badge
-                  variant="secondary"
-                  className="text-xs tabular-nums h-5 min-w-[20px] justify-center"
-                >
-                  {columnCounts[col.id] ?? 0}
-                </Badge>
-              </div>
-
-              {/* Column body */}
-              <div className="flex flex-col gap-2 p-2 min-h-[120px] overflow-y-auto max-h-[calc(100vh-280px)]">
-                {(columns[col.id] ?? []).map((pkg) => (
-                  <KanbanItemPrimitive
-                    key={pkg._kanbanId}
-                    value={pkg._kanbanId}
-                    className="rounded-lg"
-                  >
-                    <div className="flex gap-1">
-                      <KanbanItemHandle className="flex items-start pt-3 px-0.5 text-muted-foreground/50 hover:text-muted-foreground transition-colors">
-                        <GripVertical size={14} />
-                      </KanbanItemHandle>
-                      <div className="flex-1 min-w-0">
-                        <PackageCard
-                          pkg={pkg}
-                          onStatusUpdate={handleStatusUpdate}
-                          isUpdating={updatingPackages.has(pkg.id)}
-                        />
-                      </div>
-                    </div>
-                  </KanbanItemPrimitive>
-                ))}
-
-                {/* Empty state */}
-                {(columns[col.id] ?? []).length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-8 text-muted-foreground/50">
-                    <span className={cn('mb-2', col.color)}>{col.icon}</span>
-                    <span className="text-xs">No packages</span>
-                  </div>
+      {/* Kanban Board — fills remaining height */}
+      <div className="flex-1 min-h-0 overflow-x-auto">
+        <Kanban<KanbanItem>
+          value={columns}
+          onValueChange={handleValueChange}
+          getItemValue={(item) => item._kanbanId}
+          flatCursor
+        >
+          <KanbanBoard className="gap-3 h-full min-w-max">
+            {COLUMNS.map((col) => (
+              <KanbanColumn
+                key={col.id}
+                value={col.id}
+                className={cn(
+                  'w-[220px] shrink-0 rounded-lg border border-border/40 p-0 gap-0 flex flex-col h-full',
+                  col.bg,
                 )}
-              </div>
-            </KanbanColumn>
-          ))}
-        </KanbanBoard>
+              >
+                {/* Column header */}
+                <div className="flex items-center justify-between px-2.5 py-2 border-b border-border/40 shrink-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className={col.color}>{col.icon}</span>
+                    <span className="text-xs font-medium text-foreground">{col.shortLabel}</span>
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] tabular-nums h-4 min-w-[18px] justify-center px-1"
+                  >
+                    {columnCounts[col.id] ?? 0}
+                  </Badge>
+                </div>
 
-        {/* Drag overlay */}
-        <KanbanOverlay>
-          {({ value, variant }) => {
-            if (variant === 'column') return null;
-            const pkg = findPackage(value);
-            if (!pkg) return null;
-            return (
-              <div className="w-[280px]">
-                <PackageCard
-                  pkg={pkg}
-                  onStatusUpdate={handleStatusUpdate}
-                  isUpdating={false}
-                  isDragOverlay
-                />
-              </div>
-            );
-          }}
-        </KanbanOverlay>
-      </Kanban>
+                {/* Column body — scrollable */}
+                <div className="flex flex-col gap-1.5 p-1.5 flex-1 min-h-0 overflow-y-auto">
+                  {(columns[col.id] ?? []).map((pkg) => (
+                    <KanbanItemPrimitive
+                      key={pkg._kanbanId}
+                      value={pkg._kanbanId}
+                      className="rounded-md"
+                    >
+                      <div className="flex gap-0.5">
+                        <KanbanItemHandle className="flex items-center px-0.5 text-muted-foreground/30 hover:text-muted-foreground/60 transition-colors">
+                          <GripVertical size={12} />
+                        </KanbanItemHandle>
+                        <div className="flex-1 min-w-0">
+                          <PackageCard
+                            pkg={pkg}
+                            onStatusUpdate={handleStatusUpdate}
+                            isUpdating={updatingPackages.has(pkg.id)}
+                          />
+                        </div>
+                      </div>
+                    </KanbanItemPrimitive>
+                  ))}
+
+                  {/* Empty state */}
+                  {(columns[col.id] ?? []).length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-6 text-muted-foreground/40">
+                      <span className={cn('mb-1', col.color)}>{col.icon}</span>
+                      <span className="text-[10px]">No packages</span>
+                    </div>
+                  )}
+                </div>
+              </KanbanColumn>
+            ))}
+          </KanbanBoard>
+
+          {/* Drag overlay */}
+          <KanbanOverlay>
+            {({ value, variant }) => {
+              if (variant === 'column') return null;
+              const pkg = findPackage(value);
+              if (!pkg) return null;
+              return (
+                <div className="w-[210px]">
+                  <PackageCard
+                    pkg={pkg}
+                    onStatusUpdate={handleStatusUpdate}
+                    isUpdating={false}
+                    isDragOverlay
+                  />
+                </div>
+              );
+            }}
+          </KanbanOverlay>
+        </Kanban>
+      </div>
     </div>
   );
 }
