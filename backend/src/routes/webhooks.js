@@ -5,6 +5,7 @@ import admin from 'firebase-admin';
 import cronDataSyncService from '../services/cronDataSyncService.js';
 import zohoReportsService from '../services/zohoReportsService.js';
 import { createCustomerAuth } from '../services/customerAuthService.js';
+import { query } from '../config/database.js';
 
 const router = express.Router();
 
@@ -774,6 +775,64 @@ router.post('/trigger-sync', authenticateWebhook, async (req, res) => {
             error: error.message 
         });
     }
+});
+
+// ── Package update webhook (from Zoho) ──────────────────────────────
+router.post('/package-update', authenticateWebhook, async (req, res) => {
+  try {
+    const { package_id, salesorder_id, status, tracking_number, carrier } = req.body;
+
+    // Log the webhook event using the actual webhook_logs schema
+    await query(
+      `INSERT INTO webhook_logs (event, module, entity_id, payload, success, created_at)
+       VALUES ($1, $2, $3, $4, $5, NOW())`,
+      ['package_update', 'packages', package_id ? String(package_id) : null, JSON.stringify(req.body), true]
+    );
+
+    if (!package_id) {
+      return res.status(400).json({ error: 'package_id required' });
+    }
+
+    const { rows: [existing] } = await query(
+      `SELECT * FROM shipments WHERE zoho_shipment_id = $1`,
+      [String(package_id)]
+    );
+
+    if (!existing) {
+      return res.json({ message: 'Package not found locally, will sync on next cycle' });
+    }
+
+    const STATUS_ORDER = ['not_shipped', 'sent_to_packing', 'packed', 'delivery_booked', 'shipped', 'delivered'];
+    const statusMap = { not_shipped: 'not_shipped', packed: 'packed', shipped: 'shipped', delivered: 'delivered' };
+    const zohoWarehouseStatus = statusMap[status] || null;
+
+    const updates = {};
+    if (tracking_number) updates.tracking_number = tracking_number;
+    if (carrier) updates.carrier_name = carrier;
+    if (status) updates.status = status;
+
+    if (zohoWarehouseStatus) {
+      const currentIdx = STATUS_ORDER.indexOf(existing.warehouse_status);
+      const newIdx = STATUS_ORDER.indexOf(zohoWarehouseStatus);
+      if (newIdx > currentIdx) {
+        updates.warehouse_status = zohoWarehouseStatus;
+      }
+    }
+
+    if (Object.keys(updates).length > 0) {
+      const keys = Object.keys(updates);
+      const setClause = keys.map((k, i) => `${k} = $${i + 1}`).join(', ');
+      await query(
+        `UPDATE shipments SET ${setClause}, updated_at = NOW() WHERE id = $${keys.length + 1}`,
+        [...Object.values(updates), existing.id]
+      );
+    }
+
+    res.json({ message: 'Package updated', updates });
+  } catch (err) {
+    console.error('Webhook package-update error:', err);
+    res.status(500).json({ error: 'Internal error' });
+  }
 });
 
 export default router;

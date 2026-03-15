@@ -1,5 +1,6 @@
 import { orderService } from './orderService';
 import { authService } from './authService';
+import { warehouseService, type KanbanPackage } from './warehouseService';
 
 export interface WarehouseNotification {
   id: string;
@@ -48,6 +49,9 @@ export interface OrderWithShipping {
     trading_name?: string;
     company?: string;
   };
+  _packageId?: number;
+  _packingNumber?: string;
+  _itemCount?: number;
 }
 
 export const shippingService = {
@@ -131,11 +135,7 @@ export const shippingService = {
     }
   },
 
-  // Get orders by warehouse status for current user's company
-  // TODO: The new orders API does not have a warehouse_status filter.
-  // The new schema does not have warehouse_status on orders at all.
-  // This fetches all orders and returns empty buckets until a proper
-  // warehouse workflow is implemented in the backend API.
+  // Get orders by warehouse status using real kanban data from warehouse API
   async getOrdersByWarehouseStatus(_companyId: string): Promise<{
     pending: OrderWithShipping[];
     sentToPacking: OrderWithShipping[];
@@ -144,24 +144,33 @@ export const shippingService = {
     delivered: OrderWithShipping[];
   }> {
     try {
-      // TODO: Implement proper warehouse status filtering once the backend
-      // supports warehouse workflow fields. For now, return empty arrays.
+      const kanban = await warehouseService.getKanbanData();
+
+      const mapToOrder = (pkg: KanbanPackage): OrderWithShipping => ({
+        id: String(pkg.order_id),
+        salesorder_number: pkg.salesorder_number,
+        status: pkg.warehouse_status,
+        warehouse_status: pkg.warehouse_status,
+        customer_name: pkg.customer_name,
+        total: pkg.order_total,
+        date: pkg.order_date,
+        created_at: pkg.created_at,
+        customers: { display_name: pkg.customer_name },
+        _packageId: pkg.id,
+        _packingNumber: pkg.packing_number,
+        _itemCount: pkg.item_count,
+      });
+
       return {
         pending: [],
-        sentToPacking: [],
-        packed: [],
-        deliveryBooked: [],
-        delivered: [],
+        sentToPacking: (kanban.sent_to_packing || []).map(mapToOrder),
+        packed: (kanban.packed || []).map(mapToOrder),
+        deliveryBooked: (kanban.delivery_booked || []).map(mapToOrder),
+        delivered: (kanban.delivered || []).map(mapToOrder),
       };
     } catch (error) {
-      console.error('Error fetching orders by warehouse status:', error);
-      return {
-        pending: [],
-        sentToPacking: [],
-        packed: [],
-        deliveryBooked: [],
-        delivered: [],
-      };
+      console.error('Error fetching kanban data:', error);
+      return { pending: [], sentToPacking: [], packed: [], deliveryBooked: [], delivered: [] };
     }
   },
 

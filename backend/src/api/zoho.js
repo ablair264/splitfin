@@ -1073,3 +1073,36 @@ export function getTokenInfo() {
     timeUntilExpiry: cachedExpiry - Date.now()
   };
 }
+
+// ========================================
+// PACKAGE CREATION
+// ========================================
+
+/**
+ * Creates a package in Zoho Inventory for a given sales order.
+ * @param {string} zohoSalesorderId - The Zoho sales order ID
+ * @param {Array<{zoho_line_item_id: string, quantity: number}>} lineItems - Items to package
+ * @returns {Promise<object>} The Zoho API response
+ */
+export async function createZohoPackage(zohoSalesorderId, lineItems) {
+  const token = await getAccessToken();
+
+  const packageData = {
+    date: new Date().toISOString().split('T')[0],
+    line_items: lineItems.map(item => ({
+      so_line_item_id: item.zoho_line_item_id,
+      quantity: item.quantity,
+    })),
+  };
+
+  const response = await axios.post(
+    `${ZOHO_CONFIG.baseUrls.inventory}/packages?salesorder_id=${zohoSalesorderId}&organization_id=${ZOHO_CONFIG.orgId}`,
+    packageData,
+    {
+      headers: { Authorization: `Zoho-oauthtoken ${token}` },
+      timeout: 30000,
+    }
+  );
+
+  return response.data;
+}

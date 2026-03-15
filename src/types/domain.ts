@@ -115,6 +115,8 @@ export interface OrderLineItem {
   amount: number;
   discount: number;
   tax_amount: number;
+  quantity_shipped?: number;
+  quantity_invoiced?: number;
 }
 
 export interface Product {

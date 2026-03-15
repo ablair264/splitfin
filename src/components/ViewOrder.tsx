@@ -6,6 +6,13 @@ import { customerService } from '../services/customerService';
 import { invoiceService } from '../services/invoiceService';
 import { productService } from '../services/productService';
 import { shippingService } from '../services/shippingService';
+import { PackageAllocationModal } from '@/components/warehouse/PackageAllocationModal';
+import { OrderPackagesSection } from '@/components/warehouse/OrderPackagesSection';
+import { PackingScanModal } from '@/components/warehouse/PackingScanModal';
+import { ShippingBookingModal } from '@/components/warehouse/ShippingBookingModal';
+import { PackingListEditModal } from '@/components/warehouse/PackingListEditModal';
+import { triggerPackingListPrint } from '@/components/warehouse/PackingListPrint';
+import type { Package as WarehousePackage } from '@/services/warehouseService';
 import { useLoader } from '../contexts/LoaderContext';
 import type { Order, OrderLineItem, Customer, Invoice } from '../types/domain';
 import { Button } from '@/components/ui/button';
@@ -104,6 +111,12 @@ function ViewOrder() {
   const [shippingMessage, setShippingMessage] = useState('');
 
   const [activePackageTab, setActivePackageTab] = useState(0);
+
+  const [allocationOpen, setAllocationOpen] = useState(false);
+  const [scanPkg, setScanPkg] = useState<WarehousePackage | null>(null);
+  const [bookingPkg, setBookingPkg] = useState<WarehousePackage | null>(null);
+  const [editPkg, setEditPkg] = useState<WarehousePackage | null>(null);
+  const [packagesKey, setPackagesKey] = useState(0);
 
   const fetchOrderDetails = useCallback(async () => {
     if (!orderId) return;
@@ -688,8 +701,8 @@ function ViewOrder() {
             <Button intent="outline" size="sm" onPress={handleEditOrder}>
               <Settings size={16} /> Edit Order
             </Button>
-            <Button intent="primary" size="sm" onPress={handleSendToPacking} isDisabled={sendingToPacking}>
-              <Package size={16} /> {sendingToPacking ? 'Sending...' : 'Send to Packing'}
+            <Button intent="primary" size="sm" onPress={() => setAllocationOpen(true)}>
+              <Package size={16} /> Send to Packing
             </Button>
           </div>
         </div>
@@ -1117,6 +1130,18 @@ function ViewOrder() {
                 )}
               </div>
 
+              {/* Warehouse Packages */}
+              {order && (
+                <OrderPackagesSection
+                  orderId={order.id}
+                  key={packagesKey}
+                  onOpenScan={(pkg) => setScanPkg(pkg)}
+                  onOpenBooking={(pkg) => setBookingPkg(pkg)}
+                  onOpenEdit={(pkg) => setEditPkg(pkg)}
+                  onOpenPrint={(pkg) => triggerPackingListPrint(pkg)}
+                />
+              )}
+
               {/* Order Summary */}
               <div className="bg-white/5 p-6 rounded-lg border-t border-border">
                 <div className="flex justify-between items-center py-2 text-sm text-muted-foreground">
@@ -1455,6 +1480,44 @@ function ViewOrder() {
               </div>
             </div>
           </div>
+        )}
+
+        {/* Warehouse Modals */}
+        {order && (
+          <PackageAllocationModal
+            order={order}
+            open={allocationOpen}
+            onClose={() => setAllocationOpen(false)}
+            onSuccess={() => {
+              setAllocationOpen(false);
+              setPackagesKey((k) => k + 1);
+              fetchOrderDetails();
+            }}
+          />
+        )}
+        {scanPkg && (
+          <PackingScanModal
+            pkg={scanPkg}
+            open={!!scanPkg}
+            onClose={() => setScanPkg(null)}
+            onSuccess={() => { setScanPkg(null); setPackagesKey((k) => k + 1); }}
+          />
+        )}
+        {bookingPkg && (
+          <ShippingBookingModal
+            pkg={bookingPkg}
+            open={!!bookingPkg}
+            onClose={() => setBookingPkg(null)}
+            onSuccess={() => { setBookingPkg(null); setPackagesKey((k) => k + 1); }}
+          />
+        )}
+        {editPkg && (
+          <PackingListEditModal
+            pkg={editPkg}
+            open={!!editPkg}
+            onClose={() => setEditPkg(null)}
+            onSuccess={() => { setEditPkg(null); setPackagesKey((k) => k + 1); }}
+          />
         )}
 
         {/* Cancel Order Modal */}
