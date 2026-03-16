@@ -179,6 +179,7 @@ export default function PackingListsPage() {
     }
 
     // Column filters
+    let hasStatusFilter = false;
     for (const filter of columnFilters) {
       const value = filter.value;
       if (filter.id === "search" && typeof value === "string" && value) {
@@ -187,7 +188,13 @@ export default function PackingListsPage() {
         filters.search = value[0];
       } else if (filter.id === "warehouse_status" && Array.isArray(value) && value.length) {
         filters.warehouse_status = (value as string[]).join(",");
+        hasStatusFilter = true;
       }
+    }
+
+    // Default to packing-stage statuses only (exclude shipped/delivered)
+    if (!hasStatusFilter) {
+      filters.warehouse_status = "sent_to_packing,packed,delivery_booked";
     }
 
     return filters;

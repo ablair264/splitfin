@@ -306,7 +306,8 @@ export function AddWebsiteProductSheet({
                   <select
                     value={badge}
                     onChange={(e) => setBadge(e.target.value)}
-                    className="w-full px-2 py-1.5 rounded-md bg-background border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
+                    style={{ colorScheme: 'dark' }}
+                    className="w-full px-2 py-1.5 rounded-md bg-background border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
                   >
                     <option value="">None</option>
                     <option value="new">New</option>

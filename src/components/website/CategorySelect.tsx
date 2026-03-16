@@ -93,7 +93,8 @@ export function CategorySelect({
     <select
       value={value ?? ''}
       onChange={handleSelectChange}
-      className={cn('w-full px-2 py-1.5 rounded-md bg-background border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50', className)}
+      style={{ colorScheme: 'dark' }}
+      className={cn('w-full px-2 py-1.5 rounded-md bg-background border border-border text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50', className)}
     >
       <option value="">{placeholder}</option>
       {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}

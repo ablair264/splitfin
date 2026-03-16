@@ -389,6 +389,7 @@ export function WebsiteProductDetailSheet({
                     <select
                       value={effectiveBadge ?? ''}
                       onChange={(e) => handleSelectChange('badge', e.target.value || null)}
+                      style={{ colorScheme: 'dark' }}
                       className="text-sm bg-card border border-border/50 rounded px-2 py-0.5 text-foreground"
                     >
                       <option value="">None</option>
@@ -418,6 +419,7 @@ export function WebsiteProductDetailSheet({
                     <select
                       value={effectiveFeaturedSpan ?? ''}
                       onChange={(e) => handleSelectChange('featured_span', e.target.value || null)}
+                      style={{ colorScheme: 'dark' }}
                       className="text-sm bg-card border border-border/50 rounded px-2 py-0.5 text-foreground"
                     >
                       <option value="">None</option>

@@ -42,7 +42,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 function CustomerAvatar({ name }: { name: string }) {
-  const initials = name
+  const initials = (name || "?")
     .split(" ")
     .map((w) => w[0])
     .filter(Boolean)
