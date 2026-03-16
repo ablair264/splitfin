@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { usePageTitle } from '@/hooks/usePageTitle';
 import {
   Mail, Phone, MapPin, ExternalLink, Save, X, Loader2, ShoppingCart, Bell, BellOff, Plus, Trash2,
+  ChevronDown, KeyRound, Link2,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { customerService } from '../services/customerService';
@@ -111,6 +112,7 @@ export default function CustomerDetail() {
   const [reminderSaving, setReminderSaving] = useState(false);
   const [reminderDayInput, setReminderDayInput] = useState('');
   const [reminderAfterDayInput, setReminderAfterDayInput] = useState('');
+  const [remindersOpen, setRemindersOpen] = useState(false);
 
   const hasDirtyFields = Object.keys(dirtyFields).length > 0;
 
@@ -354,8 +356,18 @@ export default function CustomerDetail() {
   // Stable Editable key prefix
   const ek = `${customerData.id}-${discardCount}`;
 
+  // Helpers for flat address rendering
+  const billingFields = ADDRESS_FIELDS.filter(({ key }) => {
+    const val = (customerData.billing_address as Address)?.[key];
+    return val && val.trim() !== '';
+  });
+  const shippingFields = ADDRESS_FIELDS.filter(({ key }) => {
+    const val = (customerData.shipping_address as Address)?.[key];
+    return val && val.trim() !== '';
+  });
+
   return (
-    <div className="w-full p-6">
+    <div className="w-full p-6 max-w-[1400px]">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-1.5 text-sm text-muted-foreground mb-5">
         <button onClick={() => navigate('/customers')} className="hover:text-foreground transition-colors">
@@ -496,19 +508,19 @@ export default function CustomerDetail() {
       </AnimatePresence>
 
       {/* ── Main two-column layout ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-10">
-        {/* Left column */}
-        <div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Company card */}
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.05 }}
-              className="bg-card rounded-xl border border-border/60 p-5"
-            >
-              <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-4">Company</h3>
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-x-12 gap-y-10">
 
+        {/* ── Left column: Details + Financial merged flat ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-4">Details</h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10">
+            {/* Left sub-column: Editable company fields */}
+            <div>
               <DetailRow label="Contact">
                 <Editable
                   key={`contact_name-${ek}`}
@@ -634,16 +646,10 @@ export default function CustomerDetail() {
                   </EditableArea>
                 </Editable>
               </DetailRow>
-            </motion.div>
+            </div>
 
-            {/* Financial card — read-only */}
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="bg-card rounded-xl border border-border/60 p-5"
-            >
-              <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-4">Financial</h3>
+            {/* Right sub-column: Read-only financial + access */}
+            <div>
               <DetailRow label="Total Spent">
                 <span className="text-[13px] font-semibold text-primary tabular-nums">{formatCurrency(customerData.total_spent)}</span>
               </DetailRow>
@@ -663,139 +669,60 @@ export default function CustomerDetail() {
               <DetailRow label="Last Order">
                 <span className="text-[13px] font-medium text-foreground">{formatDate(lastOrderDate)}</span>
               </DetailRow>
-            </motion.div>
-          </div>
 
-          {/* Separator */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.12 }}
-          >
-            <Separator className="my-8" />
-          </motion.div>
-
-          {/* Orders */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 }}
-            className="bg-card rounded-xl border border-border/60 p-5"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
-                Orders ({orders.length})
-              </h3>
-              {orders.length > 0 && (
-                <Button
-                  intent="plain"
-                  size="xs"
-                  onPress={() => navigate('/orders', { state: { customerId: customerData.id, customerName: customerData.company_name } })}
-                  className="text-primary/70 hover:text-primary"
-                >
-                  View all <ExternalLink size={10} />
+              {/* Login & Access — inline, no card */}
+              <div className="flex items-center gap-2 pt-4 mt-1 border-t border-border/30">
+                <Button intent="outline" size="sm" onPress={handleResetPin} isDisabled={resettingPin}>
+                  {resettingPin ? <Loader2 size={13} className="animate-spin" /> : <KeyRound size={12} />}
+                  Reset PIN
                 </Button>
+                <Button intent="outline" size="sm" onPress={handleSendMagicLink} isDisabled={sendingMagicLink || !customerData?.email}>
+                  {sendingMagicLink ? <Loader2 size={13} className="animate-spin" /> : <Link2 size={12} />}
+                  Magic Link
+                </Button>
+              </div>
+
+              {/* Integration — inline, no card */}
+              {customerData.zoho_contact_id && (
+                <div className="pt-3 mt-3 border-t border-border/30">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-muted-foreground/60">Zoho</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono text-muted-foreground">{customerData.zoho_contact_id}</span>
+                      <span className={cn(
+                        'text-[10px] px-1.5 py-0.5 rounded-md border font-medium',
+                        customerData.sync_status === 'synced'
+                          ? 'bg-emerald-500/8 text-emerald-400 border-emerald-500/15'
+                          : customerData.sync_status === 'pending_push'
+                            ? 'bg-amber-500/8 text-amber-400 border-amber-500/15'
+                            : 'bg-red-500/8 text-red-400 border-red-500/15'
+                      )}>
+                        {customerData.sync_status === 'synced' ? 'Synced' : customerData.sync_status === 'pending_push' ? 'Pending' : customerData.sync_status}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
-
-            {ordersLoading ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">Loading orders...</div>
-            ) : orders.length === 0 ? (
-              <div className="py-8 text-center">
-                <p className="text-sm text-muted-foreground mb-3">No orders found</p>
-                <Button
-                  intent="plain"
-                  size="sm"
-                  onPress={() => navigate('/orders/new', { state: { fromCustomerDetail: true, customer: { id: customerData.id, display_name: customerData.company_name } } })}
-                  className="text-primary hover:underline"
-                >
-                  Create first order
-                </Button>
-              </div>
-            ) : (
-              <div className="rounded-lg border border-border/60 overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-secondary/50">
-                    <TableRow className="border-b border-border/60 hover:bg-secondary/50">
-                      <TableHead>Order</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
-                      <TableHead className="w-[40px]" />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {orders.slice(0, 15).map(order => (
-                      <TableRow
-                        key={order.id}
-                        className="cursor-pointer border-b border-border/30 hover:bg-primary/[0.03] transition-colors"
-                        onClick={() => navigate(`/order/${order.id}`)}
-                      >
-                        <TableCell className="font-medium text-foreground">
-                          <span className="text-[13px]">#{order.salesorder_number || order.id}</span>
-                          {order.reference_number && (
-                            <span className="ml-2 text-[11px] text-muted-foreground">{order.reference_number}</span>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-[12px] text-muted-foreground tabular-nums">
-                          {formatDate(order.date)}
-                        </TableCell>
-                        <TableCell>
-                          <span className={cn(
-                            'inline-flex px-2 py-0.5 rounded-md text-[10px] font-medium capitalize border',
-                            orderStatusColor(order.status)
-                          )}>
-                            {order.status}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <span className="text-[13px] font-semibold text-foreground tabular-nums">
-                            {formatCurrency(order.total)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <ExternalLink size={12} className="text-muted-foreground inline-block" />
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {orders.length > 15 && (
-                      <TableRow>
-                        <TableCell colSpan={5} className="text-center py-2">
-                          <Button
-                            intent="plain"
-                            size="xs"
-                            onPress={() => navigate('/orders', { state: { customerId: customerData.id, customerName: customerData.company_name } })}
-                            className="text-primary/70 hover:text-primary"
-                          >
-                            View all {orders.length} orders
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
 
         {/* ── Right column ── */}
-        <div className="flex flex-col gap-6">
-          {/* Contact Persons — read-only */}
+        <div className="flex flex-col gap-8">
+          {/* Contacts — flat */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-card rounded-xl border border-border/60 p-5"
+            transition={{ delay: 0.1 }}
           >
-            <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-4">
+            <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-3">
               Contacts ({contactPersons.length})
             </h3>
             {contactPersons.length > 0 ? (
               <div className="space-y-3">
                 {contactPersons.map((contact, i) => (
-                  <div key={contact.contact_person_id || i} className="py-3 border-b border-border/30 last:border-0">
-                    <div className="flex items-center gap-2 mb-1.5">
+                  <div key={contact.contact_person_id || i} className="py-2 border-b border-border/30 last:border-0">
+                    <div className="flex items-center gap-2 mb-1">
                       <span className="text-[13px] font-medium text-foreground">
                         {`${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'Unnamed'}
                       </span>
@@ -828,270 +755,357 @@ export default function CustomerDetail() {
             )}
           </motion.div>
 
-          {/* Login & Access */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.22 }}
-            className="bg-card rounded-xl border border-border/60 p-5"
-          >
-            <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-4">Login & Access</h3>
-            <div className="flex gap-2">
-              <Button intent="outline" size="sm" onPress={handleResetPin} isDisabled={resettingPin}>
-                {resettingPin ? <Loader2 size={13} className="animate-spin" /> : null}
-                Reset PIN
-              </Button>
-              <Button intent="outline" size="sm" onPress={handleSendMagicLink} isDisabled={sendingMagicLink || !customerData?.email}>
-                {sendingMagicLink ? <Loader2 size={13} className="animate-spin" /> : <Mail size={13} />}
-                Send Magic Link
-              </Button>
-            </div>
-          </motion.div>
-
-          {/* Reminder Settings */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.23 }}
-            className="bg-card rounded-xl border border-border/60 p-5"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">Invoice Reminders</h3>
-              {reminderSettings && (
-                <button
-                  onClick={() => setReminderSettings({ ...reminderSettings, is_enabled: !reminderSettings.is_enabled })}
-                  className={cn(
-                    'flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium transition-colors',
-                    reminderSettings.is_enabled
-                      ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
-                      : 'bg-muted-foreground/10 text-muted-foreground hover:bg-muted-foreground/20'
-                  )}
-                >
-                  {reminderSettings.is_enabled ? <Bell size={11} /> : <BellOff size={11} />}
-                  {reminderSettings.is_enabled ? 'Enabled' : 'Disabled'}
-                </button>
-              )}
-            </div>
-
-            {reminderLoading ? (
-              <div className="py-4 text-center text-sm text-muted-foreground">Loading...</div>
-            ) : reminderSettings ? (
-              <div className="space-y-4">
-                {/* Days before due */}
-                <div>
-                  <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-2">Before due date</span>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {reminderSettings.days_before_due.map(day => (
-                      <span key={day} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[12px] font-medium border border-primary/15">
-                        {day}d
-                        <button onClick={() => removeDayBefore(day)} className="text-primary/50 hover:text-primary ml-0.5"><X size={10} /></button>
-                      </span>
-                    ))}
-                    {reminderSettings.days_before_due.length === 0 && (
-                      <span className="text-[12px] text-muted-foreground/50">None</span>
-                    )}
-                  </div>
-                  <div className="flex gap-1.5">
-                    <input
-                      type="number"
-                      min={1}
-                      max={90}
-                      placeholder="Days"
-                      value={reminderDayInput}
-                      onChange={e => setReminderDayInput(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && addDayBefore()}
-                      className="w-16 px-2 py-1 text-[12px] bg-foreground/5 border border-foreground/10 rounded-md text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40"
-                    />
-                    <button onClick={addDayBefore} className="p-1 rounded-md bg-foreground/5 border border-foreground/10 text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors">
-                      <Plus size={12} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Days after due */}
-                <div>
-                  <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-2">After due date</span>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {reminderSettings.days_after_due.map(day => (
-                      <span key={day} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-[12px] font-medium border border-amber-500/15">
-                        {day}d
-                        <button onClick={() => removeDayAfter(day)} className="text-amber-400/50 hover:text-amber-400 ml-0.5"><X size={10} /></button>
-                      </span>
-                    ))}
-                    {reminderSettings.days_after_due.length === 0 && (
-                      <span className="text-[12px] text-muted-foreground/50">None</span>
-                    )}
-                  </div>
-                  <div className="flex gap-1.5">
-                    <input
-                      type="number"
-                      min={1}
-                      max={90}
-                      placeholder="Days"
-                      value={reminderAfterDayInput}
-                      onChange={e => setReminderAfterDayInput(e.target.value)}
-                      onKeyDown={e => e.key === 'Enter' && addDayAfter()}
-                      className="w-16 px-2 py-1 text-[12px] bg-foreground/5 border border-foreground/10 rounded-md text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40"
-                    />
-                    <button onClick={addDayAfter} className="p-1 rounded-md bg-foreground/5 border border-foreground/10 text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors">
-                      <Plus size={12} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Max reminders */}
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider">Max reminders</span>
-                  <input
-                    type="number"
-                    min={1}
-                    max={20}
-                    value={reminderSettings.max_reminders}
-                    onChange={e => setReminderSettings({ ...reminderSettings, max_reminders: parseInt(e.target.value) || 5 })}
-                    className="w-14 px-2 py-1 text-[12px] text-right bg-foreground/5 border border-foreground/10 rounded-md text-foreground focus:outline-none focus:border-primary/40"
-                  />
-                </div>
-
-                {/* CC agent toggle */}
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider">CC assigned agent</span>
-                  <label className="relative inline-block w-10 h-5">
-                    <input
-                      type="checkbox"
-                      checked={reminderSettings.cc_agent}
-                      onChange={() => setReminderSettings({ ...reminderSettings, cc_agent: !reminderSettings.cc_agent })}
-                      className="opacity-0 w-0 h-0 peer"
-                    />
-                    <span className="absolute cursor-pointer inset-0 bg-foreground/10 rounded-full transition-colors duration-300 before:absolute before:content-[''] before:h-[14px] before:w-[14px] before:left-[3px] before:bottom-[3px] before:bg-muted-foreground before:rounded-full before:transition-all before:duration-300 peer-checked:bg-primary peer-checked:before:translate-x-5 peer-checked:before:bg-white" />
-                  </label>
-                </div>
-
-                {/* Custom message */}
-                <div>
-                  <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-2">Custom message</span>
-                  <textarea
-                    rows={2}
-                    value={reminderSettings.custom_message || ''}
-                    onChange={e => setReminderSettings({ ...reminderSettings, custom_message: e.target.value || null })}
-                    placeholder="Optional message to include in reminders..."
-                    className="w-full px-2.5 py-1.5 text-[12px] bg-foreground/5 border border-foreground/10 rounded-md text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 resize-none"
-                  />
-                </div>
-
-                {/* Save button */}
-                <Button
-                  intent="primary"
-                  size="sm"
-                  onPress={handleSaveReminderSettings}
-                  isDisabled={reminderSaving}
-                  className="w-full"
-                >
-                  {reminderSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
-                  {reminderSaving ? 'Saving...' : 'Save Reminder Settings'}
-                </Button>
-              </div>
-            ) : null}
-          </motion.div>
-
-          {/* Addresses — inline editable */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-            className="bg-card rounded-xl border border-border/60 p-5"
-          >
-            <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-4">Addresses</h3>
-
-            <div className="space-y-5">
-              {/* Billing */}
-              <div>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <MapPin size={11} className="text-muted-foreground" />
-                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Billing</span>
-                </div>
-                <div className="space-y-1 pl-[17px]">
-                  {ADDRESS_FIELDS.filter(({ key }) => {
-                    const val = (customerData.billing_address as Address)?.[key];
-                    return val && val.trim() !== '';
-                  }).map(({ key, label }) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground/60">{label}</span>
-                      <Editable
-                        key={`billing_${key}-${ek}`}
-                        defaultValue={(customerData.billing_address as Address)?.[key] ?? ''}
-                        placeholder="-"
-                        onSubmit={val => handleAddressFieldSubmit('billing_address', key, val)}
-                      >
-                        <EditableArea>
-                          <EditablePreview className="text-[13px] text-foreground py-0" />
-                          <EditableInput className="text-[13px] px-1 text-right" />
-                        </EditableArea>
-                      </Editable>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Shipping */}
-              <div>
-                <div className="flex items-center gap-1.5 mb-2">
-                  <MapPin size={11} className="text-muted-foreground" />
-                  <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Shipping</span>
-                </div>
-                <div className="space-y-1 pl-[17px]">
-                  {ADDRESS_FIELDS.filter(({ key }) => {
-                    const val = (customerData.shipping_address as Address)?.[key];
-                    return val && val.trim() !== '';
-                  }).map(({ key, label }) => (
-                    <div key={key} className="flex items-center justify-between">
-                      <span className="text-[11px] text-muted-foreground/60">{label}</span>
-                      <Editable
-                        key={`shipping_${key}-${ek}`}
-                        defaultValue={(customerData.shipping_address as Address)?.[key] ?? ''}
-                        placeholder="-"
-                        onSubmit={val => handleAddressFieldSubmit('shipping_address', key, val)}
-                      >
-                        <EditableArea>
-                          <EditablePreview className="text-[13px] text-foreground py-0" />
-                          <EditableInput className="text-[13px] px-1 text-right" />
-                        </EditableArea>
-                      </Editable>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Integration — read-only */}
-          {customerData.zoho_contact_id && (
+          {/* Addresses — flat, side by side */}
+          {(billingFields.length > 0 || shippingFields.length > 0) && (
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="bg-card rounded-xl border border-border/60 p-5"
+              transition={{ delay: 0.15 }}
             >
-              <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-4">Integration</h3>
-              <DetailRow label="Zoho ID">
-                <span className="text-[13px] font-medium text-foreground font-mono">{customerData.zoho_contact_id}</span>
-              </DetailRow>
-              <DetailRow label="Sync Status">
-                <span className={cn(
-                  'text-[10px] px-2 py-0.5 rounded-md border font-medium',
-                  customerData.sync_status === 'synced'
-                    ? 'bg-emerald-500/8 text-emerald-400 border-emerald-500/15'
-                    : customerData.sync_status === 'pending_push'
-                      ? 'bg-amber-500/8 text-amber-400 border-amber-500/15'
-                      : 'bg-red-500/8 text-red-400 border-red-500/15'
-                )}>
-                  {customerData.sync_status === 'synced' ? 'Synced' : customerData.sync_status === 'pending_push' ? 'Pending' : customerData.sync_status}
-                </span>
-              </DetailRow>
+              <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider mb-3">Addresses</h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {/* Billing */}
+                {billingFields.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <MapPin size={11} className="text-muted-foreground" />
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Billing</span>
+                    </div>
+                    <div className="space-y-1">
+                      {billingFields.map(({ key, label }) => (
+                        <div key={key} className="flex items-center justify-between">
+                          <span className="text-[11px] text-muted-foreground/60">{label}</span>
+                          <Editable
+                            key={`billing_${key}-${ek}`}
+                            defaultValue={(customerData.billing_address as Address)?.[key] ?? ''}
+                            placeholder="-"
+                            onSubmit={val => handleAddressFieldSubmit('billing_address', key, val)}
+                          >
+                            <EditableArea>
+                              <EditablePreview className="text-[13px] text-foreground py-0" />
+                              <EditableInput className="text-[13px] px-1 text-right" />
+                            </EditableArea>
+                          </Editable>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Shipping */}
+                {shippingFields.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-2">
+                      <MapPin size={11} className="text-muted-foreground" />
+                      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">Shipping</span>
+                    </div>
+                    <div className="space-y-1">
+                      {shippingFields.map(({ key, label }) => (
+                        <div key={key} className="flex items-center justify-between">
+                          <span className="text-[11px] text-muted-foreground/60">{label}</span>
+                          <Editable
+                            key={`shipping_${key}-${ek}`}
+                            defaultValue={(customerData.shipping_address as Address)?.[key] ?? ''}
+                            placeholder="-"
+                            onSubmit={val => handleAddressFieldSubmit('shipping_address', key, val)}
+                          >
+                            <EditableArea>
+                              <EditablePreview className="text-[13px] text-foreground py-0" />
+                              <EditableInput className="text-[13px] px-1 text-right" />
+                            </EditableArea>
+                          </Editable>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </motion.div>
           )}
         </div>
+
+        {/* ── Orders — full-width spanning both columns ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="xl:col-span-2"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
+              Orders ({orders.length})
+            </h3>
+            {orders.length > 0 && (
+              <Button
+                intent="plain"
+                size="xs"
+                onPress={() => navigate('/orders', { state: { customerId: customerData.id, customerName: customerData.company_name } })}
+                className="text-primary/70 hover:text-primary"
+              >
+                View all <ExternalLink size={10} />
+              </Button>
+            )}
+          </div>
+
+          {ordersLoading ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">Loading orders...</div>
+          ) : orders.length === 0 ? (
+            <div className="py-10 text-center">
+              <ShoppingCart size={24} className="mx-auto mb-3 text-muted-foreground/30" />
+              <p className="text-sm text-muted-foreground mb-3">No orders yet</p>
+              <Button
+                intent="plain"
+                size="sm"
+                onPress={() => navigate('/orders/new', { state: { fromCustomerDetail: true, customer: { id: customerData.id, display_name: customerData.company_name } } })}
+                className="text-primary hover:underline"
+              >
+                Create first order
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-lg border border-border/60 overflow-hidden">
+              <Table>
+                <TableHeader className="bg-secondary/50">
+                  <TableRow className="border-b border-border/60 hover:bg-secondary/50">
+                    <TableHead>Order</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Total</TableHead>
+                    <TableHead className="w-[40px]" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.slice(0, 15).map(order => (
+                    <TableRow
+                      key={order.id}
+                      className="cursor-pointer border-b border-border/30 hover:bg-primary/[0.03] transition-colors"
+                      onClick={() => navigate(`/order/${order.id}`)}
+                    >
+                      <TableCell className="font-medium text-foreground">
+                        <span className="text-[13px]">#{order.salesorder_number || order.id}</span>
+                        {order.reference_number && (
+                          <span className="ml-2 text-[11px] text-muted-foreground">{order.reference_number}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-[12px] text-muted-foreground tabular-nums">
+                        {formatDate(order.date)}
+                      </TableCell>
+                      <TableCell>
+                        <span className={cn(
+                          'inline-flex px-2 py-0.5 rounded-md text-[10px] font-medium capitalize border',
+                          orderStatusColor(order.status)
+                        )}>
+                          {order.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <span className="text-[13px] font-semibold text-foreground tabular-nums">
+                          {formatCurrency(order.total)}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <ExternalLink size={12} className="text-muted-foreground inline-block" />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {orders.length > 15 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-2">
+                        <Button
+                          intent="plain"
+                          size="xs"
+                          onPress={() => navigate('/orders', { state: { customerId: customerData.id, customerName: customerData.company_name } })}
+                          className="text-primary/70 hover:text-primary"
+                        >
+                          View all {orders.length} orders
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </motion.div>
+
+        {/* ── Invoice Reminders — collapsible, full-width ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.25 }}
+          className="xl:col-span-2"
+        >
+          <button
+            onClick={() => setRemindersOpen(prev => !prev)}
+            className="flex items-center gap-2 w-full group"
+          >
+            <ChevronDown
+              size={14}
+              className={cn(
+                'text-muted-foreground/60 transition-transform duration-200',
+                !remindersOpen && '-rotate-90'
+              )}
+            />
+            <h3 className="text-xs font-medium text-muted-foreground/60 uppercase tracking-wider">
+              Invoice Reminders
+            </h3>
+            {reminderSettings && (
+              <span className={cn(
+                'ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium',
+                reminderSettings.is_enabled
+                  ? 'text-emerald-400'
+                  : 'text-muted-foreground/50'
+              )}>
+                {reminderSettings.is_enabled ? 'Enabled' : 'Disabled'}
+              </span>
+            )}
+          </button>
+
+          <AnimatePresence initial={false}>
+            {remindersOpen && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                {reminderLoading ? (
+                  <div className="py-4 text-sm text-muted-foreground">Loading...</div>
+                ) : reminderSettings ? (
+                  <div className="pt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
+                    {/* Before due */}
+                    <div>
+                      <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-2">Before due date</span>
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {reminderSettings.days_before_due.map(day => (
+                          <span key={day} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[12px] font-medium border border-primary/15">
+                            {day}d
+                            <button onClick={() => removeDayBefore(day)} className="text-primary/50 hover:text-primary ml-0.5"><X size={10} /></button>
+                          </span>
+                        ))}
+                        {reminderSettings.days_before_due.length === 0 && (
+                          <span className="text-[12px] text-muted-foreground/50">None</span>
+                        )}
+                      </div>
+                      <div className="flex gap-1.5">
+                        <input
+                          type="number"
+                          min={1}
+                          max={90}
+                          placeholder="Days"
+                          value={reminderDayInput}
+                          onChange={e => setReminderDayInput(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && addDayBefore()}
+                          className="w-16 px-2 py-1 text-[12px] bg-foreground/5 border border-foreground/10 rounded-md text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40"
+                        />
+                        <button onClick={addDayBefore} className="p-1 rounded-md bg-foreground/5 border border-foreground/10 text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors">
+                          <Plus size={12} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* After due */}
+                    <div>
+                      <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-2">After due date</span>
+                      <div className="flex flex-wrap gap-1.5 mb-2">
+                        {reminderSettings.days_after_due.map(day => (
+                          <span key={day} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-400 text-[12px] font-medium border border-amber-500/15">
+                            {day}d
+                            <button onClick={() => removeDayAfter(day)} className="text-amber-400/50 hover:text-amber-400 ml-0.5"><X size={10} /></button>
+                          </span>
+                        ))}
+                        {reminderSettings.days_after_due.length === 0 && (
+                          <span className="text-[12px] text-muted-foreground/50">None</span>
+                        )}
+                      </div>
+                      <div className="flex gap-1.5">
+                        <input
+                          type="number"
+                          min={1}
+                          max={90}
+                          placeholder="Days"
+                          value={reminderAfterDayInput}
+                          onChange={e => setReminderAfterDayInput(e.target.value)}
+                          onKeyDown={e => e.key === 'Enter' && addDayAfter()}
+                          className="w-16 px-2 py-1 text-[12px] bg-foreground/5 border border-foreground/10 rounded-md text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40"
+                        />
+                        <button onClick={addDayAfter} className="p-1 rounded-md bg-foreground/5 border border-foreground/10 text-muted-foreground hover:text-foreground hover:bg-foreground/10 transition-colors">
+                          <Plus size={12} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Settings column */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider">Max reminders</span>
+                        <input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={reminderSettings.max_reminders}
+                          onChange={e => setReminderSettings({ ...reminderSettings, max_reminders: parseInt(e.target.value) || 5 })}
+                          className="w-14 px-2 py-1 text-[12px] text-right bg-foreground/5 border border-foreground/10 rounded-md text-foreground focus:outline-none focus:border-primary/40"
+                        />
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider">CC assigned agent</span>
+                        <label className="relative inline-block w-10 h-5">
+                          <input
+                            type="checkbox"
+                            checked={reminderSettings.cc_agent}
+                            onChange={() => setReminderSettings({ ...reminderSettings, cc_agent: !reminderSettings.cc_agent })}
+                            className="opacity-0 w-0 h-0 peer"
+                          />
+                          <span className="absolute cursor-pointer inset-0 bg-foreground/10 rounded-full transition-colors duration-200 before:absolute before:content-[''] before:h-[14px] before:w-[14px] before:left-[3px] before:bottom-[3px] before:bg-muted-foreground before:rounded-full before:transition-all before:duration-200 peer-checked:bg-primary peer-checked:before:translate-x-5 peer-checked:before:bg-white" />
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider">Enabled</span>
+                        <label className="relative inline-block w-10 h-5">
+                          <input
+                            type="checkbox"
+                            checked={reminderSettings.is_enabled}
+                            onChange={() => setReminderSettings({ ...reminderSettings, is_enabled: !reminderSettings.is_enabled })}
+                            className="opacity-0 w-0 h-0 peer"
+                          />
+                          <span className="absolute cursor-pointer inset-0 bg-foreground/10 rounded-full transition-colors duration-200 before:absolute before:content-[''] before:h-[14px] before:w-[14px] before:left-[3px] before:bottom-[3px] before:bg-muted-foreground before:rounded-full before:transition-all before:duration-200 peer-checked:bg-primary peer-checked:before:translate-x-5 peer-checked:before:bg-white" />
+                        </label>
+                      </div>
+                    </div>
+
+                    {/* Message + save */}
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-[11px] text-muted-foreground/60 uppercase tracking-wider block mb-2">Custom message</span>
+                        <textarea
+                          rows={2}
+                          value={reminderSettings.custom_message || ''}
+                          onChange={e => setReminderSettings({ ...reminderSettings, custom_message: e.target.value || null })}
+                          placeholder="Optional message to include in reminders..."
+                          className="w-full px-2.5 py-1.5 text-[12px] bg-foreground/5 border border-foreground/10 rounded-md text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/40 resize-none"
+                        />
+                      </div>
+                      <Button
+                        intent="primary"
+                        size="sm"
+                        onPress={handleSaveReminderSettings}
+                        isDisabled={reminderSaving}
+                        className="w-full"
+                      >
+                        {reminderSaving ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                        {reminderSaving ? 'Saving...' : 'Save Reminders'}
+                      </Button>
+                    </div>
+                  </div>
+                ) : null}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
       </div>
     </div>
   );
