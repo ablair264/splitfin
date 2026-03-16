@@ -273,7 +273,6 @@ router.post('/:id/send-magic-link', async (req, res) => {
     await update('customers', req.params.id, {
       magic_link_token: token,
       magic_link_expires_at: expiresAt.toISOString(),
-      updated_at: new Date().toISOString(),
     });
 
     if (!process.env.RESEND_API_KEY) {
