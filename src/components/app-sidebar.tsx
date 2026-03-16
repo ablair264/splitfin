@@ -264,6 +264,7 @@ const ALL_NAV_ITEMS: Record<string, NavItemDef> = {
   intelligence: { id: "intelligence", label: "Intelligence", icon: <TrendingUp size={18} />, path: "/website/intelligence" },
   // Warehouse
   pipeline: { id: "pipeline", label: "Pipeline", icon: <BoxIcon size={18} />, path: "/shipping/warehouse" },
+  packingLists: { id: "packingLists", label: "Packing Lists", icon: <ClipboardCheckIcon size={18} />, path: "/shipping/packing-lists" },
   couriers: { id: "couriers", label: "Couriers", icon: <MailCheckIcon size={18} />, path: "/shipping/couriers" },
   deliveries: { id: "deliveries", label: "Deliveries", icon: <TruckIcon size={18} />, path: "/shipping/deliveries" },
   // Management
@@ -296,6 +297,7 @@ const COLLAPSED_ITEMS: { id: string; item: NavItemDef; divider?: boolean; adminO
   { id: "d2", item: ALL_NAV_ITEMS.dashboard, divider: true },
   // Warehouse
   { id: "pipeline", item: ALL_NAV_ITEMS.pipeline, adminOnly: true },
+  { id: "packingLists", item: ALL_NAV_ITEMS.packingLists, adminOnly: true },
   { id: "couriers", item: ALL_NAV_ITEMS.couriers, adminOnly: true },
   { id: "deliveries", item: ALL_NAV_ITEMS.deliveries, adminOnly: true },
   { id: "d3", item: ALL_NAV_ITEMS.dashboard, divider: true },
@@ -783,6 +785,7 @@ export default function AppSidebar({ user, unreadNotifications = 0, unreadMessag
                       onToggle={() => toggleSection("warehouse")}
                     >
                       <NavItem indent item={ALL_NAV_ITEMS.pipeline} isActive={isPathActive("/shipping/warehouse")} isCollapsed={false} onPin={() => togglePin("pipeline")} pinned={pinnedIds.includes("pipeline")} />
+                      <NavItem indent item={ALL_NAV_ITEMS.packingLists} isActive={isPathActive("/shipping/packing-lists")} isCollapsed={false} onPin={() => togglePin("packingLists")} pinned={pinnedIds.includes("packingLists")} />
                       <NavItem indent item={ALL_NAV_ITEMS.couriers} isActive={isPathActive("/shipping/couriers")} isCollapsed={false} onPin={() => togglePin("couriers")} pinned={pinnedIds.includes("couriers")} />
                       <NavItem indent item={ALL_NAV_ITEMS.deliveries} isActive={isPathActive("/shipping/deliveries")} isCollapsed={false} onPin={() => togglePin("deliveries")} pinned={pinnedIds.includes("deliveries")} />
                     </AccordionSection>

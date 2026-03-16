@@ -37,6 +37,7 @@ import Settings from '../components/Settings/Settings';
 import AgentManagement from '../components/agents/AgentManagement';
 import Messaging from '../components/Messaging/Messaging';
 import Warehouse from '../components/Warehouse';
+import PackingListsPage from '../components/warehouse/PackingListsPage';
 import Couriers from '../components/Couriers';
 import Deliveries from '../components/Deliveries';
 import InvoicesTable from '../components/invoices/InvoicesTable';
@@ -234,6 +235,7 @@ export default function MasterLayout() {
 
             {/* Shipping Routes */}
             <Route path="/shipping/warehouse" element={<Warehouse />} />
+            <Route path="/shipping/packing-lists" element={<PackingListsPage />} />
             <Route path="/shipping/couriers" element={<Couriers />} />
             <Route path="/shipping/deliveries" element={<Deliveries />} />
 
