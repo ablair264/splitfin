@@ -60,6 +60,48 @@ export interface KanbanPackage {
   created_at: string;
 }
 
+export interface PackageListItem {
+  id: number;
+  packing_number: string;
+  warehouse_status: string;
+  status: string;
+  carrier_name: string | null;
+  tracking_number: string | null;
+  shipment_date: string | null;
+  created_at: string;
+  updated_at: string;
+  sent_to_packing_at: string | null;
+  packed_at: string | null;
+  delivery_booked_at: string | null;
+  shipping_address: string | null;
+  shipping_city: string | null;
+  shipping_state: string | null;
+  shipping_code: string | null;
+  shipping_country: string | null;
+  shipping_phone: string | null;
+  shipping_attention: string | null;
+  order_id: number;
+  salesorder_number: string;
+  customer_name: string;
+  order_total: number;
+  order_date: string;
+  item_count: number;
+}
+
+export interface PackageListResponse {
+  data: PackageListItem[];
+  meta: { total: number; limit: number; offset: number; has_more: boolean };
+}
+
+export interface PackageListFilters {
+  search?: string;
+  warehouse_status?: string;
+  sort_by?: string;
+  sort_order?: 'asc' | 'desc';
+  limit?: number;
+  offset?: number;
+}
+
 export interface CreatePackageRequest {
   order_id: number;
   line_items: { order_line_item_id: number; quantity: number }[];
@@ -124,6 +166,15 @@ export const warehouseService = {
 
   async getKanbanData(maxAgeDays = 30): Promise<KanbanData> {
     const result = await api.get<{ data: KanbanData }>('/api/v1/warehouse/kanban', { max_age_days: maxAgeDays });
+    return result.data;
+  },
+
+  async list(filters: PackageListFilters = {}): Promise<PackageListResponse> {
+    return api.get<PackageListResponse>('/api/v1/warehouse/list', filters as Record<string, string | number>);
+  },
+
+  async getStatuses(): Promise<{ status: string; count: number }[]> {
+    const result = await api.get<{ data: { status: string; count: number }[] }>('/api/v1/warehouse/statuses');
     return result.data;
   },
 

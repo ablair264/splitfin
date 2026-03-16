@@ -546,6 +546,102 @@ router.delete('/packages/:id', async (req, res) => {
   }
 });
 
+// ── GET /list — paginated, filterable package list ──────────────────
+router.get('/list', async (req, res) => {
+  try {
+    const {
+      search,
+      warehouse_status,
+      sort_by = 'created_at',
+      sort_order = 'desc',
+      limit = 50,
+      offset = 0,
+    } = req.query;
+
+    const sortCol = PACKAGE_SORT_COLUMNS[sort_by] || 'created_at';
+    const sortDir = sort_order === 'asc' ? 'ASC' : 'DESC';
+
+    let where = `WHERE 1=1`;
+    const params = [];
+    let idx = 1;
+
+    // Exclude delivered by default (unless explicitly requested)
+    if (warehouse_status) {
+      const statuses = warehouse_status.split(',').map(s => s.trim()).filter(Boolean);
+      if (statuses.length === 1) {
+        where += ` AND s.warehouse_status = $${idx++}`;
+        params.push(statuses[0]);
+      } else if (statuses.length > 1) {
+        where += ` AND s.warehouse_status = ANY($${idx++}::text[])`;
+        params.push(statuses);
+      }
+    } else {
+      where += ` AND s.warehouse_status NOT IN ('delivered')`;
+    }
+
+    if (search) {
+      where += ` AND (
+        s.packing_number ILIKE $${idx} OR
+        s.salesorder_number ILIKE $${idx} OR
+        s.customer_name ILIKE $${idx} OR
+        s.tracking_number ILIKE $${idx}
+      )`;
+      params.push(`%${search}%`);
+      idx++;
+    }
+
+    // Count
+    const countResult = await query(
+      `SELECT count(*) FROM shipments s ${where}`,
+      params
+    );
+    const total = parseInt(countResult.rows[0].count);
+
+    // Data
+    const dataParams = [...params, parseInt(limit), parseInt(offset)];
+    const { rows } = await query(
+      `SELECT s.id, s.packing_number, s.warehouse_status, s.status,
+              s.carrier_name, s.tracking_number, s.shipment_date, s.created_at, s.updated_at,
+              s.sent_to_packing_at, s.packed_at, s.delivery_booked_at,
+              s.shipping_address, s.shipping_city, s.shipping_state, s.shipping_code, s.shipping_country,
+              s.shipping_phone, s.shipping_attention,
+              s.order_id, o.salesorder_number, o.customer_name, o.total as order_total, o.date as order_date,
+              (SELECT count(*) FROM package_items pi WHERE pi.shipment_id = s.id) as item_count
+       FROM shipments s
+       LEFT JOIN orders o ON o.id = s.order_id
+       ${where}
+       ORDER BY s.${sortCol} ${sortDir}
+       LIMIT $${idx++} OFFSET $${idx++}`,
+      dataParams
+    );
+
+    res.json({
+      data: rows,
+      meta: { total, limit: parseInt(limit), offset: parseInt(offset), has_more: parseInt(offset) + rows.length < total },
+    });
+  } catch (err) {
+    logger.error('Error fetching package list:', err);
+    res.status(500).json({ error: 'Failed to fetch package list' });
+  }
+});
+
+// ── GET /statuses — status counts for filter options ────────────────
+router.get('/statuses', async (req, res) => {
+  try {
+    const { rows } = await query(
+      `SELECT warehouse_status, count(*) as count
+       FROM shipments
+       WHERE warehouse_status NOT IN ('delivered')
+       GROUP BY warehouse_status
+       ORDER BY count DESC`
+    );
+    res.json({ data: rows.map(r => ({ status: r.warehouse_status, count: parseInt(r.count) })) });
+  } catch (err) {
+    logger.error('Error fetching statuses:', err);
+    res.status(500).json({ error: 'Failed to fetch statuses' });
+  }
+});
+
 // ── GET /kanban ─────────────────────────────────────────────────────
 router.get('/kanban', async (req, res) => {
   try {
