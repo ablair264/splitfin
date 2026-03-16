@@ -1,4 +1,3 @@
-// src/components/warehouse/PackingScanModal.tsx
 import { useState, useEffect, useRef } from 'react';
 import { Dialog, Modal, ModalOverlay } from 'react-aria-components';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { warehouseService, type Package, type PackageItem } from '@/services/warehouseService';
 import { ScanLine, X, CheckCircle, Package as PackageIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+interface ScanItem extends PackageItem {
+  expected: number;
+  scanned: number;
+}
 
 interface PackingScanModalProps {
   pkg: Package;
@@ -15,7 +19,7 @@ interface PackingScanModalProps {
 }
 
 export function PackingScanModal({ pkg, open, onClose, onSuccess }: PackingScanModalProps) {
-  const [items, setItems] = useState<PackageItem[]>(pkg.items || []);
+  const [items, setItems] = useState<ScanItem[]>([]);
   const [scanInput, setScanInput] = useState('');
   const [lastResult, setLastResult] = useState<string | null>(null);
   const [marking, setMarking] = useState(false);
@@ -23,7 +27,15 @@ export function PackingScanModal({ pkg, open, onClose, onSuccess }: PackingScanM
 
   useEffect(() => {
     if (open) {
-      setItems(pkg.items || []);
+      // quantity_packed = how many items were allocated to this package (the expected qty)
+      // scanned starts at 0 — user scans to verify
+      setItems(
+        (pkg.items || []).map((item) => ({
+          ...item,
+          expected: Number(item.quantity_packed) || 0,
+          scanned: 0,
+        }))
+      );
       setScanInput('');
       setLastResult(null);
       setTimeout(() => inputRef.current?.focus(), 100);
@@ -34,20 +46,26 @@ export function PackingScanModal({ pkg, open, onClose, onSuccess }: PackingScanM
     if (!code.trim()) return;
     setScanInput('');
 
-    try {
-      const result = await warehouseService.scanItem(pkg.id, code.trim());
-      if (result.result === 'matched' && result.item) {
-        setItems((prev) =>
-          prev.map((i) => (i.id === result.item!.id ? result.item! : i))
-        );
-        setLastResult(`Scanned: ${result.item.item_name}`);
-      } else if (result.result === 'already_complete') {
-        setLastResult(`Already complete: ${code}`);
+    // Match locally by SKU first
+    const matchIdx = items.findIndex(
+      (i) => i.sku === code.trim() && i.scanned < i.expected
+    );
+
+    if (matchIdx !== -1) {
+      setItems((prev) => {
+        const next = [...prev];
+        next[matchIdx] = { ...next[matchIdx], scanned: next[matchIdx].scanned + 1 };
+        return next;
+      });
+      setLastResult(`Scanned: ${items[matchIdx].item_name} (${items[matchIdx].scanned + 1}/${items[matchIdx].expected})`);
+    } else {
+      // Check if SKU exists but is already complete
+      const completeMatch = items.find((i) => i.sku === code.trim());
+      if (completeMatch) {
+        setLastResult(`Already complete: ${completeMatch.item_name}`);
       } else {
         setLastResult(`Not found: ${code}`);
       }
-    } catch (err) {
-      setLastResult(`Error scanning: ${code}`);
     }
 
     setTimeout(() => inputRef.current?.focus(), 50);
@@ -71,8 +89,8 @@ export function PackingScanModal({ pkg, open, onClose, onSuccess }: PackingScanM
     }
   };
 
-  const totalExpected = items.reduce((sum, i) => sum + (i.ordered_quantity || i.quantity_packed || 0), 0);
-  const totalScanned = items.reduce((sum, i) => sum + (i.quantity_packed || 0), 0);
+  const totalExpected = items.reduce((sum, i) => sum + i.expected, 0);
+  const totalScanned = items.reduce((sum, i) => sum + i.scanned, 0);
   const allComplete = totalScanned >= totalExpected && totalExpected > 0;
 
   if (!open) return null;
@@ -143,9 +161,7 @@ export function PackingScanModal({ pkg, open, onClose, onSuccess }: PackingScanM
               <div className="flex-1 overflow-y-auto px-6 py-3">
                 <div className="space-y-1">
                   {items.map((item) => {
-                    const expected = item.ordered_quantity || item.quantity_packed || 0;
-                    const scanned = item.quantity_packed || 0;
-                    const complete = scanned >= expected;
+                    const complete = item.scanned >= item.expected;
                     return (
                       <div
                         key={item.id}
@@ -159,10 +175,10 @@ export function PackingScanModal({ pkg, open, onClose, onSuccess }: PackingScanM
                         ) : (
                           <PackageIcon size={14} className="text-muted-foreground shrink-0" />
                         )}
-                        <span className="font-mono text-xs text-muted-foreground w-16">{item.sku}</span>
+                        <span className="font-mono text-xs text-muted-foreground w-20">{item.sku}</span>
                         <span className="flex-1 truncate">{item.item_name}</span>
-                        <span className="tabular-nums text-xs">
-                          {scanned}/{expected}
+                        <span className="tabular-nums text-xs font-medium">
+                          {item.scanned}/{item.expected}
                         </span>
                       </div>
                     );
