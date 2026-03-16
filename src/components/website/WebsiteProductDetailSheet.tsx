@@ -389,7 +389,7 @@ export function WebsiteProductDetailSheet({
                     <select
                       value={effectiveBadge ?? ''}
                       onChange={(e) => handleSelectChange('badge', e.target.value || null)}
-                      className="text-sm bg-transparent border border-border/50 rounded px-2 py-0.5 text-foreground"
+                      className="text-sm bg-card border border-border/50 rounded px-2 py-0.5 text-foreground"
                     >
                       <option value="">None</option>
                       <option value="new">New</option>
@@ -418,7 +418,7 @@ export function WebsiteProductDetailSheet({
                     <select
                       value={effectiveFeaturedSpan ?? ''}
                       onChange={(e) => handleSelectChange('featured_span', e.target.value || null)}
-                      className="text-sm bg-transparent border border-border/50 rounded px-2 py-0.5 text-foreground"
+                      className="text-sm bg-card border border-border/50 rounded px-2 py-0.5 text-foreground"
                     >
                       <option value="">None</option>
                       <option value="hot">Hot Products</option>

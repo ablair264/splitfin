@@ -3,31 +3,31 @@
   "startedAt": "2026-03-15T21:48:52.323Z",
   "workers": {
     "map": {
-      "runCount": 13,
-      "successCount": 13,
+      "runCount": 14,
+      "successCount": 14,
       "failureCount": 0,
-      "averageDurationMs": 0.23076923076923078,
-      "lastRun": "2026-03-16T00:55:22.865Z",
-      "nextRun": "2026-03-16T01:10:22.865Z",
+      "averageDurationMs": 0.2857142857142857,
+      "lastRun": "2026-03-16T01:10:22.920Z",
+      "nextRun": "2026-03-16T01:25:22.920Z",
       "isRunning": false
     },
     "audit": {
-      "runCount": 13,
+      "runCount": 15,
       "successCount": 0,
-      "failureCount": 13,
+      "failureCount": 15,
       "averageDurationMs": 0,
-      "lastRun": "2026-03-16T00:52:24.084Z",
-      "nextRun": "2026-03-16T01:02:24.084Z",
+      "lastRun": "2026-03-16T01:22:24.448Z",
+      "nextRun": "2026-03-16T01:17:24.247Z",
       "isRunning": false
     },
     "optimize": {
-      "runCount": 9,
+      "runCount": 10,
       "successCount": 0,
-      "failureCount": 9,
+      "failureCount": 10,
       "averageDurationMs": 0,
-      "lastRun": "2026-03-16T00:44:23.319Z",
-      "nextRun": "2026-03-16T00:59:23.319Z",
-      "isRunning": true
+      "lastRun": "2026-03-16T01:04:23.480Z",
+      "nextRun": "2026-03-16T01:34:23.589Z",
+      "isRunning": false
     },
     "consolidate": {
       "runCount": 7,
@@ -35,16 +35,16 @@
       "failureCount": 0,
       "averageDurationMs": 0.14285714285714285,
       "lastRun": "2026-03-16T01:01:22.780Z",
-      "nextRun": "2026-03-16T01:01:22.679Z",
+      "nextRun": "2026-03-16T01:31:22.780Z",
       "isRunning": false
     },
     "testgaps": {
-      "runCount": 8,
+      "runCount": 9,
       "successCount": 0,
-      "failureCount": 8,
+      "failureCount": 9,
       "averageDurationMs": 0,
-      "lastRun": "2026-03-16T00:49:23.320Z",
-      "nextRun": "2026-03-16T01:03:22.864Z",
+      "lastRun": "2026-03-16T01:09:23.558Z",
+      "nextRun": "2026-03-16T01:23:22.922Z",
       "isRunning": false
     },
     "predict": {
@@ -131,5 +131,5 @@
       }
     ]
   },
-  "savedAt": "2026-03-16T01:01:22.780Z"
+  "savedAt": "2026-03-16T01:22:24.448Z"
 }

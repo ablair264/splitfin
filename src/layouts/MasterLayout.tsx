@@ -40,6 +40,10 @@ import Warehouse from '../components/Warehouse';
 import PackingListsPage from '../components/warehouse/PackingListsPage';
 import Couriers from '../components/Couriers';
 import Deliveries from '../components/Deliveries';
+import DeliveriesTable from '../components/deliveries/DeliveriesTable';
+import DeliveryManagement from '../components/deliveries/DeliveryManagement';
+import LiveDeliveries from '../components/deliveries/LiveDeliveries';
+import DeliveryArchive from '../components/deliveries/DeliveryArchive';
 import InvoicesTable from '../components/invoices/InvoicesTable';
 import ViewInvoice from '../components/invoices/ViewInvoice';
 
@@ -237,7 +241,10 @@ export default function MasterLayout() {
             <Route path="/shipping/warehouse" element={<Warehouse />} />
             <Route path="/shipping/packing-lists" element={<PackingListsPage />} />
             <Route path="/shipping/couriers" element={<Couriers />} />
-            <Route path="/shipping/deliveries" element={<Deliveries />} />
+            <Route path="/shipping/deliveries" element={<DeliveriesTable />} />
+            <Route path="/shipping/delivery-management" element={<DeliveryManagement />} />
+            <Route path="/shipping/live-deliveries" element={<LiveDeliveries />} />
+            <Route path="/shipping/delivery-archive" element={<DeliveryArchive />} />
 
             {/* Image Management */}
             <Route path="/image-management" element={<ImageManagement />} />

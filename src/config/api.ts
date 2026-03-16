@@ -38,4 +38,9 @@ export const API_ENDPOINTS = {
 
   // Sync endpoints
   SYNC: `${API_BASE_URL}/api/sync`,
+
+  // Tracking endpoints (proxied through backend)
+  TRACKING_UPS: `${API_BASE_URL}/api/tracking/ups`,
+  TRACKING_ROYALMAIL: `${API_BASE_URL}/api/tracking/royalmail`,
+  TRACKINGMORE_PROXY: `${API_BASE_URL}/api/trackingmore-proxy`,
 };

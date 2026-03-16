@@ -279,10 +279,11 @@ router.post('/upload', async (req, res) => {
     // Resize + convert to WebP
     const processed = await processImage(req.file.buffer);
 
-    // Build R2 key (always .webp after processing)
+    // Build R2 key (always .webp after processing, with timestamp for uniqueness)
     const brandSlug = brand.toLowerCase().replace(/\s+/g, '-');
     const baseName = req.file.originalname.replace(/\.[^.]+$/, '');
-    const key = `images/${brandSlug}/${baseName}.webp`;
+    const timestamp = Date.now();
+    const key = `images/${brandSlug}/${baseName}-${timestamp}.webp`;
 
     // Upload to R2
     const r2 = await getR2Client();
@@ -463,10 +464,11 @@ router.post('/upload-batch', async (req, res) => {
         // Resize + convert to WebP
         const processed = await processImage(file.buffer);
 
-        // Build R2 key (always .webp after processing)
+        // Build R2 key (always .webp after processing, with timestamp for uniqueness)
         const brandSlug = brand.toLowerCase().replace(/\s+/g, '-');
         const baseName = file.originalname.replace(/\.[^.]+$/, '');
-        const key = `images/${brandSlug}/${baseName}.webp`;
+        const timestamp = Date.now();
+        const key = `images/${brandSlug}/${baseName}-${timestamp}.webp`;
 
         // Upload to R2
         await r2.send(new _s3Sdk.PutObjectCommand({

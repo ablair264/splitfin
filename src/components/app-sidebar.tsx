@@ -267,6 +267,9 @@ const ALL_NAV_ITEMS: Record<string, NavItemDef> = {
   packingLists: { id: "packingLists", label: "Packing Lists", icon: <ClipboardCheckIcon size={18} />, path: "/shipping/packing-lists" },
   couriers: { id: "couriers", label: "Couriers", icon: <MailCheckIcon size={18} />, path: "/shipping/couriers" },
   deliveries: { id: "deliveries", label: "Deliveries", icon: <TruckIcon size={18} />, path: "/shipping/deliveries" },
+  deliveryMap: { id: "deliveryMap", label: "Delivery Map", icon: <TruckIcon size={18} />, path: "/shipping/delivery-management" },
+  liveDeliveries: { id: "liveDeliveries", label: "Live Deliveries", icon: <TruckIcon size={18} />, path: "/shipping/live-deliveries" },
+  deliveryArchive: { id: "deliveryArchive", label: "Delivery Archive", icon: <TruckIcon size={18} />, path: "/shipping/delivery-archive" },
   // Management
   agents: { id: "agents", label: "Agents", icon: <ClipboardCheckIcon size={18} />, path: "/agents" },
   reportSuite: { id: "reportSuite", label: "Report Suite", icon: <ChartLineIcon size={18} />, path: "/reports" },
@@ -788,6 +791,9 @@ export default function AppSidebar({ user, unreadNotifications = 0, unreadMessag
                       <NavItem indent item={ALL_NAV_ITEMS.packingLists} isActive={isPathActive("/shipping/packing-lists")} isCollapsed={false} onPin={() => togglePin("packingLists")} pinned={pinnedIds.includes("packingLists")} />
                       <NavItem indent item={ALL_NAV_ITEMS.couriers} isActive={isPathActive("/shipping/couriers")} isCollapsed={false} onPin={() => togglePin("couriers")} pinned={pinnedIds.includes("couriers")} />
                       <NavItem indent item={ALL_NAV_ITEMS.deliveries} isActive={isPathActive("/shipping/deliveries")} isCollapsed={false} onPin={() => togglePin("deliveries")} pinned={pinnedIds.includes("deliveries")} />
+                      <NavItem indent item={ALL_NAV_ITEMS.deliveryMap} isActive={isPathActive("/shipping/delivery-management")} isCollapsed={false} onPin={() => togglePin("deliveryMap")} pinned={pinnedIds.includes("deliveryMap")} />
+                      <NavItem indent item={ALL_NAV_ITEMS.liveDeliveries} isActive={isPathActive("/shipping/live-deliveries")} isCollapsed={false} onPin={() => togglePin("liveDeliveries")} pinned={pinnedIds.includes("liveDeliveries")} />
+                      <NavItem indent item={ALL_NAV_ITEMS.deliveryArchive} isActive={isPathActive("/shipping/delivery-archive")} isCollapsed={false} onPin={() => togglePin("deliveryArchive")} pinned={pinnedIds.includes("deliveryArchive")} />
                     </AccordionSection>
                   )}
 
