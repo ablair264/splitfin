@@ -276,10 +276,15 @@ router.post('/:id/send-magic-link', async (req, res) => {
       updated_at: new Date().toISOString(),
     });
 
+    if (!process.env.RESEND_API_KEY) {
+      logger.warn('[Customers] Magic link not sent: RESEND_API_KEY not configured');
+      return res.status(503).json({ error: 'Email service not configured' });
+    }
+
     // Send magic link email via Resend
     const magicLinkUrl = `https://trade.dmbrands.co.uk/auth/magic-link?token=${token}`;
 
-    await fetch('https://api.resend.com/emails', {
+    const emailRes = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
@@ -295,6 +300,12 @@ router.post('/:id/send-magic-link', async (req, res) => {
         <p>If you didn't request this, you can safely ignore this email.</p>`,
       }),
     });
+
+    if (!emailRes.ok) {
+      const errorBody = await emailRes.text();
+      logger.error(`[Customers] Resend API error (${emailRes.status}): ${errorBody}`);
+      return res.status(502).json({ error: 'Failed to send email' });
+    }
 
     logger.info(`[Customers] Magic link sent to ${customer.email} for customer ${req.params.id} by ${req.agent?.id}`);
     res.json({ message: `Magic link sent to ${customer.email}` });
